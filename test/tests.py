@@ -1,4 +1,7 @@
+import json
 import unittest
+
+from module.submission import fetch_submissions
 from module.utils import *
 from module.config import Config
 
@@ -19,6 +22,15 @@ class TestUtil(unittest.TestCase):
     def test_reload_problemStat(self):
         req_type = "problemStat"
         self.assertTrue(reload_stats(config, oj_url, req_type))
+
+
+class TestFetch(unittest.TestCase):
+    def test_fetch_submissions(self):
+        result = fetch_submissions(config, False)
+        with open("submission_result.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
 
 
 if __name__ == '__main__':
