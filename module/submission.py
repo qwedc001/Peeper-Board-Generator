@@ -59,3 +59,22 @@ def get_first_ac(submission_list: list[SubmissionData]) -> SubmissionData:
         if submission.verdict == 'Accepted':
             return submission
     return SubmissionData(UserData("好像今天没有人AC", "-1"), 0, "Wait WHAT", "Never gonna give you up", 114514)
+
+
+def get_hourly_submissions(submission_list: list[SubmissionData]) -> dict:
+    result = {}
+    for i in range(24):
+        result[str(i)] = [0, 0]
+    for submission in submission_list:
+        hour = time.localtime(submission.at).tm_hour
+        if submission.verdict == 'Accepted':
+            result[str(hour)][0] += 1
+        result[str(hour)][1] += 1
+    # 0: AC, 1: 总数
+    for i in range(24):
+        if result[str(i)][1] == 0:
+            result[str(i)][0] = 0
+        else:
+            result[str(i)][0] /= result[str(i)][1]
+    # 0: AC 率, 1: 总数
+    return result
