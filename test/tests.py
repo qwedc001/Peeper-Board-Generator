@@ -41,8 +41,12 @@ class TestFetch(unittest.TestCase):
         self.assertTrue(len(result) > 0)
 
     def test_get_first_ac(self):
-        yesterday_submissions = json.load(open("submission_result_yesterday.json", "r", encoding="utf-8"))
-        today_submissions = json.load(open("submission_result_today.json", "r", encoding="utf-8"))
+        yesterday_json = open("submission_result_yesterday.json", "r", encoding="utf-8")
+        today_json = open("submission_result_today.json", "r", encoding="utf-8")
+        yesterday_submissions = json.load(yesterday_json)
+        today_submissions = json.load(today_json)
+        yesterday_json.close()
+        today_json.close()
         submissions = []
         for submission in yesterday_submissions:
             submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid']),
