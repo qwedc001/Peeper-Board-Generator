@@ -1,4 +1,6 @@
 import logging
+from typing import Dict, Union, Any
+
 import requests
 import time
 from module.config import Config
@@ -104,4 +106,17 @@ def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
         result['ac_rate'] += 1 if submission.verdict == 'Accepted' else 0
     result['avg_score'] /= len(submission_list)
     result['ac_rate'] /= len(submission_list)
+    return result
+
+
+def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
+    result: dict[Union[str, int], Union[dict[str, int], dict[str, int]]] = {} # 这一段是 PyCharm 自动加的类型提示
+    for submission in submission_list:
+        if submission.verdict not in result:
+            result[submission.verdict] = {}
+        if submission.user.name not in result[submission.verdict]:
+            result[submission.verdict][submission.user.name] = 0
+        result[submission.verdict][submission.user.name] += 1
+    for verdict in result:
+        result[verdict] = dict(sorted(result[verdict].items(), key=lambda x: x[1], reverse=True))
     return result

@@ -3,7 +3,7 @@ import unittest
 
 from module.structures import SubmissionData, UserData
 from module.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
-    classify_by_verdict
+    classify_by_verdict, rank_by_verdict
 from module.utils import *
 from module.config import Config
 
@@ -94,6 +94,15 @@ class TestFetch(unittest.TestCase):
         result = {"yesterday": classify_by_verdict(yesterday_submissions),
                   "today": classify_by_verdict(today_submissions)}
         with open("classify_by_verdict.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_rank_by_verdict(self):
+        yesterday_submissions, today_submissions = load_submission_json()
+        result = {"yesterday": rank_by_verdict(yesterday_submissions),
+                  "today": rank_by_verdict(today_submissions)}
+        with open("rank_by_verdict.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
             f.close()
         self.assertTrue(len(result) > 0)
