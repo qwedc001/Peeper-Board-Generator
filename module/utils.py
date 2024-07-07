@@ -43,3 +43,4 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
         status = response_get_status.json()["rdoc"]["status"]
         logging.debug(f'当前 {req_type} 状态为：{status}')
     logging.info(f'重新加载 {req_type} 数据完成')
+    return True

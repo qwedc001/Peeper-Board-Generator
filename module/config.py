@@ -6,7 +6,7 @@ class Config:
     def __init__(self, config_path: str = 'config.json'):
         self.work_dir = os.path.abspath(os.path.curdir)
         json_path = os.path.join(self.work_dir, config_path)
-        config_file = open(json_path, 'r')
+        config_file = open(json_path, 'r',encoding='utf-8')
         self.jsonCfg = json.loads(config_file.read())
         config_file.close()
 

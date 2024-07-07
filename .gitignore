@@ -1,3 +1,5 @@
 config.json
 /.idea
-/test
+
+test/*
+!/test/tests.py
