@@ -25,9 +25,16 @@ class TestUtil(unittest.TestCase):
 
 
 class TestFetch(unittest.TestCase):
-    def test_fetch_submissions(self):
+    def test_fetch_submissions_yesterday(self):
+        result = fetch_submissions(config, True)
+        with open("submission_result_yesterday.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_fetch_submissions_today(self):
         result = fetch_submissions(config, False)
-        with open("submission_result.json", "w", encoding="utf-8") as f:
+        with open("submission_result_today.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
             f.close()
         self.assertTrue(len(result) > 0)
