@@ -2,7 +2,6 @@ from PIL import Image, ImageDraw, ImageFont
 import random
 from typing import Tuple, List
 
-
 def textsize(draw: ImageDraw, content: str, font: ImageFont) -> Tuple[int, int]:
     _, _, width, height = draw.textbbox((0, 0), content, font=font)
     return width, height
@@ -19,16 +18,6 @@ class Color:
 
     def __repr__(self):
         return f"Color(Hex={self.hex_color}, RGB={self.rgb})"
-
-
-class Pair:
-    def __init__(self, first, second):
-        self.first = first
-        self.second = second
-
-    @staticmethod
-    def of(first, second):
-        return Pair(first, second)
 
 
 class StyledString:
