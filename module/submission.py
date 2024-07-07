@@ -52,3 +52,10 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
             result.append(SubmissionData(user, score, verdict, problem_name, at))
         page += 1
     return result
+
+
+def get_first_ac(submission_list: list[SubmissionData]) -> SubmissionData:
+    for submission in submission_list[::-1]:
+        if submission.verdict == 'Accepted':
+            return submission
+    return SubmissionData(UserData("好像今天没有人AC", "-1"), 0, "Wait WHAT", "Never gonna give you up", 114514)
