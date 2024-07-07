@@ -44,3 +44,13 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
         logging.debug(f'当前 {req_type} 状态为：{status}')
     logging.info(f'重新加载 {req_type} 数据完成')
     return True
+
+
+class Pair:
+    def __init__(self, first, second):
+        self.first = first
+        self.second = second
+
+    @staticmethod
+    def of(first, second):
+        return Pair(first, second)
