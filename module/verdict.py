@@ -13,6 +13,7 @@ VERDICT_MAP = {
     "Hacked": 11,
     "Running": 12,
     "Compiling": 13,
+    "Format Error": 31,
 }
 
 ALIAS_MAP = {
@@ -23,5 +24,24 @@ ALIAS_MAP = {
     "OLE": "Output Limit Exceeded",
     "RE": "Runtime Error",
     "CE": "Compile Error",
-    "SE": "System Error"
+    "SE": "System Error",
+    "FE": "Format Error",
+}
+
+STATUS_VERDICT = {
+    0: "Waiting",
+    1: "Accepted",
+    2: "Wrong Answer",
+    3: "Time Limit Exceeded",
+    4: "Memory Limit Exceeded",
+    5: "Output Limit Exceeded",
+    6: "Runtime Error",
+    7: "Compile Error",
+    8: "System Error",
+    9: "Canceled",
+    10: "Unknown Error",
+    11: "Hacked",
+    12: "Running",
+    13: "Compiling",
+    31: "Format Error",
 }

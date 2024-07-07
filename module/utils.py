@@ -1,4 +1,6 @@
 import logging
+from datetime import datetime, timedelta
+from typing import Tuple
 import requests
 import time
 from module.config import Config
@@ -45,6 +47,16 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
     logging.info(f'重新加载 {req_type} 数据完成')
     return True
 
+def get_yesterday_timestamp() -> Tuple[int, int]:
+    yesterday_start = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    yesterday_end = (datetime.now() - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999)
+    return int(yesterday_start.timestamp()), int(yesterday_end.timestamp())
+
+
+def get_today_timestamp() -> Tuple[int, int]:
+    today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = datetime.now()
+    return int(today_start.timestamp()), int(today_end.timestamp())
 
 class Pair:
     def __init__(self, first, second):

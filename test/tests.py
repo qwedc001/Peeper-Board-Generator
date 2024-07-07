@@ -1,9 +1,36 @@
+import json
 import unittest
+
+from module.structures import SubmissionData, UserData
+from module.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
+    classify_by_verdict, rank_by_verdict
 from module.utils import *
 from module.config import Config
 
 config = Config("../config.json")
 oj_url = config.get_config("url")
+
+
+def load_submission_json() -> tuple[list[SubmissionData], list[SubmissionData]]:
+    yesterday_json = open("submission_result_yesterday.json", "r", encoding="utf-8")
+    today_json = open("submission_result_today.json", "r", encoding="utf-8")
+    yesterday_submissions = json.load(yesterday_json)
+    today_submissions = json.load(today_json)
+    yesterday_json.close()
+    today_json.close()
+    submissions = []
+    for submission in yesterday_submissions:
+        submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid']),
+                                          submission['score'], submission['verdict'], submission['problem_name'],
+                                          submission['at']))
+    yesterday_submissions = submissions
+    submissions = []
+    for submission in today_submissions:
+        submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid']),
+                                          submission['score'], submission['verdict'], submission['problem_name'],
+                                          submission['at']))
+    today_submissions = submissions
+    return yesterday_submissions, today_submissions
 
 
 class TestUtil(unittest.TestCase):
@@ -19,6 +46,66 @@ class TestUtil(unittest.TestCase):
     def test_reload_problemStat(self):
         req_type = "problemStat"
         self.assertTrue(reload_stats(config, oj_url, req_type))
+
+
+class TestFetch(unittest.TestCase):
+    def test_fetch_submissions_yesterday(self):
+        result = fetch_submissions(config, True)
+        with open("submission_result_yesterday.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_fetch_submissions_today(self):
+        result = fetch_submissions(config, False)
+        with open("submission_result_today.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_get_first_ac(self):
+        yesterday_submissions, today_submissions = load_submission_json()
+        result = {"yesterday": get_first_ac(yesterday_submissions), "today": get_first_ac(today_submissions)}
+        with open("first_ac.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_hourly_ac(self):
+        yesterday_submissions, today_submissions = load_submission_json()
+        result = {"yesterday": get_hourly_submissions(yesterday_submissions),
+                  "today": get_hourly_submissions(today_submissions)}
+        with open("hourly_ac.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_popular_problem(self):
+        yesterday_submissions, today_submissions = load_submission_json()
+        result = {"yesterday": get_most_popular_problem(yesterday_submissions),
+                  "today": get_most_popular_problem(today_submissions)}
+        with open("popular_problem.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_classify_by_verdict(self):
+        yesterday_submissions, today_submissions = load_submission_json()
+        result = {"yesterday": classify_by_verdict(yesterday_submissions),
+                  "today": classify_by_verdict(today_submissions)}
+        with open("classify_by_verdict.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
+
+    def test_rank_by_verdict(self):
+        yesterday_submissions, today_submissions = load_submission_json()
+        result = {"yesterday": rank_by_verdict(yesterday_submissions),
+                  "today": rank_by_verdict(today_submissions)}
+        with open("rank_by_verdict.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        self.assertTrue(len(result) > 0)
 
 
 if __name__ == '__main__':
