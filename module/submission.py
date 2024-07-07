@@ -88,3 +88,20 @@ def get_most_popular_problem(submission_list: list[SubmissionData]) -> tuple[str
         problem_dict[submission.problem_name] += 1
     max_problem = max(problem_dict, key=problem_dict.get)
     return max_problem, problem_dict[max_problem]
+
+
+def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
+    result = {
+        "avg_score": 0,
+        "ac_rate": 0.0,
+        "verdicts": {}
+    }
+    for submission in submission_list:
+        if submission.verdict not in result:
+            result['verdicts'][submission.verdict] = 0
+        result['verdicts'][submission.verdict] += 1
+        result['avg_score'] += submission.score
+        result['ac_rate'] += 1 if submission.verdict == 'Accepted' else 0
+    result['avg_score'] /= len(submission_list)
+    result['ac_rate'] /= len(submission_list)
+    return result
