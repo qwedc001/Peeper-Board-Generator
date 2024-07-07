@@ -78,3 +78,13 @@ def get_hourly_submissions(submission_list: list[SubmissionData]) -> dict:
             result[str(i)][0] /= result[str(i)][1]
     # 0: AC 率, 1: 总数
     return result
+
+
+def get_most_popular_problem(submission_list: list[SubmissionData]) -> tuple[str, int]:
+    problem_dict = {}
+    for submission in submission_list:
+        if submission.problem_name not in problem_dict:
+            problem_dict[submission.problem_name] = 0
+        problem_dict[submission.problem_name] += 1
+    max_problem = max(problem_dict, key=problem_dict.get)
+    return max_problem, problem_dict[max_problem]
