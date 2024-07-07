@@ -7,6 +7,10 @@ from module.verdict import VERDICT_MAP
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 }
+json_headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    'Accept': 'application/json',
+}
 
 
 def get_qq_name(qq: str):
@@ -21,10 +25,9 @@ def get_qq_name(qq: str):
 def reload_stats(config: Config, oj_url: str, req_type: str):
     logging.info(f"正在重新加载 {req_type} 数据")
     url = oj_url + 'manage/script'
-    rp_headers = headers
+    rp_headers = json_headers
     rp_headers['Cookie'] = f'sid={config.get_config("cookie")["sid"]};sid.sig={config.get_config("cookie")["sid_sig"]};'
     rp_headers['Content-Type'] = 'application/json'
-    rp_headers['Accept'] = 'application/json'
     data = f'{{"args":"","id":"{req_type}"}}'
     response_create_task = requests.post(url, headers=rp_headers, data=data)
     record_id = response_create_task.json()["rid"]
