@@ -18,3 +18,12 @@ class SubmissionData:
         self.verdict = verdict
         self.problem_name = problem_name
         self.at = at
+
+
+class RankingData:
+
+    def __init__(self, user_name: str, accepted: str, uid: str, rank: str):
+        self.user_name = user_name
+        self.accepted = accepted
+        self.uid = uid
+        self.rank = rank

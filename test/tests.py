@@ -1,6 +1,8 @@
 import json
+import os
 import unittest
 
+from module.ranking import fetch_rankings, save_ranking_json, load_ranking_json
 from module.structures import SubmissionData, UserData
 from module.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
     classify_by_verdict, rank_by_verdict
@@ -118,6 +120,18 @@ class TestUserModule(unittest.TestCase):
             f.close()
         # 在测试 json 中填入一个有 qq 号的用户来检验 infer_qq 模块是否正常
         self.assertTrue(result.qq != "")
+
+
+class TestRankingModule(unittest.TestCase):
+    def test_fetch_rankings(self):
+        result = fetch_rankings(config)
+        save_ranking_json(config, result)
+        self.assertTrue(os.path.exists(os.path.join(config.work_dir, config.get_config('data'),
+                                                    f'ranking-{get_date_string(False)}.json')))
+
+    def test_load_ranking(self):
+        result = load_ranking_json(config, False)
+        self.assertTrue(len(result) > 0)
 
 
 if __name__ == '__main__':
