@@ -2,9 +2,8 @@ import unittest
 
 from module.hydro.ranking import fetch_rankings
 from module.hydro.tools import reload_stats
-from module.structures import SubmissionData, UserData
-from module.hydro.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
-    classify_by_verdict, rank_by_verdict
+from module.structures import UserData
+from module.hydro.submission import fetch_submissions
 from module.hydro.user import fetch_user
 from module.utils import *
 from module.config import Config

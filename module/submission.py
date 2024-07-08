@@ -68,3 +68,7 @@ def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
     for verdict in result:
         result[verdict] = dict(sorted(result[verdict].items(), key=lambda x: x[1], reverse=True))
     return result
+
+
+def count_users_submitted(submission_list: list[SubmissionData]) -> int:
+    return len(set([submission.user.name for submission in submission_list]))
