@@ -2,6 +2,12 @@ class UserData:
     def __init__(self, name: str, uid: str):
         self.name = name
         self.uid = uid
+        self.status = ""
+        self.progress = ""
+        self.mail = ""
+        self.qq = ""
+        self.qq_name = ""
+        self.description = ""
 
 
 class SubmissionData:
