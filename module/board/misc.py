@@ -6,7 +6,7 @@ from datetime import datetime
 
 from PIL import Image, ImageDraw, ImageFont
 
-from module.ImgConvert import StyledString, ImgConvert
+from module.ImgConvert import StyledString, ImgConvert, Color
 from module.config import Config
 from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
@@ -141,17 +141,47 @@ def darken_color(color: tuple[int, int, int]) -> tuple[int, int, int]:
     return int(color[0] * 0.7), int(color[1] * 0.7), int(color[2] * 0.7)
 
 
+def draw_gradient(image: Image, gradient_info: tuple[list[float], list['Color']], start_pos, end_pos) -> Image:
+    positions, colors = gradient_info
+    start_x, start_y = start_pos
+    end_x, end_y = end_pos
+    if len(positions) == 3:
+        half = draw_gradient(image, (positions[:2], colors[:2]), start_pos, (end_x / 2, end_y))
+        return draw_gradient(half, (positions[1:], colors[1:]), (end_x / 2, 0), end_pos)
+    start_r, start_g, start_b = colors[0].rgb
+    end_r, end_g, end_b = colors[1].rgb
+    x_size = end_x - start_x
+    y_size = end_y - start_y
+    r_gap = (end_r - start_r) / x_size
+    g_gap = (end_g - start_g) / x_size
+    b_gap = (end_b - start_b) / x_size
+    for x in range(x_size):
+        column_color = (int(start_r + r_gap * x),
+                        int(start_g + g_gap * x),
+                        int(start_b + b_gap * x))
+        for y in range(y_size):
+            image.putpixel((x, y), column_color)
+    return image
+
+
+def mask_white_image(image: Image) -> Image:
+    mask = Image.new('L', image.size, 0)
+    mask_draw = ImageDraw.Draw(mask)
+    width,height = image.size
+    mask_draw.rectangle((0, 0, width, height), fill=255)
+    return Image.composite(image, Image.new('RGBA', image.size, (255, 255, 255, 255)), mask).convert("RGBA")
+
+
 def draw_basic_content(output_img: Image, total_height: int, title: StyledString,
                        subtitle: StyledString, current_y: int, logo_path: str) -> tuple[ImageDraw, int]:
+    current_gradient = ImgConvert.GradientColors.generate_gradient()
+    background = mask_white_image(draw_gradient(Image.new('RGBA', (1280, total_height + 300), color=(0, 0, 0)), current_gradient, (0, 0), (1280, total_height+300)))
+    output_img.paste(background, (0, 0), background)
     draw = ImageDraw.Draw(output_img)
     total_height += 300
 
-    current_gradient = ImgConvert.GradientColors.generate_gradient()
-
-    # 不会画渐变，好复杂
-    r, g, b = current_gradient[1][0].rgb
-    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192, (r, g, b, 50), None)
-    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192, (255, 255, 255, 180), None)
+    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192)
+    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192)
 
     accent_color = current_gradient[1][0].rgb
     accent_dark_color = darken_color(darken_color(darken_color(accent_color)))
@@ -161,7 +191,7 @@ def draw_basic_content(output_img: Image, total_height: int, title: StyledString
     draw.bitmap((108, 160), logo_tinted)
     title.font_color = accent_dark_color
     current_y = draw_text(draw, title, 32, current_y, x=260)
-    subtitle.font_color = (accent_dark_color[0],accent_dark_color[1],accent_dark_color[2], 136)
+    subtitle.font_color = (accent_dark_color[0], accent_dark_color[1], accent_dark_color[2], 136)
     current_y = draw_text(draw, subtitle, 108, current_y)
 
     return draw, current_y
@@ -261,7 +291,8 @@ class MiscBoardGenerator:
             ]) + calculate_ranking_height([top_5_detail, top_10_detail, full_rank_detail])
                             + 1380 + 200)  # 1380是所有padding
 
-            output_img = Image.new('RGB', (1280, total_height + 300), color=(0, 0, 0))
+            output_img = Image.new('RGBA', (1280, total_height + 300), color=(0, 0, 0))
+
             draw, current_y = draw_basic_content(output_img, total_height, title, subtitle, 134, logo_path)
 
             current_y = draw_text(draw, play_of_the_oj_title, 8, current_y)

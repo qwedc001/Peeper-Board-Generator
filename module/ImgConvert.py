@@ -247,7 +247,7 @@ class ImgConvert:
             if len(now_colors) == 2:
                 positions = [0.0, 1.0]
             elif len(now_colors) == 3:
-                positions = [0.0, 0.5, 1.0]
+                positions = [0.0, 0.5, 1.0] # 三种颜色的时候 0~0.5 是第一个到第二个，0.5~1 是第二个到第三个
 
             colors_list = [Color.from_hex(color) for color in now_colors]
 

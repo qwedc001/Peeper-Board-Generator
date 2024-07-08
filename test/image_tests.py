@@ -20,7 +20,7 @@ class GenerateTest(unittest.TestCase):
 
     def test_gen(self):
         output_img = MiscBoardGenerator.generate_image(config, "full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
-        output_img.save("full.jpg")
+        output_img.save("full.png")
         self.assertIsNotNone(output_img)
 
 
