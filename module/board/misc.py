@@ -67,7 +67,7 @@ def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
     ranking_list = []
 
     for top in tops:
-        record = {'progress': top[key] / max_val,
+        record = {'progress': str(int(top[key]) / int(max_val)),
                   'unrated': False,
                   'rank': StyledString(config, str(top['rank']), 'H', 64),
                   'user': StyledString(config, str(top['user']), 'B', 36),
@@ -82,18 +82,18 @@ def pack_verdict_detail(verdict_data: dict) -> str:
     verdict_detail = ''
 
     for (key, val) in alias.items():
-        if verdict_data[val] == 0:
+        if key not in verdict_data:
             continue
 
         if len(verdict_detail) > 0:
             verdict_detail += ', '
-        verdict_detail += str(verdict_data[val]) + key
+        verdict_detail += str(verdict_data[key]) + val
 
     return verdict_detail
 
 
 def pack_hourly_detail(hourly_data: dict) -> dict:
-    max_hourly_submit = max(hourly[1] for hourly in hourly_data.items())
+    max_hourly_submit = max(hourly[1] for (time, hourly) in hourly_data.items())
     hourly_detail = {'distribution': [], 'hot_time': 0, 'hot_count': 0, 'hot_ac': 0.0}
 
     for (time, hourly) in hourly_data.items():
@@ -149,7 +149,8 @@ def draw_basic_content(output_img: Image, total_height: int, title: StyledString
     current_gradient = ImgConvert.GradientColors.generate_gradient()
 
     # 不会画渐变，好复杂
-    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192, (current_gradient[1][0].rgb, 50), None)
+    r, g, b = current_gradient[1][0].rgb
+    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192, (r, g, b, 50), None)
     draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192, (255, 255, 255, 180), None)
 
     accent_color = current_gradient[1][0].rgb
@@ -157,10 +158,10 @@ def draw_basic_content(output_img: Image, total_height: int, title: StyledString
 
     logo_tinted = ImgConvert.apply_tint(logo_path, accent_dark_color)
     logo_tinted.resize((140, 140))
-    draw.bitmap((108, 160), logo_tinted.tobitmap())
+    draw.bitmap((108, 160), logo_tinted)
     title.font_color = accent_dark_color
     current_y = draw_text(draw, title, 32, current_y, x=260)
-    subtitle.font_color = (accent_dark_color, 136)
+    subtitle.font_color = (accent_dark_color[0],accent_dark_color[1],accent_dark_color[2], 136)
     current_y = draw_text(draw, subtitle, 108, current_y)
 
     return draw, current_y
@@ -173,7 +174,8 @@ class MiscBoardGenerator:
         today = load_json(config, False)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
-            subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List', 'H', 36)
+            subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List', 'H',
+                                    36)
 
             try:
                 yesterday = load_json(config, True)
@@ -209,22 +211,22 @@ class MiscBoardGenerator:
             ac_rate_detail_sub = StyledString(config, ac_rate_split[0], 'H', 72)
 
             verdict_detail_text = (f'收到 {data.users_submitted} 个人的提交，'
-                                   f'其中包含 {pack_verdict_detail(data.verdict_data['verdicts'])}')
+                                   f'其中包含 {pack_verdict_detail(data.verdict_data["verdicts"])}')
             verdict_detail = StyledString(config, verdict_detail_text, 'M', 28)
 
             hourly_data = pack_hourly_detail(data.hourly_data)
             hourly_text = (
-                f'提交高峰时段为 {"%02d:00 - %02d:59".format(hourly_data['hot_time'], hourly_data['hot_time'])}. '
-                f'在 {hourly_data['hot_count']} 份提交中，通过率为 {".2f%".format(hourly_data['hot_ac'])}.')
+                f'提交高峰时段为 {"%02d:00 - %02d:59".format(hourly_data["hot_time"], hourly_data["hot_time"])}. '
+                f'在 {hourly_data["hot_count"]} 份提交中，通过率为 {".2f%".format(hourly_data["hot_ac"])}.')
 
             hourly_title = StyledString(config, "提交时间分布", 'B', 36)
             hourly_detail = StyledString(config, hourly_text, 'M', 28)
 
-            first_ac_text = (f'在 {datetime.fromtimestamp(data.first_ac.at).strftime('%H:%M:%S')} '
+            first_ac_text = (f'在 {datetime.fromtimestamp(data.first_ac.at).strftime("%H:%M:%S")} '
                              f'提交了 {data.first_ac.problem_name} 并通过.')
 
             first_ac_title = StyledString(config, "昨日最速通过", 'B', 36)
-            first_ac_who = StyledString(config, data.first_ac.user, 'B', 36)
+            first_ac_who = StyledString(config, data.first_ac.user.name, 'B', 36)
             first_ac_detail = StyledString(config, first_ac_text, 'M', 28)
 
             popular_problem_title = StyledString(config, "昨日最受欢迎的题目", 'B', 36)
@@ -242,8 +244,8 @@ class MiscBoardGenerator:
             full_rank_detail = pack_ranking_list(config, data.total_board, 'ac')
 
             cp = StyledString(config, f'Generated by xxx.\n'
-                              f'©xxx.\n'
-                              f'At yyyy/MM/dd HH:mm:ss', 'B', 24, line_multiplier=1.32)
+                                      f'©xxx.\n'
+                                      f'At yyyy/MM/dd HH:mm:ss', 'B', 24, line_multiplier=1.32)
 
             total_height = (calculate_height([
                 title, subtitle,
@@ -272,14 +274,16 @@ class MiscBoardGenerator:
         if board_type == "now":
             if verdict == "Accepted":
                 title = StyledString(config, "今日当前提交榜", 'H', 96)
-                subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List', 'H', 36)
+                subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List',
+                                        'H', 36)
 
                 data = generate_board_data(today.submissions)
                 rank = today.rankings[:5]
                 # 对于 now 榜单的图形逻辑
             else:
                 title = StyledString(config, f"今日当前{verdict}榜", 'H', 96)
-                subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List', 'H', 36)
+                subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List',
+                                        'H', 36)
                 data = generate_board_data([s for s in today.submissions if s.verdict == verdict])
                 rank = rank_by_verdict([s for s in today.submissions if s.verdict == verdict])
                 # 对于分 verdict 的 now 榜单的图形逻辑

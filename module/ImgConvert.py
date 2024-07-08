@@ -5,6 +5,7 @@ import random
 from typing import Tuple, List
 from module.config import Config
 
+
 def textsize(draw: ImageDraw, content: str, font: ImageFont) -> Tuple[int, int]:
     _, _, width, height = draw.textbbox((0, 0), content, font=font)
     return width, height
@@ -24,7 +25,7 @@ class Color:
 
 
 class StyledString:
-    def __init__(self, config: Config, content, font_type, font_size,
+    def __init__(self, config: Config, content: str, font_type: str, font_size: int,
                  font_color: Tuple[int, ...] = (0, 0, 0), line_multiplier=1.0):  # 添加字体颜色
         file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
         self.content = content
@@ -39,7 +40,8 @@ class StyledString:
 
         # textsize is deprecated and will be removed in Pillow 10 (2023-07-01). Use textbbox or textlength instead.
         if self.font:
-            self.height = ImgConvert.calculate_string_height(self.font, font_size, content, line_multiplier=line_multiplier)
+            self.height = ImgConvert.calculate_string_height(file_path, font_size, content,
+                                                             line_multiplier=line_multiplier)
         else:
             self.height = 0
 
@@ -89,7 +91,7 @@ class ImgConvert:
 
     @staticmethod
     def calculate_string_height(font_type, font_size, content, max_width=MAX_WIDTH, line_multiplier=1.0):
-        # 加载字体  
+        # 加载字体
         font = ImageFont.truetype(font_type, font_size)
         # font = "symbol.ttf"
 
@@ -163,7 +165,6 @@ class ImgConvert:
                 offset += int(text_height * styled_string.line_multiplier)
                 temp_text = temp_text[sub_pos:]
                 text_width -= draw_width
-
             draw.text((x, y + offset), temp_text, font=styled_string.font, fill=styled_string.font_color)
             offset += int(text_height * styled_string.line_multiplier)
 
@@ -176,11 +177,10 @@ class ImgConvert:
     """
 
     @staticmethod
-    def apply_tint(image, tint):
-
-        tint = tint.lstrip('#')  # 去除可能的前缀'#'  
+    def apply_tint(image, tint:tuple[int, int, int]):
         length = len(tint)
-        tint_color = tuple(int(tint[i:i + length // 3], 16) for i in range(0, length, length // 3))
+        r,g,b = tint
+        tint_color = (r,g,b,16)
 
         image = Image.open(image)
         image = image.convert("RGBA")  # 转换图片到RGBA模式，以支持透明度  
@@ -259,7 +259,7 @@ class ImgConvert:
 
     class StyledString:
 
-        def __init__(self,config: Config, content: str, font_type: str, font_size: int, line_multiplier: float = 1.0):
+        def __init__(self, config: Config, content: str, font_type: str, font_size: int, line_multiplier: float = 1.0):
             file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
             self.content = content
             self.line_multiplier = line_multiplier

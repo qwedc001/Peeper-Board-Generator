@@ -4,6 +4,7 @@ import unittest
 from module.ImgConvert import ImgConvert
 from module.board.misc import MiscBoardGenerator
 from module.config import Config
+from module.hydro.entry import HydroHandler
 
 config = Config("../config.json")
 
@@ -20,6 +21,7 @@ class GenerateTest(unittest.TestCase):
     def test_gen(self):
         output_img = MiscBoardGenerator.generate_image(config, "full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
         output_img.save("full.jpg")
+        self.assertIsNotNone(output_img)
 
 
 if __name__ == '__main__':
