@@ -4,6 +4,7 @@ import unittest
 from module.structures import SubmissionData, UserData
 from module.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
     classify_by_verdict, rank_by_verdict
+from module.user import fetch_user
 from module.utils import *
 from module.config import Config
 
@@ -48,7 +49,7 @@ class TestUtil(unittest.TestCase):
         self.assertTrue(reload_stats(config, oj_url, req_type))
 
 
-class TestFetch(unittest.TestCase):
+class TestSubmissionModule(unittest.TestCase):
     def test_fetch_submissions_yesterday(self):
         result = fetch_submissions(config, True)
         with open("submission_result_yesterday.json", "w", encoding="utf-8") as f:
@@ -106,6 +107,17 @@ class TestFetch(unittest.TestCase):
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
             f.close()
         self.assertTrue(len(result) > 0)
+
+
+class TestUserModule(unittest.TestCase):
+    def test_fetch_user(self):
+        uid = config.get_config("test")['user']['uid']
+        result = fetch_user(config, uid)
+        with open("user.json", "w", encoding="utf-8") as f:
+            f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+            f.close()
+        # 在测试 json 中填入一个有 qq 号的用户来检验 infer_qq 模块是否正常
+        self.assertTrue(result.qq != "")
 
 
 if __name__ == '__main__':
