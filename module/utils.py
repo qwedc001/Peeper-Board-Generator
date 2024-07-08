@@ -7,10 +7,12 @@ from module.config import Config
 from module.verdict import VERDICT_MAP
 
 headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
+                  "Safari/537.36"
 }
 json_headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
+                  "Safari/537.36",
     'Accept': 'application/json',
 }
 
@@ -47,6 +49,7 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
     logging.info(f'重新加载 {req_type} 数据完成')
     return True
 
+
 def get_yesterday_timestamp() -> Tuple[int, int]:
     yesterday_start = (datetime.now() - timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
     yesterday_end = (datetime.now() - timedelta(days=1)).replace(hour=23, minute=59, second=59, microsecond=999)
@@ -57,6 +60,7 @@ def get_today_timestamp() -> Tuple[int, int]:
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = datetime.now()
     return int(today_start.timestamp()), int(today_end.timestamp())
+
 
 class Pair:
     def __init__(self, first, second):

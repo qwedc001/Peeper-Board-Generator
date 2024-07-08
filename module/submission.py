@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Union, Any
+from typing import Union
 
 import requests
 import time
@@ -110,7 +110,7 @@ def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
 
 
 def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
-    result: dict[Union[str, int], Union[dict[str, int], dict[str, int]]] = {} # 这一段是 PyCharm 自动加的类型提示
+    result: dict[Union[str, int], Union[dict[str, int], dict[str, int]]] = {}  # 这一段是 PyCharm 自动加的类型提示
     for submission in submission_list:
         if submission.verdict not in result:
             result[submission.verdict] = {}

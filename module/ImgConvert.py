@@ -2,6 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import random
 from typing import Tuple, List
 
+
 def textsize(draw: ImageDraw, content: str, font: ImageFont) -> Tuple[int, int]:
     _, _, width, height = draw.textbbox((0, 0), content, font=font)
     return width, height
@@ -158,7 +159,7 @@ class ImgConvert:
     :param tint         覆盖色
     :return             处理完后的图片
     """
-    
+
     @staticmethod
     def apply_tint(image, tint):
 
@@ -261,4 +262,3 @@ class ImgConvert:
                 self.height = int(text_height * line_multiplier)
             else:
                 self.height = 0
-
