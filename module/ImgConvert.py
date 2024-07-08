@@ -1,7 +1,9 @@
+import os
+
 from PIL import Image, ImageDraw, ImageFont
 import random
 from typing import Tuple, List
-
+from module.config import Config
 
 def textsize(draw: ImageDraw, content: str, font: ImageFont) -> Tuple[int, int]:
     _, _, width, height = draw.textbbox((0, 0), content, font=font)
@@ -243,15 +245,16 @@ class ImgConvert:
     """
 
     class StyledString:
-        def __init__(self, content: str, font_type: str, font_size: int, line_multiplier: float = 1.0):
+
+        def __init__(self,config: Config, content: str, font_type: str, font_size: int, line_multiplier: float = 1.0):
+            file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
             self.content = content
             self.line_multiplier = line_multiplier
-
             # 尝试加载字体  
             try:
-                self.font = ImageFont.truetype(font_type, font_size)
+                self.font = ImageFont.truetype(file_path, font_size)
             except IOError:
-                print(f"无法加载字体文件: {font_type}")
+                print(f"无法加载字体文件: {file_path}")
                 self.font = None  # 或者你可以抛出一个异常  
 
             # textsize is deprecated and will be removed in Pillow 10 (2023-07-01). Use textbbox or textlength instead.
