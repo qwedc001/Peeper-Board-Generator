@@ -1,4 +1,6 @@
 import logging
+import os
+
 from module.config import Config
 from module.hydro.entry import HydroHandler
 from module.board.misc import MiscBoardGenerator
@@ -35,10 +37,10 @@ if __name__ == "__main__":
     handler.save_daily()
     if args.full:
         logging.info("正在生成昨日榜单")
-        MiscBoardGenerator.generate_image(config,"full")
+        MiscBoardGenerator.generate_image(config,"full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
-        MiscBoardGenerator.generate_image(config,"now", verdict=args.verdict)
+        MiscBoardGenerator.generate_image(config,"now", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'), verdict=args.verdict)
     else:
         parser.print_help()
         sys.exit(0)

@@ -24,10 +24,24 @@ class Color:
 
 
 class StyledString:
-    def __init__(self, content, font_type, font_size, font_color=(0, 0, 0)):  # 添加字体颜色  
+    def __init__(self, config: Config, content, font_type, font_size,
+                 font_color: Tuple[int, ...] = (0, 0, 0), line_multiplier=1.0):  # 添加字体颜色
+        file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
         self.content = content
-        self.font = ImageFont.truetype(font_type, font_size)
         self.font_color = font_color
+        self.line_multiplier = line_multiplier
+        # 尝试加载字体
+        try:
+            self.font = ImageFont.truetype(file_path, font_size)
+        except IOError:
+            print(f"无法加载字体文件: {file_path}")
+            self.font = None  # 或者你可以抛出一个异常
+
+        # textsize is deprecated and will be removed in Pillow 10 (2023-07-01). Use textbbox or textlength instead.
+        if self.font:
+            self.height = ImgConvert.calculate_string_height(self.font, font_size, content, line_multiplier=line_multiplier)
+        else:
+            self.height = 0
 
 
 class ImgConvert:
@@ -74,7 +88,7 @@ class ImgConvert:
     """
 
     @staticmethod
-    def calculate_string_height(font_type, font_size, content, max_width, line_multiplier):
+    def calculate_string_height(font_type, font_size, content, max_width=MAX_WIDTH, line_multiplier=1.0):
         # 加载字体  
         font = ImageFont.truetype(font_type, font_size)
         # font = "symbol.ttf"
@@ -112,7 +126,7 @@ class ImgConvert:
     """  
     绘制文本
   
-    :param image            目标图片
+    :param draw             目标图层
     :param styled_string    包装后的文本内容
     :param x                文本左上角的横坐标 
     :param y                文本左上角的纵坐标
@@ -121,14 +135,13 @@ class ImgConvert:
     """
 
     @staticmethod
-    def draw_string(image, styled_string, x, y, max_width, line_multiplier):
-        draw = ImageDraw.Draw(image)
+    def draw_string(draw: ImageDraw, styled_string: StyledString, x, y, max_width=MAX_WIDTH):
         offset = 0
         lines = styled_string.content.split("\n")
 
         for line in lines:
             if not line.strip():  # 忽略空行  
-                offset += int(styled_string.font.getsize("A")[1] * line_multiplier)
+                offset += int(styled_string.font.getsize("A")[1] * styled_string.line_multiplier)
                 continue
 
             text_width, text_height = textsize(draw, line, font=styled_string.font)
@@ -147,12 +160,12 @@ class ImgConvert:
                     draw_width, _ = textsize(draw, draw_text, font=styled_string.font)
 
                 draw.text((x, y + offset), draw_text, font=styled_string.font, fill=styled_string.font_color)
-                offset += int(text_height * line_multiplier)
+                offset += int(text_height * styled_string.line_multiplier)
                 temp_text = temp_text[sub_pos:]
                 text_width -= draw_width
 
             draw.text((x, y + offset), temp_text, font=styled_string.font, fill=styled_string.font_color)
-            offset += int(text_height * line_multiplier)
+            offset += int(text_height * styled_string.line_multiplier)
 
     """  
     给图片应用覆盖色

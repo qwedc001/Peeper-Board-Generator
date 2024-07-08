@@ -1,6 +1,8 @@
+import os
 import unittest
 
 from module.ImgConvert import ImgConvert
+from module.board.misc import MiscBoardGenerator
 from module.config import Config
 
 config = Config("../config.json")
@@ -14,6 +16,10 @@ class GenerateTest(unittest.TestCase):
         print(styled_string.font)
         print(styled_string.line_multiplier)
         self.assertIsNotNone(styled_string.font)
+
+    def test_gen(self):
+        output_img = MiscBoardGenerator.generate_image(config, "full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
+        output_img.save("full.jpg")
 
 
 if __name__ == '__main__':
