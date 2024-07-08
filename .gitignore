@@ -2,4 +2,4 @@ config.json
 /.idea
 
 test/*
-!/test/tests.py
+!/test/hydro_tests.py

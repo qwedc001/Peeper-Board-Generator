@@ -4,7 +4,7 @@ from typing import Union
 import requests
 import time
 from module.config import Config
-from module.verdict import STATUS_VERDICT
+from module.hydro.verdict import STATUS_VERDICT
 from module.utils import json_headers
 from module.structures import SubmissionData, UserData
 from module.utils import get_today_timestamp, get_yesterday_timestamp

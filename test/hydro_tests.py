@@ -1,12 +1,11 @@
-import json
-import os
 import unittest
 
-from module.ranking import fetch_rankings
+from module.hydro.ranking import fetch_rankings
+from module.hydro.tools import reload_stats
 from module.structures import SubmissionData, UserData
-from module.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
+from module.hydro.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
     classify_by_verdict, rank_by_verdict
-from module.user import fetch_user
+from module.hydro.user import fetch_user
 from module.utils import *
 from module.config import Config
 
@@ -135,6 +134,7 @@ class TestStructure(unittest.TestCase):
     def test_daily_json_load(self):
         daily_json = load_json(config, False)
         self.assertTrue(daily_json is not None)
+
 
 if __name__ == '__main__':
     unittest.main()
