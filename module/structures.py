@@ -19,6 +19,12 @@ class SubmissionData:
         self.problem_name = problem_name
         self.at = at
 
+    @classmethod
+    def from_json(cls, json_data:dict):
+        return SubmissionData(UserData(json_data['user']['name'], json_data['user']['uid']),
+                              json_data['score'], json_data['verdict'], json_data['problem_name'],
+                              json_data['at'])
+
 
 class RankingData:
 
@@ -27,3 +33,22 @@ class RankingData:
         self.accepted = accepted
         self.uid = uid
         self.rank = rank
+
+    @classmethod
+    def from_json(cls, json_data:dict):
+        return RankingData(json_data['user_name'], json_data['accepted'], json_data['uid'], json_data['rank'])
+
+
+
+
+class DailyJson:
+
+    def __init__(self, submissions: list[SubmissionData], rankings: list[RankingData]):
+        self.submissions = submissions
+        self.rankings = rankings
+
+    @classmethod
+    def from_json(cls, json_data: dict):
+
+        return DailyJson([SubmissionData.from_json(item) for item in json_data['submissions']],
+                         [RankingData.from_json(item) for item in json_data['rankings']])

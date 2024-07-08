@@ -29,25 +29,3 @@ def fetch_rankings(config: Config) -> list[RankingData]:
             result.append(RankingData(user_name, accepted, uid, rank))
         page += 1
     return result
-
-
-def load_ranking_json(config: Config, is_yesterday: bool) -> list[RankingData]:
-    result = []
-    ranking_file = f'ranking-{get_date_string(is_yesterday)}.json'
-    ranking_file_path = os.path.join(config.work_dir, config.get_config('data'), ranking_file)
-    data = []
-    with open(ranking_file_path, 'r',encoding='utf-8') as f:
-        data = json.load(f)
-        f.close()
-    for user in data:
-        result.append(RankingData(user['user_name'], user['accepted'], user['uid'], user['rank']))
-    return result
-
-
-def save_ranking_json(config: Config, data: list[RankingData]):
-    ranking_file = f'ranking-{get_date_string(False)}.json'
-    ranking_file_path = os.path.join(config.work_dir, config.get_config('data'), ranking_file)
-    with open(ranking_file_path, 'w',encoding='utf-8') as f:
-        json.dump([user.__dict__ for user in data], f, ensure_ascii=False, indent=4)
-        f.close()
-    logging.info(f'排行榜记录已保存至 {ranking_file_path}')

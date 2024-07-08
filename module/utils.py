@@ -1,9 +1,12 @@
+import json
 import logging
+import os
 from datetime import datetime, timedelta
 from typing import Tuple
 import requests
 import time
 from module.config import Config
+from module.structures import DailyJson
 from module.verdict import VERDICT_MAP
 
 headers = {
@@ -69,11 +72,19 @@ def get_date_string(is_yesterday: bool) -> str:
     return datetime.fromtimestamp(today_timestamp).strftime('%Y-%m-%d')
 
 
-class Pair:
-    def __init__(self, first, second):
-        self.first = first
-        self.second = second
+def load_json(config: Config, is_yesterday: bool) -> DailyJson:
+    json_file = f'daily-{get_date_string(is_yesterday)}.json'
+    file_path = os.path.join(config.work_dir, config.get_config('data'), json_file)
+    content = {}
+    with open(file_path, "r", encoding="utf-8") as f:
+        content = json.load(f)
+        f.close()
+    return DailyJson.from_json(content)
 
-    @staticmethod
-    def of(first, second):
-        return Pair(first, second)
+
+def save_json(config: Config, data: DailyJson):
+    json_file = f'daily-{get_date_string(False)}.json'
+    file_path = os.path.join(config.work_dir, config.get_config('data'), json_file)
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
+        f.close()

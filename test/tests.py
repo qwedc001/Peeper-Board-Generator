@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 
-from module.ranking import fetch_rankings, save_ranking_json, load_ranking_json
+from module.ranking import fetch_rankings
 from module.structures import SubmissionData, UserData
 from module.submission import fetch_submissions, get_first_ac, get_hourly_submissions, get_most_popular_problem, \
     classify_by_verdict, rank_by_verdict
@@ -122,17 +122,19 @@ class TestUserModule(unittest.TestCase):
         self.assertTrue(result.qq != "")
 
 
-class TestRankingModule(unittest.TestCase):
-    def test_fetch_rankings(self):
-        result = fetch_rankings(config)
-        save_ranking_json(config, result)
-        self.assertTrue(os.path.exists(os.path.join(config.work_dir, config.get_config('data'),
-                                                    f'ranking-{get_date_string(False)}.json')))
+class TestStructure(unittest.TestCase):
 
-    def test_load_ranking(self):
-        result = load_ranking_json(config, False)
-        self.assertTrue(len(result) > 0)
+    def test_daily_json_save(self):
+        submission_data = fetch_submissions(config, False)
+        ranking_data = fetch_rankings(config)
+        daily_json = DailyJson(submission_data, ranking_data)
+        save_json(config, daily_json)
+        file_path = os.path.join(config.work_dir, config.get_config('data'), f'daily-{get_date_string(False)}.json')
+        self.assertTrue(os.path.exists(file_path))
 
+    def test_daily_json_load(self):
+        daily_json = load_json(config, False)
+        self.assertTrue(daily_json is not None)
 
 if __name__ == '__main__':
     unittest.main()
