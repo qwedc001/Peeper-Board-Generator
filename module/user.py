@@ -2,12 +2,12 @@ import base64
 import logging
 import requests
 from module.config import Config
-from module.utils import headers,get_qq_name
+from module.utils import headers, get_qq_name
 from module.structures import UserData
 from lxml import etree
 
 
-def infer_qq(html,mail) -> str:
+def infer_qq(html, mail) -> str:
     # 一共有三种手段：检测QQ邮箱，爬取QQ号字段是否有QQ号，检测头像字段是否有QQ号
     direct_qq_base64 = "".join(html.xpath('//a[@data-tooltip="复制QQ号"]/@data-copy'))
     direct_qq = base64.b64decode(direct_qq_base64).decode() if direct_qq_base64 else ""
@@ -33,10 +33,13 @@ def fetch_user(config: Config, uid: str) -> UserData:
     user = UserData(user_name, uid)
     mail_base64 = "".join(html.xpath('//a[@data-tooltip="复制电子邮件"]/@data-copy'))
     user.mail = base64.b64decode(mail_base64).decode() if mail_base64 else ""
-    user.qq = infer_qq(html,user.mail)
+    user.qq = infer_qq(html, user.mail)
     user.qq_name = get_qq_name(user.qq) if user.qq else ""
     status_and_progress = "".join(html.xpath('//div[@class="media__body profile-header__main"]/p/text() | //div['
                                              '@class="media__body profile-header__main"]/p/*/text()')).split("\n")
     user.status = "".join(s.strip() for s in status_and_progress[:-1])
     user.progress = status_and_progress[-1].strip()
+    user.description = "\n".join(
+        html.xpath('//div[@class="section__body typo richmedia"]/p/text() | //div[@class="section__body typo '
+                   'richmedia"]/p//*/text()'))
     return user
