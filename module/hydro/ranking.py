@@ -1,12 +1,9 @@
-import json
 import logging
-import os
-
 import requests
 from lxml import etree
 from module.config import Config
 from module.structures import RankingData
-from module.utils import headers, get_date_string
+from module.utils import headers
 
 
 def fetch_rankings(config: Config) -> list[RankingData]:

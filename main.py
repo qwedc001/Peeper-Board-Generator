@@ -1,6 +1,6 @@
 import logging
 from module.config import Config
-from module.utils import reload_stats
+from module.hydro.entry import HydroHandler
 import argparse
 from module.verdict import ALIAS_MAP
 import sys
@@ -14,26 +14,6 @@ class DefaultHelpParser(argparse.ArgumentParser):
         sys.stderr.write('error: %sn' % message)
         self.print_help()
         sys.exit(2)
-
-
-def generate_full_rank(verdict: str):
-    logging.debug(f'得到的 verdict 为 {verdict}')
-
-    # 1.获取最新的榜单数据(刷新题目统计和rp)
-    reload_stats(config, url, "problemStat")
-    reload_stats(config, url, "rp")
-
-    # TODO: 2.爬取 rank 榜单
-
-
-def generate_now_rank(verdict: str):
-    logging.debug(f'得到的 verdict 为 {verdict}')
-
-    # 1.获取最新的榜单数据(刷新题目统计和rp)
-    reload_stats(config, url, "problemStat")
-    reload_stats(config, url, "rp")
-
-    # TODO: 2.爬取 rank 榜单
 
 
 if __name__ == "__main__":
@@ -50,12 +30,13 @@ if __name__ == "__main__":
         args.verdict = ALIAS_MAP["AC"]
     else:
         args.verdict = ALIAS_MAP[args.verdict]
+    handler = HydroHandler(config, url)
     if args.full:
         logging.info("正在生成今日全部榜单")
-        generate_full_rank(args.verdict)
+        handler.generate_full_rank(args.verdict)
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
-        generate_now_rank(args.verdict)
+        handler.generate_now_rank(args.verdict)
     else:
         parser.print_help()
         sys.exit(0)

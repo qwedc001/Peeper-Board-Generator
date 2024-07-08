@@ -1,13 +1,10 @@
 import json
-import logging
 import os
 from datetime import datetime, timedelta
 from typing import Tuple
 import requests
-import time
 from module.config import Config
 from module.structures import DailyJson
-from module.hydro.verdict import VERDICT_MAP
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
@@ -51,7 +48,6 @@ def get_date_string(is_yesterday: bool) -> str:
 def load_json(config: Config, is_yesterday: bool) -> DailyJson:
     json_file = f'daily-{get_date_string(is_yesterday)}.json'
     file_path = os.path.join(config.work_dir, config.get_config('data'), json_file)
-    content = {}
     with open(file_path, "r", encoding="utf-8") as f:
         content = json.load(f)
         f.close()
