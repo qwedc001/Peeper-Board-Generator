@@ -62,6 +62,13 @@ def get_today_timestamp() -> Tuple[int, int]:
     return int(today_start.timestamp()), int(today_end.timestamp())
 
 
+def get_date_string(is_yesterday: bool) -> str:
+    today_timestamp = datetime.now().timestamp()
+    if is_yesterday:
+        today_timestamp -= 86400
+    return datetime.fromtimestamp(today_timestamp).strftime('%Y-%m-%d')
+
+
 class Pair:
     def __init__(self, first, second):
         self.first = first

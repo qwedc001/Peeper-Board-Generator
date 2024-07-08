@@ -3,6 +3,7 @@
     "sid": "[Your-Session-Id]",
     "sid_sig": "[Your-Session-Sig]"
   },
+  "data": "data",
   "excludeID": [],
   "workPath": "",
   "url": "[Your-OJ-Base-URL-Ends-With-Slash]",
@@ -11,6 +12,9 @@
     "qq": {
       "number": "[Your-QQ-Number]",
       "name": "[Your-QQ-Name]"
+    },
+    "user": {
+      "uid": -1
     }
   }
 }
