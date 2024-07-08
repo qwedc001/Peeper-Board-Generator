@@ -81,7 +81,7 @@ class ImgConvert:
         draw = ImageDraw.Draw(temp_image)
 
         x, y = 0, 0
-        line_height = font.getsize('A')[1]  # 使用'A'的高度作为行高，这通常是一个合理的近似值
+        line_height = font.getbbox('A')[3]  # 使用'A'的高度作为行高，这通常是一个合理的近似值
 
         words = content.split()
         line = []
@@ -158,18 +158,13 @@ class ImgConvert:
     :param tint         覆盖色
     :return             处理完后的图片
     """
-
-    # FIXIT: WHAT
-
+    
     @staticmethod
     def apply_tint(image, tint):
 
-        def RGBImageFilter(tint):
-            tint = tint.lstrip('#')  # 去除可能的前缀'#'  
-            length = len(tint)
-            return tuple(int(tint[i:i + length // 3], 16) for i in range(0, length, length // 3))
-
-        tint_color = RGBImageFilter(tint)
+        tint = tint.lstrip('#')  # 去除可能的前缀'#'  
+        length = len(tint)
+        tint_color = tuple(int(tint[i:i + length // 3], 16) for i in range(0, length, length // 3))
 
         image = Image.open(image)
         image = image.convert("RGBA")  # 转换图片到RGBA模式，以支持透明度  
@@ -267,9 +262,3 @@ class ImgConvert:
             else:
                 self.height = 0
 
-
-styled_string = ImgConvert.StyledString("Hello, world!", "msyh.ttc", 24)
-print(styled_string.content)
-print(styled_string.height)
-print(styled_string.font)  # 这将打印字体对象的表示，或者None如果加载失败  
-print(styled_string.line_multiplier)
