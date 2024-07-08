@@ -1,5 +1,6 @@
 import logging
 from module.config import Config
+from module.utils import load_json
 from module.hydro.entry import HydroHandler
 import argparse
 from module.verdict import ALIAS_MAP
@@ -14,6 +15,20 @@ class DefaultHelpParser(argparse.ArgumentParser):
         sys.stderr.write('error: %sn' % message)
         self.print_help()
         sys.exit(2)
+
+
+def generate_full(verdict):
+    today = load_json(config, False)
+    try:
+        yesterday = load_json(config, True)
+    except FileNotFoundError:
+        logging.error("未检测到昨日榜单文件，请改用--now参数生成今日榜单")
+        sys.exit(1)
+
+
+def generate_now(verdict):
+    today = load_json(config, False)
+
 
 
 if __name__ == "__main__":
@@ -31,12 +46,13 @@ if __name__ == "__main__":
     else:
         args.verdict = ALIAS_MAP[args.verdict]
     handler = HydroHandler(config, url)
+    handler.save_daily()
     if args.full:
         logging.info("正在生成今日全部榜单")
-        handler.generate_full_rank(args.verdict)
+        generate_full(args.verdict)
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
-        handler.generate_now_rank(args.verdict)
+        generate_now(args.verdict)
     else:
         parser.print_help()
         sys.exit(0)
