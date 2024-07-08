@@ -81,7 +81,7 @@ class ImgConvert:
         draw = ImageDraw.Draw(temp_image)
 
         x, y = 0, 0
-        line_height = font.getsize('A')[1]  # 使用'A'的高度作为行高，这通常是一个合理的近似值
+        line_height = font.getbbox('A')[3]  # 使用'A'的高度作为行高，这通常是一个合理的近似值
 
         words = content.split()
         line = []
@@ -158,9 +158,7 @@ class ImgConvert:
     :param tint         覆盖色
     :return             处理完后的图片
     """
-
-    # FIXIT: WHAT
-
+    
     @staticmethod
     def apply_tint(image, tint):
 
