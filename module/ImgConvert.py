@@ -54,25 +54,15 @@ class ImgConvert:
     """  
     计算文本在给定字体和大小下的长度（宽度）。  
   
-    :param font_type: 字体文件 
-    :param font_size: 字体大小  
+    :param font: 字体
     :param content: 要测量的文本内容  
     :return: 文本的宽度（像素）  
     """
 
     @staticmethod
-    def calculate_string_width(font_type, font_size, content):
-
-        try:
-            # 加载字体
-            font = pixie.read_font(font_type)
-            font.size = font_size
-        except IOError:
-            print(f"无法加载字体文件: {font_type}")
-            return 0
-
+    def calculate_string_width(content: StyledString):
         # 获取文本的宽度
-        text_width, text_height = text_size(content, font)
+        text_width, text_height = text_size(content.content, content.font)
 
         # 返回文本的宽度  
         return text_width

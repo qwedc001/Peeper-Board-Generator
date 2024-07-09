@@ -20,9 +20,19 @@ class GenerateTest(unittest.TestCase):
         print(styled_string.line_multiplier)
         self.assertIsNotNone(styled_string.font)
 
-    def test_gen(self):
+    def test_gen_full(self):
         output_img = MiscBoardGenerator.generate_image(config, "full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
         output_img.write_file("full.png")
+        self.assertIsNotNone(output_img)
+
+    def test_gen_now(self):
+        output_img = MiscBoardGenerator.generate_image(config, "now", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
+        output_img.write_file("now.png")
+        self.assertIsNotNone(output_img)
+
+    def test_gen_verdict(self):
+        output_img = MiscBoardGenerator.generate_image(config, "now", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'), verdict="Wrong Answer")
+        output_img.write_file("verdict_wa.png")
         self.assertIsNotNone(output_img)
 
 
