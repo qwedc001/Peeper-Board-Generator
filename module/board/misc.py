@@ -187,7 +187,7 @@ def draw_basic_content(image: Image, total_height: int, title: StyledString,
     accent_color = pixie.parse_color(current_gradient[0])
     accent_dark_color = darken_color(darken_color(darken_color(accent_color)))
 
-    logo_tinted = ImgConvert.apply_tint(logo_path, accent_color).resize(140, 140)
+    logo_tinted = ImgConvert.apply_tint(logo_path, accent_dark_color).resize(140, 140)
     image.draw(logo_tinted, pixie.translate(108, 160))
     title.set_font_color(accent_dark_color)
     current_y = draw_text(image, title, 12, current_y, x=260)
@@ -375,13 +375,13 @@ class MiscBoardGenerator:
 
             ave_score_title = StyledString(config, "提交平均分", 'B', 36)
             ave_score_detail_main = StyledString(config, ave_score_split[0], 'H', 72)
-            ave_score_detail_sub = StyledString(config, "." + ave_score_split[0], 'H', 72)
+            ave_score_detail_sub = StyledString(config, "." + ave_score_split[1], 'H', 72)  # 有傻逼写了0
 
             ac_rate_split = format(data.avg_score, '.2f').split(".")
 
             ac_rate_title = StyledString(config, "提交通过率", 'B', 36)
             ac_rate_detail_main = StyledString(config, ac_rate_split[0], 'H', 72)
-            ac_rate_detail_sub = StyledString(config, "." + ac_rate_split[0], 'H', 72)
+            ac_rate_detail_sub = StyledString(config, "." + ac_rate_split[1], 'H', 72)
 
             verdict_detail_text = (f'收到 {data.users_submitted} 个人的提交，'
                                    f'其中包含 {pack_verdict_detail(data.verdict_data["verdicts"])}')
@@ -496,13 +496,13 @@ class MiscBoardGenerator:
 
                 ave_score_title = StyledString(config, "提交平均分", 'B', 36)
                 ave_score_detail_main = StyledString(config, ave_score_split[0], 'H', 72)
-                ave_score_detail_sub = StyledString(config, "." + ave_score_split[0], 'H', 72)
+                ave_score_detail_sub = StyledString(config, "." + ave_score_split[1], 'H', 72)
 
                 ac_rate_split = format(data.avg_score, '.2f').split(".")
 
                 ac_rate_title = StyledString(config, "提交通过率", 'B', 36)
                 ac_rate_detail_main = StyledString(config, ac_rate_split[0], 'H', 72)
-                ac_rate_detail_sub = StyledString(config, "." + ac_rate_split[0], 'H', 72)
+                ac_rate_detail_sub = StyledString(config, "." + ac_rate_split[1], 'H', 72)
 
                 verdict_detail_text = (f'收到 {data.users_submitted} 个人的提交，'
                                        f'其中包含 {pack_verdict_detail(data.verdict_data["verdicts"])}')
@@ -582,15 +582,16 @@ class MiscBoardGenerator:
                 total_submits_title = StyledString(config, "提交总数", 'B', 36)
                 total_submits_detail = StyledString(config, str(data.total_submits), 'H', 72)
 
-                prop_split = format(data.avg_score, '.2f').split(".")  # 分割小数
+                prop_val = sum(item[verdict] for item in data.total_board) / data.total_submits * 100
+                prop_split = format(prop_val, '.2f').split(".")  # 分割小数
 
                 prop_title = StyledString(config, f"{verdict} 占比", 'B', 36)
                 prop_detail_main = StyledString(config, prop_split[0], 'H', 72)
-                prop_detail_sub = StyledString(config, "." + prop_split[0], 'H', 72)
+                prop_detail_sub = StyledString(config, "." + prop_split[1], 'H', 72)
 
                 top_ten = rank_data[:10]
                 top_10_subtitle = StyledString(config, "分类型提交榜单", "B", 36)
-                top_10_title = StyledString(config, f"{verdict} 排行榜", "H", 72)
+                top_10_title = StyledString(config, f"{alias[verdict]} 排行榜", "H", 72)
                 top_10_mark = StyledString(config, "Top 10th", "H", 48)
                 top_10_detail = pack_ranking_list(config, top_ten, verdict)  # todo doubt.
 
@@ -604,7 +605,7 @@ class MiscBoardGenerator:
                     top_10_subtitle, top_10_title,
                     cp
                 ]) + calculate_ranking_height([top_10_detail])
-                                + 576 + 232)  # 576是所有padding（现在可能不是）
+                                + 272 + 232)  # 576是所有padding（现在可能不是）
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
@@ -623,7 +624,7 @@ class MiscBoardGenerator:
                 # 保持在同一行
                 draw_text(output_img, prop_detail_main, 32, current_y, x=total_submits_width + 128 + 150)
                 prop_detail_sub.set_font_color(Color(0, 0, 0, 64 / 255))
-                current_y = draw_text(output_img, prop_detail_sub, 16, current_y,
+                current_y = draw_text(output_img, prop_detail_sub, 108, current_y,
                                       x=ImgConvert.calculate_string_width(
                                           prop_detail_main) + total_submits_width + 128 + 150)
 
