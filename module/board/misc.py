@@ -4,10 +4,9 @@ import sys
 
 from datetime import datetime
 
-from PIL import Image, ImageDraw
-from pixie import pixie
+from pixie import pixie, Image, Color
 
-from module.ImgConvert import StyledString, ImgConvert, Color
+from module.ImgConvert import StyledString, ImgConvert
 from module.config import Config
 from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
@@ -132,18 +131,17 @@ def calculate_ranking_height(rankings: list[list[dict]]) -> int:
     return height
 
 
-def draw_text(draw: ImageDraw, content: StyledString, padding_bottom: int, current_y: int, x: int = 128) -> int:
-    ImgConvert.draw_string(draw, content, x, current_y)
+def draw_text(image: Image, content: StyledString, padding_bottom: int, current_y: int, x: int = 128) -> int:
+    ImgConvert.draw_string(image, content, x, current_y)
     return current_y + calculate_height([content]) + padding_bottom
 
 
 # 这个java自带 (Color.darker)
-def darken_color(color: tuple[int, int, int]) -> tuple[int, int, int]:
-    return int(color[0] * 0.7), int(color[1] * 0.7), int(color[2] * 0.7)
+def darken_color(color: Color) -> Color:
+    return Color(color.r * 0.7, color.g * 0.7, color.b * 0.7, color.a)
 
 
-def get_background(width, height, colors: list[str], positions: list[float]) -> pixie.Image:
-    image = pixie.Image(width, height)
+def draw_background(image: Image, width: int, height: int, colors: list[str], positions: list[float]):
     image.fill(pixie.Color(0, 0, 0, 1))  # 填充黑色背景
     paint = pixie.Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.RADIAL_GRADIENT_PAINT)  # 准备渐变色画笔
     paint_mask = pixie.Paint(pixie.SOLID_PAINT)  # 准备蒙版画笔
@@ -162,36 +160,31 @@ def get_background(width, height, colors: list[str], positions: list[float]) -> 
     ctx.rounded_rect(32, 32, width - 64, height - 64, 192, 192, 192, 192)
     ctx.fill()
     image.draw(mask, blend_mode=pixie.NORMAL_BLEND)
-    return image
 
 
-def draw_basic_content(config: Config, total_height: int, title: StyledString,
-                       subtitle: StyledString, current_y: int, logo_path: str) -> tuple[Image, ImageDraw, int]:
-    current_gradient,gradient_positions = ImgConvert.GradientColors.generate_gradient()
-    # 先暂时混用Pillow和pixie，根据后续情况再决定是否全部换用pixie
-    background = get_background(1280, total_height + 300, current_gradient,gradient_positions)
-    bg_path = os.path.join(config.work_dir, config.get_config('data'), "background.png")
-    background.write_file(bg_path)
-    output_img = Image.open(bg_path)
-    draw = ImageDraw.Draw(output_img)
-    accent_color = Color.from_hex(current_gradient[0]).rgb
+def draw_basic_content(image: Image, total_height: int, title: StyledString,
+                       subtitle: StyledString, current_y: int, logo_path: str) -> int:
+    current_gradient, gradient_positions = ImgConvert.GradientColors.generate_gradient()
+    # 全部换用pixie
+    draw_background(image, 1280, total_height + 300, current_gradient, gradient_positions)
+    accent_color = pixie.parse_color(current_gradient[0])
     accent_dark_color = darken_color(darken_color(darken_color(accent_color)))
 
     logo_tinted = ImgConvert.apply_tint(logo_path, accent_color)
-    logo_tinted.resize((140, 140))
-    output_img.paste(logo_tinted, (90,90),logo_tinted)
-    title.font_color = accent_dark_color
-    current_y = draw_text(draw, title, 32, current_y, x=290)
-    subtitle.font_color = (accent_dark_color[0], accent_dark_color[1], accent_dark_color[2], 136)
-    current_y = draw_text(draw, subtitle, 108, current_y)
+    logo_tinted.resize(140, 140)
+    image.draw(logo_tinted, pixie.translate(90, 90))
+    title.set_font_color(accent_dark_color)
+    current_y = draw_text(image, title, 32, current_y, x=290)
+    subtitle.set_font_color(Color(accent_dark_color.r, accent_dark_color.g, accent_dark_color.b, 136 / 255))
+    current_y = draw_text(image, subtitle, 108, current_y)
 
-    return output_img, draw, current_y
+    return current_y
 
 
 class MiscBoardGenerator:
 
     @staticmethod
-    def generate_image(config: Config, board_type: str, logo_path: str, verdict: str = "Accepted"):
+    def generate_image(config: Config, board_type: str, logo_path: str, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
@@ -282,14 +275,15 @@ class MiscBoardGenerator:
             ]) + calculate_ranking_height([top_5_detail, top_10_detail, full_rank_detail])
                             + 1380 + 200)  # 1380是所有padding
 
-            image, draw, current_y = draw_basic_content(config, total_height, title, subtitle, 134, logo_path)
+            output_img = pixie.Image(1280, total_height + 300)
+            current_y = draw_basic_content(output_img, total_height, title, subtitle, 134, logo_path)
 
-            current_y = draw_text(draw, play_of_the_oj_title, 8, current_y)
-            current_y = draw_text(draw, play_of_the_oj, 108, current_y)
+            current_y = draw_text(output_img, play_of_the_oj_title, 8, current_y)
+            current_y = draw_text(output_img, play_of_the_oj, 108, current_y)
 
             # to be continued.
 
-            return image
+            return output_img
 
         if board_type == "now":
             if verdict == "Accepted":

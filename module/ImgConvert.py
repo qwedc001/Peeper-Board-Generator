@@ -1,14 +1,16 @@
 import os
 
-from PIL import Image, ImageDraw, ImageFont
 import random
 from typing import Tuple, List
+
+from pixie import pixie, Font, Image
+
 from module.config import Config
 
 
-def textsize(draw: ImageDraw, content: str, font: ImageFont) -> Tuple[int, int]:
-    _, _, width, height = draw.textbbox((0, 0), content, font=font)
-    return width, height
+def text_size(content: str, font: Font) -> Tuple[int, int]:
+    bounds = font.layout_bounds(content)
+    return bounds.x, bounds.y
 
 
 class Color:
@@ -26,17 +28,24 @@ class Color:
 
 class StyledString:
     def __init__(self, config: Config, content: str, font_type: str, font_size: int,
-                 font_color: Tuple[int, ...] = (0, 0, 0), line_multiplier=1.0):  # 添加字体颜色
+                 font_color: Tuple[int, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
         file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
         self.content = content
-        self.font_color = font_color
         self.line_multiplier = line_multiplier
         # 尝试加载字体
         try:
-            self.font = ImageFont.truetype(file_path, font_size)
+            self.font = pixie.read_font(file_path)
+            self.font.size = font_size
+            if len(font_color) == 3:
+                self.font.paint.color = pixie.Color(font_color[0], font_color[1], font_color[2], 1)
+            else:
+                self.font.paint.color = pixie.Color(font_color[0], font_color[1], font_color[2], font_color[3])
         except IOError:
             raise IOError(f"无法加载字体文件: {file_path}")
         self.height = ImgConvert.calculate_string_height(file_path, font_size, content, line_multiplier=line_multiplier)
+
+    def set_font_color(self, font_color: pixie.Color):
+        self.font.paint.color = font_color
 
 
 class ImgConvert:
@@ -55,18 +64,15 @@ class ImgConvert:
     def calculate_string_width(font_type, font_size, content):
 
         try:
-            # 加载字体  
-            font = ImageFont.truetype(font_type, font_size)
+            # 加载字体
+            font = pixie.read_font(font_type)
+            font.size = font_size
         except IOError:
             print(f"无法加载字体文件: {font_type}")
             return 0
 
-            # 创建一个虚拟图像，该图像足够大以绘制文本
-        image = Image.new('RGB', (ImgConvert.MAX_WIDTH, 100), color=(255, 255, 255))
-        draw = ImageDraw.Draw(image)
-
-        # 获取文本的宽度（不实际显示图像）  
-        text_width, text_height = textsize(draw, content, font=font)
+        # 获取文本的宽度
+        text_width, text_height = text_size(content, font)
 
         # 返回文本的宽度  
         return text_width
@@ -84,37 +90,33 @@ class ImgConvert:
 
     @staticmethod
     def calculate_string_height(font_type, font_size, content, max_width=MAX_WIDTH, line_multiplier=1.0):
-        # 加载字体
-        font = ImageFont.truetype(font_type, font_size)
-        # font = "symbol.ttf"
 
-        # 创建一个足够大的图像来绘制文本（这里只是一个临时图像）
-        temp_image = Image.new('RGB', (max_width * 2, 1000), color=(255, 255, 255))
-        draw = ImageDraw.Draw(temp_image)
+        try:
+            # 加载字体
+            font = pixie.read_font(font_type)
+            font.size = font_size
+        except IOError:
+            print(f"无法加载字体文件: {font_type}")
+            return 0
 
         x, y = 0, 0
-        line_height = font.getbbox('A')[3]  # 使用'A'的高度作为行高，这通常是一个合理的近似值
+        line_height = font.layout_bounds("A").y  # 使用'A'的高度作为行高，这通常是一个合理的近似值
 
         words = content.split()
         line = []
 
         for word in words:
             # 尝试将单词添加到当前行
-            test_width, _ = textsize(draw, content, font=font)
+            test_width, _ = text_size(content, font=font)
 
             if test_width <= max_width:
                 line.append(word)
             else:
-                # 如果当前行太宽，则绘制它并开始新行  
-                draw.text((x, y), ' '.join(line), font=font, fill=(0, 0, 0))
+                # 如果当前行太宽，则绘制它并开始新行
                 y += line_height * line_multiplier
                 line = [word]
 
-                # 绘制最后一行
-        draw.text((x, y), ' '.join(line), font=font, fill=(0, 0, 0))
         total_height = y + line_height * line_multiplier  # 确保总高度包括最后一行  
-
-        del temp_image
 
         return int(total_height)
 
@@ -130,7 +132,7 @@ class ImgConvert:
     """
 
     @staticmethod
-    def draw_string(draw: ImageDraw, styled_string: StyledString, x, y, max_width=MAX_WIDTH):
+    def draw_string(image: Image, styled_string: StyledString, x, y, max_width=MAX_WIDTH):
         offset = 0
         lines = styled_string.content.split("\n")
 
@@ -139,7 +141,7 @@ class ImgConvert:
                 offset += int(styled_string.font.getbbox('A')[3] * styled_string.line_multiplier)
                 continue
 
-            text_width, text_height = textsize(draw, line, font=styled_string.font)
+            text_width, text_height = text_size(line, font=styled_string.font)
             temp_text = line
 
             while text_width > max_width:
@@ -147,18 +149,18 @@ class ImgConvert:
                 n = text_width // max_width
                 sub_pos = len(temp_text) // n
                 draw_text = temp_text[:sub_pos]
-                draw_width, _ = textsize(draw, draw_text, font=styled_string.font)
+                draw_width, _ = text_size(draw_text, font=styled_string.font)
 
                 while draw_width > max_width and sub_pos > 0:
                     sub_pos -= 1
                     draw_text = temp_text[:sub_pos]
-                    draw_width, _ = textsize(draw, draw_text, font=styled_string.font)
+                    draw_width, _ = text_size(draw_text, font=styled_string.font)
 
-                draw.text((x, y + offset), draw_text, font=styled_string.font, fill=styled_string.font_color)
+                image.fill_text(styled_string.font, draw_text, pixie.translate(x, y + offset))
                 offset += int(text_height * styled_string.line_multiplier)
                 temp_text = temp_text[sub_pos:]
                 text_width -= draw_width
-            draw.text((x, y + offset), temp_text, font=styled_string.font, fill=styled_string.font_color)
+            image.fill_text(styled_string.font, temp_text, pixie.translate(x, y + offset))
             offset += int(text_height * styled_string.line_multiplier)
 
     """  
@@ -170,19 +172,18 @@ class ImgConvert:
     """
 
     @staticmethod
-    def apply_tint(image_path:str, tint: tuple[int, int, int]):
-        r,g,b = tint
-        image = Image.open(image_path)
-        width, height = image.size
-        tinted_image = Image.new("RGBA", (width, height), color=tint+ (255,))
+    def apply_tint(image_path: str, tint: pixie.Color) -> Image:
+        image = pixie.read_image(image_path)
+        width, height = image.width, image.height
+        tinted_image = pixie.Image(width, height)
         alpha = 0.5
         for x in range(width):
             for y in range(height):
-                orig_pixel = image.getpixel((x, y))
-                mixed_r = int(orig_pixel[0] * (1 - alpha) + r * alpha)
-                mixed_g = int(orig_pixel[1] * (1 - alpha) + g * alpha)
-                mixed_b = int(orig_pixel[2] * (1 - alpha) + b * alpha)
-                tinted_image.putpixel((x, y), (mixed_r, mixed_g, mixed_b, orig_pixel[3]))
+                orig_pixel = image.get_color(x, y)
+                mixed_r = int(orig_pixel.r * (1 - alpha) + tint.r * alpha)
+                mixed_g = int(orig_pixel.g * (1 - alpha) + tint.g * alpha)
+                mixed_b = int(orig_pixel.b * (1 - alpha) + tint.b * alpha)
+                tinted_image.set_color(x, y, pixie.Color(mixed_r, mixed_g, mixed_b, orig_pixel.a))
         return tinted_image
 
     class GradientColors:
