@@ -166,7 +166,7 @@ class ImgConvert:
         image = pixie.read_image(image_path)
         width, height = image.width, image.height
         tinted_image = pixie.Image(width, height)
-        alpha = 0.5
+        alpha = 1
         for x in range(width):
             for y in range(height):
                 orig_pixel = image.get_color(x, y)

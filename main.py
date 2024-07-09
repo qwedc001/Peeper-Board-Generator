@@ -20,7 +20,7 @@ class DefaultHelpParser(argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logging.debug("程序开始工作")
     parser = DefaultHelpParser(description='Hydro Bot Args Parser')
     required_para = parser.add_mutually_exclusive_group(required=True)
@@ -28,6 +28,7 @@ if __name__ == "__main__":
     required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
     parser.add_argument('--version', action="store_true", help='版本号信息')
     parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
+    parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
     args = parser.parse_args()
     if not args.verdict:
         args.verdict = ALIAS_MAP["AC"]
@@ -37,10 +38,12 @@ if __name__ == "__main__":
     handler.save_daily()
     if args.full:
         logging.info("正在生成昨日榜单")
-        MiscBoardGenerator.generate_image(config,"full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
+        output_img = MiscBoardGenerator.generate_image(config, "full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
+        output_img.write_file(args.output)
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
-        MiscBoardGenerator.generate_image(config,"now", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'), verdict=args.verdict)
+        output_img = MiscBoardGenerator.generate_image(config, "now", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'), verdict=args.verdict)
+        output_img.write_file(args.output)
     else:
         parser.print_help()
         sys.exit(0)
