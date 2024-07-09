@@ -40,11 +40,11 @@ def get_today_timestamp() -> Tuple[int, int]:
     return int(today_start.timestamp()), int(today_end.timestamp())
 
 
-def get_date_string(is_yesterday: bool) -> str:
+def get_date_string(is_yesterday: bool, split: str = '-') -> str:
     today_timestamp = datetime.now().timestamp()
     if is_yesterday:
         today_timestamp -= 86400
-    return datetime.fromtimestamp(today_timestamp).strftime('%Y-%m-%d')
+    return datetime.fromtimestamp(today_timestamp).strftime(f"%Y{split}%m{split}%d")
 
 
 def load_json(config: Config, is_yesterday: bool) -> DailyJson:

@@ -180,9 +180,9 @@ class ImgConvert:
         for x in range(width):
             for y in range(height):
                 orig_pixel = image.get_color(x, y)
-                mixed_r = int(orig_pixel.r * (1 - alpha) + tint.r * alpha)
-                mixed_g = int(orig_pixel.g * (1 - alpha) + tint.g * alpha)
-                mixed_b = int(orig_pixel.b * (1 - alpha) + tint.b * alpha)
+                mixed_r = orig_pixel.r * (1 - alpha) + tint.r * alpha
+                mixed_g = orig_pixel.g * (1 - alpha) + tint.g * alpha
+                mixed_b = orig_pixel.b * (1 - alpha) + tint.b * alpha
                 tinted_image.set_color(x, y, pixie.Color(mixed_r, mixed_g, mixed_b, orig_pixel.a))
         return tinted_image
 

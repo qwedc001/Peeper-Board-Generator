@@ -152,12 +152,12 @@ def draw_background(image: Image, width: int, height: int, colors: list[str], po
         paint.gradient_stops.append(pixie.ColorStop(color, i))
     ctx = image.new_context()
     ctx.fill_style = paint
-    ctx.rounded_rect(32, 32, width - 64, height - 64, 192, 192, 192, 192)
+    ctx.rounded_rect(32, 32, width - 64, height - 64, 96, 96, 96, 96)
     ctx.fill()
     mask = pixie.Image(width, height)
     ctx = mask.new_context()
     ctx.fill_style = paint_mask
-    ctx.rounded_rect(32, 32, width - 64, height - 64, 192, 192, 192, 192)
+    ctx.rounded_rect(32, 32, width - 64, height - 64, 96, 96, 96, 96)
     ctx.fill()
     image.draw(mask, blend_mode=pixie.NORMAL_BLEND)
 
@@ -170,11 +170,10 @@ def draw_basic_content(image: Image, total_height: int, title: StyledString,
     accent_color = pixie.parse_color(current_gradient[0])
     accent_dark_color = darken_color(darken_color(darken_color(accent_color)))
 
-    logo_tinted = ImgConvert.apply_tint(logo_path, accent_color)
-    logo_tinted.resize(140, 140)
-    image.draw(logo_tinted, pixie.translate(90, 90))
+    logo_tinted = ImgConvert.apply_tint(logo_path, accent_color).resize(140, 140)
+    image.draw(logo_tinted, pixie.translate(108, 160))
     title.set_font_color(accent_dark_color)
-    current_y = draw_text(image, title, 32, current_y, x=290)
+    current_y = draw_text(image, title, 12, current_y, x=260)
     subtitle.set_font_color(Color(accent_dark_color.r, accent_dark_color.g, accent_dark_color.b, 136 / 255))
     current_y = draw_text(image, subtitle, 108, current_y)
 
@@ -188,7 +187,7 @@ class MiscBoardGenerator:
         today = load_json(config, False)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
-            subtitle = StyledString(config, f'{get_date_string(True)} {config.get_config("oj_name")} Rank List', 'H',
+            subtitle = StyledString(config, f'{get_date_string(True, '.')}  {config.get_config("oj_name")} Rank List', 'H',
                                     36)
 
             try:
@@ -276,12 +275,12 @@ class MiscBoardGenerator:
                             + 1380 + 200)  # 1380是所有padding
 
             output_img = pixie.Image(1280, total_height + 300)
-            current_y = draw_basic_content(output_img, total_height, title, subtitle, 134, logo_path)
+            current_y = draw_basic_content(output_img, total_height, title, subtitle, 168, logo_path)
 
             current_y = draw_text(output_img, play_of_the_oj_title, 8, current_y)
             current_y = draw_text(output_img, play_of_the_oj, 108, current_y)
 
-            # to be continued.
+
 
             return output_img
 
