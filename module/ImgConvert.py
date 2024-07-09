@@ -1,13 +1,16 @@
 import os
 
-from PIL import Image, ImageDraw, ImageFont
 import random
 from typing import Tuple, List
+
+from pixie import pixie, Font, Image
+
 from module.config import Config
 
-def textsize(draw: ImageDraw, content: str, font: ImageFont) -> Tuple[int, int]:
-    _, _, width, height = draw.textbbox((0, 0), content, font=font)
-    return width, height
+
+def text_size(content: str, font: Font) -> Tuple[int, int]:
+    bounds = font.layout_bounds(content)
+    return bounds.x, bounds.y
 
 
 class Color:
@@ -24,10 +27,25 @@ class Color:
 
 
 class StyledString:
-    def __init__(self, content, font_type, font_size, font_color=(0, 0, 0)):  # 添加字体颜色  
+    def __init__(self, config: Config, content: str, font_type: str, font_size: int,
+                 font_color: Tuple[int, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
+        file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
         self.content = content
-        self.font = ImageFont.truetype(font_type, font_size)
-        self.font_color = font_color
+        self.line_multiplier = line_multiplier
+        # 尝试加载字体
+        try:
+            self.font = pixie.read_font(file_path)
+            self.font.size = font_size
+            if len(font_color) == 3:
+                self.font.paint.color = pixie.Color(font_color[0], font_color[1], font_color[2], 1)
+            else:
+                self.font.paint.color = pixie.Color(font_color[0], font_color[1], font_color[2], font_color[3])
+        except IOError:
+            raise IOError(f"无法加载字体文件: {file_path}")
+        self.height = ImgConvert.calculate_string_height(file_path, font_size, content, line_multiplier=line_multiplier)
+
+    def set_font_color(self, font_color: pixie.Color):
+        self.font.paint.color = font_color
 
 
 class ImgConvert:
@@ -36,28 +54,15 @@ class ImgConvert:
     """  
     计算文本在给定字体和大小下的长度（宽度）。  
   
-    :param font_type: 字体文件 
-    :param font_size: 字体大小  
+    :param font: 字体
     :param content: 要测量的文本内容  
     :return: 文本的宽度（像素）  
     """
 
     @staticmethod
-    def calculate_string_width(font_type, font_size, content):
-
-        try:
-            # 加载字体  
-            font = ImageFont.truetype(font_type, font_size)
-        except IOError:
-            print(f"无法加载字体文件: {font_type}")
-            return 0
-
-            # 创建一个虚拟图像，该图像足够大以绘制文本
-        image = Image.new('RGB', (ImgConvert.MAX_WIDTH, 100), color=(255, 255, 255))
-        draw = ImageDraw.Draw(image)
-
-        # 获取文本的宽度（不实际显示图像）  
-        text_width, text_height = textsize(draw, content, font=font)
+    def calculate_string_width(content: StyledString):
+        # 获取文本的宽度
+        text_width, text_height = text_size(content.content, content.font)
 
         # 返回文本的宽度  
         return text_width
@@ -74,45 +79,41 @@ class ImgConvert:
     """
 
     @staticmethod
-    def calculate_string_height(font_type, font_size, content, max_width, line_multiplier):
-        # 加载字体  
-        font = ImageFont.truetype(font_type, font_size)
-        # font = "symbol.ttf"
+    def calculate_string_height(font_type, font_size, content, max_width=MAX_WIDTH, line_multiplier=1.0):
 
-        # 创建一个足够大的图像来绘制文本（这里只是一个临时图像）
-        temp_image = Image.new('RGB', (max_width * 2, 1000), color=(255, 255, 255))
-        draw = ImageDraw.Draw(temp_image)
+        try:
+            # 加载字体
+            font = pixie.read_font(font_type)
+            font.size = font_size
+        except IOError:
+            print(f"无法加载字体文件: {font_type}")
+            return 0
 
         x, y = 0, 0
-        line_height = font.getbbox('A')[3]  # 使用'A'的高度作为行高，这通常是一个合理的近似值
+        line_height = font.layout_bounds("A").y  # 使用'A'的高度作为行高，这通常是一个合理的近似值
 
         words = content.split()
         line = []
 
         for word in words:
             # 尝试将单词添加到当前行
-            test_width, _ = textsize(draw, content, font=font)
+            test_width, _ = text_size(content, font=font)
 
             if test_width <= max_width:
                 line.append(word)
             else:
-                # 如果当前行太宽，则绘制它并开始新行  
-                draw.text((x, y), ' '.join(line), font=font, fill=(0, 0, 0))
+                # 如果当前行太宽，则绘制它并开始新行
                 y += line_height * line_multiplier
                 line = [word]
 
-                # 绘制最后一行
-        draw.text((x, y), ' '.join(line), font=font, fill=(0, 0, 0))
         total_height = y + line_height * line_multiplier  # 确保总高度包括最后一行  
-
-        del temp_image
 
         return int(total_height)
 
     """  
     绘制文本
   
-    :param image            目标图片
+    :param draw             目标图层
     :param styled_string    包装后的文本内容
     :param x                文本左上角的横坐标 
     :param y                文本左上角的纵坐标
@@ -121,17 +122,16 @@ class ImgConvert:
     """
 
     @staticmethod
-    def draw_string(image, styled_string, x, y, max_width, line_multiplier):
-        draw = ImageDraw.Draw(image)
+    def draw_string(image: Image, styled_string: StyledString, x, y, max_width=MAX_WIDTH):
         offset = 0
         lines = styled_string.content.split("\n")
 
         for line in lines:
             if not line.strip():  # 忽略空行  
-                offset += int(styled_string.font.getsize("A")[1] * line_multiplier)
+                offset += int(styled_string.font.getbbox('A')[3] * styled_string.line_multiplier)
                 continue
 
-            text_width, text_height = textsize(draw, line, font=styled_string.font)
+            text_width, text_height = text_size(line, font=styled_string.font)
             temp_text = line
 
             while text_width > max_width:
@@ -139,20 +139,19 @@ class ImgConvert:
                 n = text_width // max_width
                 sub_pos = len(temp_text) // n
                 draw_text = temp_text[:sub_pos]
-                draw_width, _ = textsize(draw, draw_text, font=styled_string.font)
+                draw_width, _ = text_size(draw_text, font=styled_string.font)
 
                 while draw_width > max_width and sub_pos > 0:
                     sub_pos -= 1
                     draw_text = temp_text[:sub_pos]
-                    draw_width, _ = textsize(draw, draw_text, font=styled_string.font)
+                    draw_width, _ = text_size(draw_text, font=styled_string.font)
 
-                draw.text((x, y + offset), draw_text, font=styled_string.font, fill=styled_string.font_color)
-                offset += int(text_height * line_multiplier)
+                image.fill_text(styled_string.font, draw_text, pixie.translate(x, y + offset))
+                offset += int(text_height * styled_string.line_multiplier)
                 temp_text = temp_text[sub_pos:]
                 text_width -= draw_width
-
-            draw.text((x, y + offset), temp_text, font=styled_string.font, fill=styled_string.font_color)
-            offset += int(text_height * line_multiplier)
+            image.fill_text(styled_string.font, temp_text, pixie.translate(x, y + offset))
+            offset += int(text_height * styled_string.line_multiplier)
 
     """  
     给图片应用覆盖色
@@ -163,41 +162,18 @@ class ImgConvert:
     """
 
     @staticmethod
-    def apply_tint(image, tint):
-
-        tint = tint.lstrip('#')  # 去除可能的前缀'#'  
-        length = len(tint)
-        tint_color = tuple(int(tint[i:i + length // 3], 16) for i in range(0, length, length // 3))
-
-        image = Image.open(image)
-        image = image.convert("RGBA")  # 转换图片到RGBA模式，以支持透明度  
-        width, height = image.size  # 获取图片的宽度和高度  
-
-        # 创建一个新的图片对象，用于保存处理后的图片  
-        tinted_image = Image.new("RGBA", (width, height), color=tint_color)
-
-        # 使用Pillow的混合功能将原始图片和覆盖色混合  
-        # 这里我们简单地使用blend函数，但它不是直接“覆盖”颜色，而是混合  
-        # 如果想要“覆盖”效果，可以直接将覆盖色设置为alpha为0（透明）的像素，但这通常不是期望的覆盖效果  
-        # 这里的简单处理是混合两个图像，你可能需要根据需要调整alpha值  
-        # 注意：这里为了简单起见，我们直接设置alpha为0.5，表示半透明覆盖  
-        alpha = 0.5  # 你可以根据需要调整这个值  
+    def apply_tint(image_path: str, tint: pixie.Color) -> Image:
+        image = pixie.read_image(image_path)
+        width, height = image.width, image.height
+        tinted_image = pixie.Image(width, height)
+        alpha = 0.5
         for x in range(width):
             for y in range(height):
-                # 获取原始图片和覆盖色在(x, y)位置的像素  
-                orig_pixel = image.getpixel((x, y))
-                tint_pixel = tint_color + (255,)  # 添加alpha通道，这里设为不透明  
-
-                # 混合像素（简单地将RGB值按alpha混合，注意这里并未真正处理alpha通道）  
-                # 注意：这里的混合方式非常基础，并不考虑alpha通道的复杂混合  
-                mixed_r = int(orig_pixel[0] * (1 - alpha) + tint_pixel[0] * alpha)
-                mixed_g = int(orig_pixel[1] * (1 - alpha) + tint_pixel[1] * alpha)
-                mixed_b = int(orig_pixel[2] * (1 - alpha) + tint_pixel[2] * alpha)
-                mixed_a = 255  # 这里简单设为不透明，实际使用时可能需要更复杂处理  
-
-                # 设置混合后的像素  
-                tinted_image.putpixel((x, y), (mixed_r, mixed_g, mixed_b, mixed_a))
-
+                orig_pixel = image.get_color(x, y)
+                mixed_r = orig_pixel.r * (1 - alpha) + tint.r * alpha
+                mixed_g = orig_pixel.g * (1 - alpha) + tint.g * alpha
+                mixed_b = orig_pixel.b * (1 - alpha) + tint.b * alpha
+                tinted_image.set_color(x, y, pixie.Color(mixed_r, mixed_g, mixed_b, orig_pixel.a))
         return tinted_image
 
     class GradientColors:
@@ -216,52 +192,12 @@ class ImgConvert:
             ["#833ab4", "#fd1d1d", "#fcb045"],
             ["#FC466B", "#3F5EFB"]
         ]
-        """
-        随机抽取一个渐变色
-
-        :return     渐变色 <每个颜色所处的位置, 颜色>
-        """
 
         @staticmethod
-        def generate_gradient() -> Tuple[List[float], List['Color']]:
-            random.shuffle(ImgConvert.GradientColors.colors)  # 这一步其实是不必要的，因为我们直接随机选择一个  
+        def generate_gradient() -> tuple[list[str], list[float]]:
             now_colors = ImgConvert.GradientColors.colors[random.randint(0, len(ImgConvert.GradientColors.colors) - 1)]
-            # 50%的概率翻转渐变色  
-            if random.randint(0, 1) == 1:
+            if random.randint(0, 1):
                 now_colors.reverse()
-
-            positions = [0.0] * len(now_colors)
-            if len(now_colors) == 2:
-                positions = [0.0, 1.0]
-            elif len(now_colors) == 3:
-                positions = [0.0, 0.5, 1.0]
-
-            colors_list = [Color.from_hex(color) for color in now_colors]
-
-            return positions, colors_list
-
-    """
-    包含绘制需要的参数的字符串
-    """
-
-    class StyledString:
-
-        def __init__(self,config: Config, content: str, font_type: str, font_size: int, line_multiplier: float = 1.0):
-            file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
-            self.content = content
-            self.line_multiplier = line_multiplier
-            # 尝试加载字体  
-            try:
-                self.font = ImageFont.truetype(file_path, font_size)
-            except IOError:
-                print(f"无法加载字体文件: {file_path}")
-                self.font = None  # 或者你可以抛出一个异常  
-
-            # textsize is deprecated and will be removed in Pillow 10 (2023-07-01). Use textbbox or textlength instead.
-            if self.font:
-                image = Image.new('RGB', (ImgConvert.MAX_WIDTH, 100), color=(255, 255, 255))
-                draw = ImageDraw.Draw(image)
-                _, text_height = textsize(draw, content, font=self.font)
-                self.height = int(text_height * line_multiplier)
-            else:
-                self.height = 0
+            colors_list = [color for color in now_colors]
+            position_list = [0.0, 1.0] if len(now_colors) == 2 else [0.0, 0.5, 1.0]
+            return colors_list, position_list
