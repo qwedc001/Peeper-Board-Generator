@@ -4,7 +4,8 @@ import sys
 
 from datetime import datetime
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
+from pixie import pixie
 
 from module.ImgConvert import StyledString, ImgConvert, Color
 from module.config import Config
@@ -141,60 +142,50 @@ def darken_color(color: tuple[int, int, int]) -> tuple[int, int, int]:
     return int(color[0] * 0.7), int(color[1] * 0.7), int(color[2] * 0.7)
 
 
-def draw_gradient(image: Image, gradient_info: tuple[list[float], list['Color']], start_pos, end_pos) -> Image:
-    positions, colors = gradient_info
-    start_x, start_y = start_pos
-    end_x, end_y = end_pos
-    if len(positions) == 3:
-        half = draw_gradient(image, (positions[:2], colors[:2]), start_pos, (end_x / 2, end_y))
-        return draw_gradient(half, (positions[1:], colors[1:]), (end_x / 2, 0), end_pos)
-    start_r, start_g, start_b = colors[0].rgb
-    end_r, end_g, end_b = colors[1].rgb
-    x_size = end_x - start_x
-    y_size = end_y - start_y
-    r_gap = (end_r - start_r) / x_size
-    g_gap = (end_g - start_g) / x_size
-    b_gap = (end_b - start_b) / x_size
-    for x in range(x_size):
-        column_color = (int(start_r + r_gap * x),
-                        int(start_g + g_gap * x),
-                        int(start_b + b_gap * x))
-        for y in range(y_size):
-            image.putpixel((x, y), column_color)
+def get_background(width, height, colors: list[str], positions: list[float]) -> pixie.Image:
+    image = pixie.Image(width, height)
+    image.fill(pixie.Color(0, 0, 0, 1))  # 填充黑色背景
+    paint = pixie.Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.RADIAL_GRADIENT_PAINT)  # 准备渐变色画笔
+    paint_mask = pixie.Paint(pixie.SOLID_PAINT)  # 准备蒙版画笔
+    paint_mask.color = pixie.Color(1, 1, 1, 0.7)  # 设置蒙版颜色
+    for i in range(len(colors)):
+        color = pixie.parse_color(colors[i])
+        paint.gradient_handle_positions.append(pixie.Vector2(width * positions[i], height * positions[i]))
+        paint.gradient_stops.append(pixie.ColorStop(color, i))
+    ctx = image.new_context()
+    ctx.fill_style = paint
+    ctx.rounded_rect(32, 32, width - 64, height - 64, 192, 192, 192, 192)
+    ctx.fill()
+    mask = pixie.Image(width, height)
+    ctx = mask.new_context()
+    ctx.fill_style = paint_mask
+    ctx.rounded_rect(32, 32, width - 64, height - 64, 192, 192, 192, 192)
+    ctx.fill()
+    image.draw(mask, blend_mode=pixie.NORMAL_BLEND)
     return image
 
 
-def mask_white_image(image: Image) -> Image:
-    mask = Image.new('L', image.size, 0)
-    mask_draw = ImageDraw.Draw(mask)
-    width,height = image.size
-    mask_draw.rectangle((0, 0, width, height), fill=255)
-    return Image.composite(image, Image.new('RGBA', image.size, (255, 255, 255, 255)), mask).convert("RGBA")
-
-
-def draw_basic_content(output_img: Image, total_height: int, title: StyledString,
-                       subtitle: StyledString, current_y: int, logo_path: str) -> tuple[ImageDraw, int]:
-    current_gradient = ImgConvert.GradientColors.generate_gradient()
-    background = mask_white_image(draw_gradient(Image.new('RGBA', (1280, total_height + 300), color=(0, 0, 0)), current_gradient, (0, 0), (1280, total_height+300)))
-    output_img.paste(background, (0, 0), background)
+def draw_basic_content(config: Config, total_height: int, title: StyledString,
+                       subtitle: StyledString, current_y: int, logo_path: str) -> tuple[Image, ImageDraw, int]:
+    current_gradient,gradient_positions = ImgConvert.GradientColors.generate_gradient()
+    # 先暂时混用Pillow和pixie，根据后续情况再决定是否全部换用pixie
+    background = get_background(1280, total_height + 300, current_gradient,gradient_positions)
+    bg_path = os.path.join(config.work_dir, config.get_config('data'), "background.png")
+    background.write_file(bg_path)
+    output_img = Image.open(bg_path)
     draw = ImageDraw.Draw(output_img)
-    total_height += 300
-
-    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192)
-    draw.rounded_rectangle([(32, 32), (1216 + 32, total_height - 64 + 32)], 192)
-
-    accent_color = current_gradient[1][0].rgb
+    accent_color = Color.from_hex(current_gradient[0]).rgb
     accent_dark_color = darken_color(darken_color(darken_color(accent_color)))
 
-    logo_tinted = ImgConvert.apply_tint(logo_path, accent_dark_color)
+    logo_tinted = ImgConvert.apply_tint(logo_path, accent_color)
     logo_tinted.resize((140, 140))
-    draw.bitmap((108, 160), logo_tinted)
+    output_img.paste(logo_tinted, (90,90),logo_tinted)
     title.font_color = accent_dark_color
-    current_y = draw_text(draw, title, 32, current_y, x=260)
+    current_y = draw_text(draw, title, 32, current_y, x=290)
     subtitle.font_color = (accent_dark_color[0], accent_dark_color[1], accent_dark_color[2], 136)
     current_y = draw_text(draw, subtitle, 108, current_y)
 
-    return draw, current_y
+    return output_img, draw, current_y
 
 
 class MiscBoardGenerator:
@@ -291,16 +282,14 @@ class MiscBoardGenerator:
             ]) + calculate_ranking_height([top_5_detail, top_10_detail, full_rank_detail])
                             + 1380 + 200)  # 1380是所有padding
 
-            output_img = Image.new('RGBA', (1280, total_height + 300), color=(0, 0, 0))
-
-            draw, current_y = draw_basic_content(output_img, total_height, title, subtitle, 134, logo_path)
+            image, draw, current_y = draw_basic_content(config, total_height, title, subtitle, 134, logo_path)
 
             current_y = draw_text(draw, play_of_the_oj_title, 8, current_y)
             current_y = draw_text(draw, play_of_the_oj, 108, current_y)
 
             # to be continued.
 
-            return output_img
+            return image
 
         if board_type == "now":
             if verdict == "Accepted":

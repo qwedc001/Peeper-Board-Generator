@@ -35,15 +35,8 @@ class StyledString:
         try:
             self.font = ImageFont.truetype(file_path, font_size)
         except IOError:
-            print(f"无法加载字体文件: {file_path}")
-            self.font = None  # 或者你可以抛出一个异常
-
-        # textsize is deprecated and will be removed in Pillow 10 (2023-07-01). Use textbbox or textlength instead.
-        if self.font:
-            self.height = ImgConvert.calculate_string_height(file_path, font_size, content,
-                                                             line_multiplier=line_multiplier)
-        else:
-            self.height = 0
+            raise IOError(f"无法加载字体文件: {file_path}")
+        self.height = ImgConvert.calculate_string_height(file_path, font_size, content, line_multiplier=line_multiplier)
 
 
 class ImgConvert:
@@ -143,7 +136,7 @@ class ImgConvert:
 
         for line in lines:
             if not line.strip():  # 忽略空行  
-                offset += int(styled_string.font.getsize("A")[1] * styled_string.line_multiplier)
+                offset += int(styled_string.font.getbbox('A')[3] * styled_string.line_multiplier)
                 continue
 
             text_width, text_height = textsize(draw, line, font=styled_string.font)
@@ -177,40 +170,19 @@ class ImgConvert:
     """
 
     @staticmethod
-    def apply_tint(image, tint:tuple[int, int, int]):
-        length = len(tint)
+    def apply_tint(image_path:str, tint: tuple[int, int, int]):
         r,g,b = tint
-        tint_color = (r,g,b,16)
-
-        image = Image.open(image)
-        image = image.convert("RGBA")  # 转换图片到RGBA模式，以支持透明度  
-        width, height = image.size  # 获取图片的宽度和高度  
-
-        # 创建一个新的图片对象，用于保存处理后的图片  
-        tinted_image = Image.new("RGBA", (width, height), color=tint_color)
-
-        # 使用Pillow的混合功能将原始图片和覆盖色混合  
-        # 这里我们简单地使用blend函数，但它不是直接“覆盖”颜色，而是混合  
-        # 如果想要“覆盖”效果，可以直接将覆盖色设置为alpha为0（透明）的像素，但这通常不是期望的覆盖效果  
-        # 这里的简单处理是混合两个图像，你可能需要根据需要调整alpha值  
-        # 注意：这里为了简单起见，我们直接设置alpha为0.5，表示半透明覆盖  
-        alpha = 0.5  # 你可以根据需要调整这个值  
+        image = Image.open(image_path)
+        width, height = image.size
+        tinted_image = Image.new("RGBA", (width, height), color=tint+ (255,))
+        alpha = 0.5
         for x in range(width):
             for y in range(height):
-                # 获取原始图片和覆盖色在(x, y)位置的像素  
                 orig_pixel = image.getpixel((x, y))
-                tint_pixel = tint_color + (255,)  # 添加alpha通道，这里设为不透明  
-
-                # 混合像素（简单地将RGB值按alpha混合，注意这里并未真正处理alpha通道）  
-                # 注意：这里的混合方式非常基础，并不考虑alpha通道的复杂混合  
-                mixed_r = int(orig_pixel[0] * (1 - alpha) + tint_pixel[0] * alpha)
-                mixed_g = int(orig_pixel[1] * (1 - alpha) + tint_pixel[1] * alpha)
-                mixed_b = int(orig_pixel[2] * (1 - alpha) + tint_pixel[2] * alpha)
-                mixed_a = 255  # 这里简单设为不透明，实际使用时可能需要更复杂处理  
-
-                # 设置混合后的像素  
-                tinted_image.putpixel((x, y), (mixed_r, mixed_g, mixed_b, mixed_a))
-
+                mixed_r = int(orig_pixel[0] * (1 - alpha) + r * alpha)
+                mixed_g = int(orig_pixel[1] * (1 - alpha) + g * alpha)
+                mixed_b = int(orig_pixel[2] * (1 - alpha) + b * alpha)
+                tinted_image.putpixel((x, y), (mixed_r, mixed_g, mixed_b, orig_pixel[3]))
         return tinted_image
 
     class GradientColors:
@@ -229,52 +201,12 @@ class ImgConvert:
             ["#833ab4", "#fd1d1d", "#fcb045"],
             ["#FC466B", "#3F5EFB"]
         ]
-        """
-        随机抽取一个渐变色
-
-        :return     渐变色 <每个颜色所处的位置, 颜色>
-        """
 
         @staticmethod
-        def generate_gradient() -> Tuple[List[float], List['Color']]:
-            random.shuffle(ImgConvert.GradientColors.colors)  # 这一步其实是不必要的，因为我们直接随机选择一个  
+        def generate_gradient() -> tuple[list[str], list[float]]:
             now_colors = ImgConvert.GradientColors.colors[random.randint(0, len(ImgConvert.GradientColors.colors) - 1)]
-            # 50%的概率翻转渐变色  
-            if random.randint(0, 1) == 1:
+            if random.randint(0, 1):
                 now_colors.reverse()
-
-            positions = [0.0] * len(now_colors)
-            if len(now_colors) == 2:
-                positions = [0.0, 1.0]
-            elif len(now_colors) == 3:
-                positions = [0.0, 0.5, 1.0] # 三种颜色的时候 0~0.5 是第一个到第二个，0.5~1 是第二个到第三个
-
-            colors_list = [Color.from_hex(color) for color in now_colors]
-
-            return positions, colors_list
-
-    """
-    包含绘制需要的参数的字符串
-    """
-
-    class StyledString:
-
-        def __init__(self, config: Config, content: str, font_type: str, font_size: int, line_multiplier: float = 1.0):
-            file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
-            self.content = content
-            self.line_multiplier = line_multiplier
-            # 尝试加载字体  
-            try:
-                self.font = ImageFont.truetype(file_path, font_size)
-            except IOError:
-                print(f"无法加载字体文件: {file_path}")
-                self.font = None  # 或者你可以抛出一个异常  
-
-            # textsize is deprecated and will be removed in Pillow 10 (2023-07-01). Use textbbox or textlength instead.
-            if self.font:
-                image = Image.new('RGB', (ImgConvert.MAX_WIDTH, 100), color=(255, 255, 255))
-                draw = ImageDraw.Draw(image)
-                _, text_height = textsize(draw, content, font=self.font)
-                self.height = int(text_height * line_multiplier)
-            else:
-                self.height = 0
+            colors_list = [color for color in now_colors]
+            position_list = [0.0, 1.0] if len(now_colors) == 2 else [0.0, 0.5, 1.0]
+            return colors_list, position_list
