@@ -19,4 +19,6 @@ class HydroHandler:
         reload_stats(self.config, self.url, "problemStat")
         reload_stats(self.config, self.url, "rp")
         daily = DailyJson(fetch_submissions(self.config, False), fetch_rankings(self.config))
-        save_json(self.config, daily)
+        save_json(self.config, daily,False)
+        daily = DailyJson(fetch_submissions(self.config, True), fetch_rankings(self.config))
+        save_json(self.config, daily, True)
