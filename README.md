@@ -34,7 +34,7 @@ pip install -r requirements.txt
 ```bash
 python main.py --help
 
-usage: main.py [-h] (--full | --now) [--version] [--verdict VERDICT]
+usage: main.py [-h] (--full | --now) [--version] [--verdict VERDICT] [--output FILE]
 
 Hydro Bot Args Parser
 
@@ -44,6 +44,7 @@ options:
   --now              生成从今日0点到当前时间的榜单
   --version          版本号信息
   --verdict VERDICT  指定榜单对应verdict (使用简写)
+  --output FILE      指定生成图片的路径 (包含文件名)
 ```
 
 ## 致谢

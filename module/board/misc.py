@@ -2,6 +2,7 @@ import logging
 import sys
 
 from datetime import datetime
+from typing import LiteralString
 
 from pixie import pixie, Image, Color, Paint
 
@@ -42,7 +43,7 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
         if i > 0 and verdict_cnt != verdict_desc[list(verdict_desc.keys())[i - 1]]:
             rank = i + 1
         total_board.append({"user": user, f"{verdict}": verdict_cnt, "rank": rank})
-    result['top_five'] = total_board[:5]  # 昨日
+    result['top_five'] = slice_ranking_data(total_board, 5)  # 昨日
     result['total_board'] = total_board  # 昨日 / 今日
     result['total_submits'] = len(submissions)  # 昨日 / 今日
     result['first_ac'] = get_first_ac(submissions)  # 昨日 / 今日
@@ -108,10 +109,20 @@ def pack_hourly_detail(hourly_data: dict) -> dict:
 
 def pack_rank_data(rank: list[RankingData]) -> list[dict]:
     # 封装一下
+    rank_by_ac = sorted(rank, key=lambda x: int(x.accepted), reverse=True)
     rank_data = []
-    for ranking_data in rank:
-        rank_data.append({'user': ranking_data.user_name, 'rank': ranking_data.rank, 'Accepted': ranking_data.accepted})
+    rank = 1
+    for i, ranking_data in enumerate(rank_by_ac):
+        if i > 0 and ranking_data.accepted != rank_by_ac[i - 1].accepted:
+            rank = i + 1
+        rank_data.append({'user': ranking_data.user_name, 'rank': rank, 'Accepted': ranking_data.accepted})
     return rank_data
+
+
+# 处理一下有排名并列时直接切片导致的问题
+def slice_ranking_data(rank: list[dict], lim: int) -> list[dict]:
+    max_rank = rank[min(len(rank), lim) - 1]['rank']
+    return [ranking_data for ranking_data in rank if ranking_data['rank'] <= max_rank]
 
 
 def pack_verdict_rank_data(verdict_desc: dict, verdict: str) -> list[dict]:
@@ -171,7 +182,8 @@ def draw_background(image: Image, width: int, height: int, colors: list[str], po
     paint_mask.color = pixie.Color(1, 1, 1, 0.7)  # 设置蒙版颜色
     for i in range(len(colors)):
         color = pixie.parse_color(colors[i])
-        paint.gradient_handle_positions.append(pixie.Vector2(width * positions[i], height * positions[i]))
+        paint.gradient_handle_positions.append(pixie.Vector2(32 + (width - 64) * positions[i],
+                                                             32 + (height - 64) * positions[i]))
         paint.gradient_stops.append(pixie.ColorStop(color, i))
     draw_round_rect(image, paint, 32, 32, width - 64, height - 64, 96)
     mask = pixie.Image(width, height)
@@ -201,7 +213,7 @@ def draw_horizontal_gradient_round_rect(image: Image, x: int, y: int, width: int
                                         colors: list[Color], positions: list[float]):
     paint = Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.RADIAL_GRADIENT_PAINT)  # 准备渐变色画笔
     for i in range(len(colors)):
-        paint.gradient_handle_positions.append(pixie.Vector2(width * positions[i], height / 2))
+        paint.gradient_handle_positions.append(pixie.Vector2(x + width * positions[i], y + height / 2))
         paint.gradient_stops.append(pixie.ColorStop(colors[i], i))
     round_size = min(width, height) / 2
     draw_round_rect(image, paint, x, y, width, height, round_size)
@@ -233,7 +245,7 @@ def draw_rank_detail(image: Image, ranking: list[dict], padding_bottom: int, cur
         current_y = draw_text(image, rank['val'], 32, current_y, x=current_x)
 
         tile_colors = [  # 这里有问题
-            Color(0, 0, 0, (10 if rank['unrated'] else (2 if same_rank else 14)) / 255),
+            Color(0, 0, 0, (12 if rank['unrated'] else (10 if same_rank else 18)) / 255),
             Color(0, 0, 0, (15 if rank['unrated'] else (18 if same_rank else 28)) / 255),
             Color(0, 0, 0, (18 if rank['unrated'] else 32) / 255)
         ]
@@ -343,7 +355,8 @@ def draw_submit_detail(image: Image,
 class MiscBoardGenerator:
 
     @staticmethod
-    def generate_image(config: Config, board_type: str, logo_path: str, verdict: str = "Accepted") -> Image:
+    def generate_image(config: Config, board_type: str,
+                       logo_path: LiteralString | str | bytes, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         eng_full_name = StyledString(config, f'{get_date_string(True, ".")}  {config.get_config("oj_name")} Rank List',
                                      'H', 36)
@@ -406,7 +419,7 @@ class MiscBoardGenerator:
             popular_problem_name = StyledString(config, data.popular_problem[0], 'B', 72)
             popular_problem_detail = StyledString(config, f'共有 {data.popular_problem[1]} 个人提交本题', 'M', 28)
 
-            top_ten = rank_data[:10]
+            top_ten = slice_ranking_data(rank_data, 10)
             top_10_subtitle = StyledString(config, "训练榜单", "B", 36)
             top_10_title = StyledString(config, "题数排名", "H", 72)
             top_10_mark = StyledString(config, "Top 10th", "H", 48)
@@ -416,7 +429,7 @@ class MiscBoardGenerator:
             full_rank_title = StyledString(config, "昨日 OJ 总榜", "H", 72)
             full_rank_detail = pack_ranking_list(config, data.total_board, verdict)
 
-            cp = StyledString(config, f'Generated by {config.get_config("oj_name")}.\n'
+            cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
                                       f'©Peeper-Board-Generator Dev Team.\n'
                                       f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                               line_multiplier=1.32)
@@ -464,7 +477,7 @@ class MiscBoardGenerator:
 
             current_y = draw_text(output_img, top_10_subtitle, 16, current_y)
             current_y = draw_text(output_img, top_10_title, 16, current_y)
-            current_y -= 96
+            current_y -= 86
             current_y = draw_text(output_img, top_10_mark, 32, current_y,
                                   x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
             current_y = draw_rank_detail(output_img, top_10_detail, 108, current_y)
@@ -482,7 +495,7 @@ class MiscBoardGenerator:
                 title = StyledString(config, "今日当前提交榜单", 'H', 96)
 
                 data = generate_board_data(today.submissions, verdict)
-                rank = today.rankings[:5]
+                rank = today.rankings
                 # 对于 now 榜单的图形逻辑
                 rank_data = pack_rank_data(rank)
 
@@ -524,13 +537,13 @@ class MiscBoardGenerator:
                 first_ac_who = StyledString(config, data.first_ac.user.name, 'H', 72)
                 first_ac_detail = StyledString(config, first_ac_text, 'M', 28)
 
-                top_five = rank_data[:5]
+                top_five = slice_ranking_data(rank_data, 5)
                 top_5_subtitle = StyledString(config, "训练榜单", "B", 36)
                 top_5_title = StyledString(config, "题数排名", "H", 72)
                 top_5_mark = StyledString(config, "Top 5th", "H", 48)
                 top_5_detail = pack_ranking_list(config, top_five, verdict)
 
-                cp = StyledString(config, f'Generated by {config.get_config("oj_name")}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
@@ -543,7 +556,7 @@ class MiscBoardGenerator:
                     top_5_subtitle, top_5_title,
                     cp
                 ]) + calculate_ranking_height([tops_detail, top_5_detail])
-                                + 940 + 232)  # 940是所有padding（现在可能不是）
+                                + 960 + 232)  # 940是所有padding（现在可能不是）
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
@@ -563,7 +576,7 @@ class MiscBoardGenerator:
 
                 current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
                 current_y = draw_text(output_img, top_5_title, 16, current_y)
-                current_y -= 96
+                current_y -= 86
                 current_y = draw_text(output_img, top_5_mark, 32, current_y,
                                       x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
                 current_y = draw_rank_detail(output_img, top_5_detail, 108, current_y)
@@ -590,13 +603,13 @@ class MiscBoardGenerator:
                 prop_detail_main = StyledString(config, prop_split[0], 'H', 72)
                 prop_detail_sub = StyledString(config, "." + prop_split[1], 'H', 72)
 
-                top_ten = rank_data[:10]
+                top_ten = slice_ranking_data(rank_data, 10)
                 top_10_subtitle = StyledString(config, "分类型提交榜单", "B", 36)
                 top_10_title = StyledString(config, f"{alias[verdict]} 排行榜", "H", 72)
                 top_10_mark = StyledString(config, "Top 10th", "H", 48)
                 top_10_detail = pack_ranking_list(config, top_ten, verdict)  # todo doubt.
 
-                cp = StyledString(config, f'Generated by {config.get_config("oj_name")}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
@@ -632,7 +645,7 @@ class MiscBoardGenerator:
 
                 current_y = draw_text(output_img, top_10_subtitle, 16, current_y)
                 current_y = draw_text(output_img, top_10_title, 16, current_y)
-                current_y -= 96
+                current_y -= 86
                 current_y = draw_text(output_img, top_10_mark, 32, current_y,
                                       x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
                 current_y = draw_rank_detail(output_img, top_10_detail, 108, current_y)

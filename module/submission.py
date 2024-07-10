@@ -47,7 +47,7 @@ def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
         "verdicts": {}
     }
     for submission in submission_list:
-        if submission.verdict not in result:
+        if submission.verdict not in result['verdicts']:
             result['verdicts'][submission.verdict] = 0
         result['verdicts'][submission.verdict] += 1
         result['avg_score'] += submission.score
