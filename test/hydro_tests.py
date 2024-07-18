@@ -1,5 +1,6 @@
 import unittest
 
+from module.hydro.entry import HydroHandler
 from module.hydro.ranking import fetch_rankings
 from module.hydro.tools import reload_stats
 from module.structures import UserData
@@ -134,6 +135,11 @@ class TestStructure(unittest.TestCase):
         daily_json = load_json(config, False)
         self.assertTrue(daily_json is not None)
 
+class TestLogin(unittest.TestCase):
+    def test_login(self):
+        handler = HydroHandler(config, oj_url)
+        session = handler.login()
+        self.assertTrue(session is not None)
 
 if __name__ == '__main__':
     unittest.main()

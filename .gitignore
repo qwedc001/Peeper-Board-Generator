@@ -4,3 +4,5 @@ config.json
 test/*
 !/test/hydro_tests.py
 !/test/image_tests.py
+
+/data/*

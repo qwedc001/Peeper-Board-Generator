@@ -13,5 +13,8 @@ class Config:
     def get_config(self, key):
         return self.jsonCfg[key]
 
+    def set_config(self, key, value):
+        self.jsonCfg[key] = value
+
     def get_work_path(self):
         return self.work_dir
