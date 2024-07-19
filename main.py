@@ -2,7 +2,7 @@ import logging
 import os
 
 from module.config import Config
-from module.hydro.entry import HydroHandler
+from module.Hydro.entry import HydroHandler
 from module.board.misc import MiscBoardGenerator
 import argparse
 from module.verdict import ALIAS_MAP
@@ -38,11 +38,15 @@ if __name__ == "__main__":
     handler.save_daily()
     if args.full:
         logging.info("正在生成昨日榜单")
-        output_img = MiscBoardGenerator.generate_image(config, "full", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'))
+        output_img = MiscBoardGenerator.generate_image(config, "full",
+                                                       os.path.join(config.work_dir, config.get_config('data'),
+                                                                    f'logo.png'))
         output_img.write_file(args.output)
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
-        output_img = MiscBoardGenerator.generate_image(config, "now", os.path.join(config.work_dir, config.get_config('data'), f'logo.png'), verdict=args.verdict)
+        output_img = MiscBoardGenerator.generate_image(config, "now",
+                                                       os.path.join(config.work_dir, config.get_config('data'),
+                                                                    f'logo.png'), verdict=args.verdict)
         output_img.write_file(args.output)
     else:
         parser.print_help()

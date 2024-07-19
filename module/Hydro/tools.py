@@ -4,7 +4,7 @@ import time
 import requests
 
 from module.config import Config
-from module.hydro.verdict import VERDICT_MAP
+from module.Hydro.verdict import VERDICT_MAP
 from module.utils import json_headers
 
 

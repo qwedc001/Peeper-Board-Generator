@@ -1,7 +1,7 @@
 import logging
 import requests
 from module.config import Config
-from module.hydro.verdict import STATUS_VERDICT
+from module.Hydro.verdict import STATUS_VERDICT
 from module.utils import json_headers
 from module.structures import SubmissionData, UserData
 from module.utils import get_today_timestamp, get_yesterday_timestamp

@@ -1,11 +1,11 @@
 import unittest
 
-from module.hydro.entry import HydroHandler
-from module.hydro.ranking import fetch_rankings
-from module.hydro.tools import reload_stats
+from module.Hydro.entry import HydroHandler
+from module.Hydro.ranking import fetch_rankings
+from module.Hydro.tools import reload_stats
 from module.structures import UserData
-from module.hydro.submission import fetch_submissions
-from module.hydro.user import fetch_user
+from module.Hydro.submission import fetch_submissions
+from module.Hydro.user import fetch_user
 from module.utils import *
 from module.config import Config
 
