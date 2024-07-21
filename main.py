@@ -28,7 +28,7 @@ if __name__ == "__main__":
     required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
     parser.add_argument('--version', action="store_true", help='版本号信息')
     parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
-    parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
+    parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)', required=True)
     args = parser.parse_args()
     if not args.verdict:
         args.verdict = ALIAS_MAP["AC"]

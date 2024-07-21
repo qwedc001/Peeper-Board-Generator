@@ -2,7 +2,6 @@ import logging
 import sys
 
 from datetime import datetime
-from typing import LiteralString
 
 from pixie import pixie, Image, Color, Paint
 
@@ -36,13 +35,9 @@ class MiscBoard:
 def generate_board_data(submissions: list[SubmissionData], verdict: str) -> MiscBoard:
     result = {}
     verdict_desc = rank_by_verdict(submissions)[verdict]
+    logging.debug(verdict_desc)
     result['play_of_the_oj'] = max(verdict_desc, key=verdict_desc.get)  # 昨日
-    total_board = []
-    rank = 1
-    for i, (user, verdict_cnt) in enumerate(verdict_desc.items()):
-        if i > 0 and verdict_cnt != verdict_desc[list(verdict_desc.keys())[i - 1]]:
-            rank = i + 1
-        total_board.append({"user": user, f"{verdict}": verdict_cnt, "rank": rank})
+    total_board = pack_verdict_rank_data(verdict_desc, verdict)
     result['top_five'] = slice_ranking_data(total_board, 5)  # 昨日
     result['total_board'] = total_board  # 昨日 / 今日
     result['total_submits'] = len(submissions)  # 昨日 / 今日
@@ -356,7 +351,7 @@ class MiscBoardGenerator:
 
     @staticmethod
     def generate_image(config: Config, board_type: str,
-                       logo_path: LiteralString | str | bytes, verdict: str = "Accepted") -> Image:
+                       logo_path: str, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         eng_full_name = StyledString(config, f'{get_date_string(True, ".")}  {config.get_config("oj_name")} Rank List',
                                      'H', 36)

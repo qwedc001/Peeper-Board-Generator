@@ -31,7 +31,7 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
         user_json = response_json['udict']
         problem_json = response_json['pdict']
         for submission in record_json:
-            if submission['lang'] == '-':
+            if submission['lang'] == '-' or ('contest' in submission and submission['contest'] == '000000000000000000000000'):
                 # 自测提交记录，不计入
                 continue
             if "hackTarget" in submission:
