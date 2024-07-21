@@ -1,7 +1,7 @@
 import os
 
 import random
-from typing import Tuple, List
+from typing import Tuple
 
 from pixie import pixie, Font, Image
 

@@ -31,7 +31,7 @@ class HydroHandler:
         daily = DailyJson(fetch_submissions(self.config, True), fetch_rankings(self.config))
         save_json(self.config, daily, True)
 
-    def login(self,credentials: dict):
+    def login(self, credentials: dict):
         with requests.Session() as session:
             session.post(f"{self.url}/login", data=credentials)
             return session
