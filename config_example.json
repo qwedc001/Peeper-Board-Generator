@@ -11,7 +11,7 @@
     }
   },
   "data": "data",
-  "url": "[Your-OJ-Base-URL-Ends-With-Slash]",
+  "url": "[Your-OJ-Base-URL]",
   "oj_name": "[Your-OJ-Name]",
   "test":{
     "explain": "该部分为跑单元测试使用的隐私信息，正常使用无需填写",

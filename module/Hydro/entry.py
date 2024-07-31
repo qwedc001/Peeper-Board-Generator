@@ -33,5 +33,5 @@ class HydroHandler:
 
     def login(self, credentials: dict):
         with requests.Session() as session:
-            session.post(f"{self.url}/login", data=credentials)
+            session.post(f"{self.url}login", data=credentials)
             return session

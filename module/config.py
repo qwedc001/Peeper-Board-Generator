@@ -8,6 +8,8 @@ class Config:
         json_path = os.path.join(self.work_dir, config_path)
         config_file = open(json_path, 'r', encoding='utf-8')
         self.jsonCfg = json.loads(config_file.read())
+        if not self.jsonCfg['url'].endswith('/'):
+            self.jsonCfg['url'] = self.jsonCfg['url']+ '/'
         config_file.close()
 
     def get_config(self, key):
