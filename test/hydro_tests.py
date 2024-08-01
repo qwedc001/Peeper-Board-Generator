@@ -139,7 +139,8 @@ class TestStructure(unittest.TestCase):
 class TestLogin(unittest.TestCase):
     def test_login(self):
         handler = HydroHandler(config, oj_url)
-        session = handler.login()
+        credentials = config.get_config("credentials")["Hydro"]
+        session = handler.login(credentials)
         self.assertTrue(session is not None)
 
 
