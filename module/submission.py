@@ -1,3 +1,4 @@
+import logging
 import time
 from typing import Union
 
@@ -32,10 +33,17 @@ def get_hourly_submissions(submission_list: list[SubmissionData]) -> dict:
 
 def get_most_popular_problem(submission_list: list[SubmissionData]) -> tuple[str, int]:
     problem_dict = {}
+    submission_user_dict = {}
     for submission in submission_list:
         if submission.problem_name not in problem_dict:
             problem_dict[submission.problem_name] = 0
-        problem_dict[submission.problem_name] += 1
+            submission_user_dict[submission.problem_name] = [submission.user.name]
+        if submission.user.name not in submission_user_dict[submission.problem_name]:
+            problem_dict[submission.problem_name] += 1
+            submission_user_dict[submission.problem_name].append(submission.user.name)
+            logging.debug(f"检测到新提交用户{submission.user.name}，题目{submission.problem_name}，已记录。")
+        else:
+            logging.debug(f"检测到重复提交用户{submission.user.name}，题目{submission.problem_name}，已忽略。")
     max_problem = max(problem_dict, key=problem_dict.get)
     return max_problem, problem_dict[max_problem]
 
