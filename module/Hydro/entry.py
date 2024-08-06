@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 import os
@@ -39,13 +40,15 @@ class HydroHandler:
         if mode == "full":  # 检查昨日榜单的json文件日期是否为今日，如果是则跳过执行
             json_file = f'daily-{get_date_string(True)}.json'
             if not os.path.exists(os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)):
+                logging.info(f"昨日json数据{json_file}不存在")
                 self.get_yesterday()
                 return
             file_timestamp = os.stat(
                 os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)).st_mtime
-            if time.strftime("%Y-%m-%d", time.gmtime(file_timestamp)) == get_date_string(False):
+
+            logging.info(f"{json_file} 文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
+            if datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d') == get_date_string(False):
                 logging.info("昨日 json 数据已存在并且固定，跳过爬取")
-                return
             else:
                 self.get_yesterday()
         elif mode == "now":  # 检查昨日榜单文件是否生成
@@ -54,10 +57,10 @@ class HydroHandler:
             if not os.path.exists(file_path):
                 logging.info("昨日json数据不存在")
                 self.get_yesterday()
-            today_submissions = fetch_submissions(self.config, False)
-            ranking = self.calculate_ranking(today_submissions)
-            daily = DailyJson(today_submissions, ranking)
-            save_json(self.config, daily, False)
+        today_submissions = fetch_submissions(self.config, False)
+        ranking = self.calculate_ranking(today_submissions)
+        daily = DailyJson(today_submissions, ranking)
+        save_json(self.config, daily, False)
 
     def login(self, credentials: dict) -> Session:
         with requests.Session() as session:
