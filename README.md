@@ -40,12 +40,24 @@ Hydro Bot Args Parser
 
 options:
   -h, --help         show this help message and exit
-  --full             生成今日榜单
+  --full             生成昨日榜单
   --now              生成从今日0点到当前时间的榜单
   --version          版本号信息
   --verdict VERDICT  指定榜单对应verdict (使用简写)
-  --output FILE      指定生成图片的路径 (包含文件名)
+  --output OUTPUT    指定生成图片的路径 (包含文件名)
 ```
+
+## 样例图片
+
+Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `oj_name` 字段更改。
+
+### 从今日0点到当前时间的榜单 (--now)
+
+<img src="example_now.png" style="zoom:50%;" />
+
+### 昨日榜单 (--now)
+
+<img src="example_full.png" style="zoom:50%;" />
 
 ## 致谢
 

@@ -36,7 +36,7 @@ if __name__ == "__main__":
         logging.debug("程序开始工作")
         parser = DefaultHelpParser(description='Hydro Bot Args Parser')
         required_para = parser.add_mutually_exclusive_group(required=True)
-        required_para.add_argument('--full', action="store_true", help='生成今日榜单')
+        required_para.add_argument('--full', action="store_true", help='生成昨日榜单')
         required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
         parser.add_argument('--version', action="store_true", help='版本号信息')
         parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
