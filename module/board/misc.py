@@ -386,7 +386,7 @@ class MiscBoardGenerator:
             ave_score_detail_main = StyledString(config, ave_score_split[0], 'H', 72)
             ave_score_detail_sub = StyledString(config, "." + ave_score_split[1], 'H', 72)  # 有傻逼写了0
 
-            ac_rate_split = format(data.avg_score, '.2f').split(".")
+            ac_rate_split = format(data.ac_rate*100, '.2f').split(".")
 
             ac_rate_title = StyledString(config, "提交通过率", 'B', 36)
             ac_rate_detail_main = StyledString(config, ac_rate_split[0], 'H', 72)
