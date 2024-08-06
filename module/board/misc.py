@@ -452,7 +452,7 @@ class MiscBoardGenerator:
 
             current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
             current_y = draw_text(output_img, top_5_title, 16, current_y)
-            current_y -= 96
+            current_y -= 86
             current_y = draw_text(output_img, top_5_mark, 32, current_y,
                                   x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
             current_y = draw_rank_detail(output_img, top_5_detail, 108, current_y)
