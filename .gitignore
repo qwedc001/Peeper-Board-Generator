@@ -6,3 +6,6 @@ test/*
 !/test/image_tests.py
 
 /data/*
+
+info.log
+last_traceback.log

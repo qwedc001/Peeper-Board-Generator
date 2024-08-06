@@ -47,19 +47,23 @@ if __name__ == "__main__":
         else:
             args.verdict = ALIAS_MAP[args.verdict]
         handler = HydroHandler(config, url)
-        handler.save_daily()
+
         if args.full:
             logging.info("正在生成昨日榜单")
+            handler.save_daily("full")
             output_img = MiscBoardGenerator.generate_image(config, "full",
                                                            os.path.join(config.work_dir, config.get_config('data'),
                                                                         f'logo.png'))
             output_img.write_file(args.output)
+            logging.info(f"生成图片成功，路径为{args.output}")
         elif args.now:
             logging.info("正在生成0点到现在时间的榜单")
+            handler.save_daily("now")
             output_img = MiscBoardGenerator.generate_image(config, "now",
                                                            os.path.join(config.work_dir, config.get_config('data'),
                                                                         f'logo.png'), verdict=args.verdict)
             output_img.write_file(args.output)
+            logging.info(f"生成图片成功，路径为{args.output}")
         else:
             parser.print_help()
             sys.exit(0)
