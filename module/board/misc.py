@@ -412,7 +412,7 @@ class MiscBoardGenerator:
             first_ac_detail = StyledString(config, first_ac_text, 'M', 28)
 
             popular_problem_title = StyledString(config, "昨日最受欢迎的题目", 'B', 36)
-            popular_problem_name = StyledString(config, data.popular_problem[0], 'B', 72)
+            popular_problem_name = StyledString(config, data.popular_problem[0], 'H', 72)
             popular_problem_detail = StyledString(config, f'共有 {data.popular_problem[1]} 个人提交本题', 'M', 28)
 
             top_ten = slice_ranking_data(rank_data, 10)
