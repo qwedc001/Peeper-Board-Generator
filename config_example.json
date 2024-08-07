@@ -13,7 +13,7 @@
   "extras": {
     "Hydro": {
       "excludeUid": [],
-      "excludeRegDate": "YYYYY-MM-DD",
+      "excludeRegDate": "YYYY-MM-DD",
       "show_unrated": true
     }
   },
