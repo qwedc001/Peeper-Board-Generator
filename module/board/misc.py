@@ -62,9 +62,10 @@ def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
     ranking_list = []
 
     for top in tops:
+        unrated = True if top.get('unrated') else False
         record = {'progress': int(top[key]) / int(max_val),
-                  'unrated': False,
-                  'rank': StyledString(config, str(top['rank']), 'H', 64),
+                  'unrated': unrated,
+                  'rank': StyledString(config, "*" if unrated else str(top['rank']), 'H', 64),
                   'user': StyledString(config, str(top['user']), 'B', 36),
                   'val': StyledString(config, str(top[key]), 'H', 36)}
         ranking_list.append(record)
@@ -106,17 +107,22 @@ def pack_rank_data(rank: list[RankingData]) -> list[dict]:
     # 封装一下
     rank_by_ac = sorted(rank, key=lambda x: int(x.accepted), reverse=True)
     rank_data = []
-    rank = 1
+    rank, last_ac, unrated_cnt = 1, -1, 0
     for i, ranking_data in enumerate(rank_by_ac):
-        if i > 0 and ranking_data.accepted != rank_by_ac[i - 1].accepted:
-            rank = i + 1
-        rank_data.append({'user': ranking_data.user_name, 'rank': rank, 'Accepted': ranking_data.accepted})
+        if i > 0 and ranking_data.accepted != last_ac and not ranking_data.unrated:
+            rank = i + 1 - unrated_cnt
+        if ranking_data.unrated:
+            unrated_cnt += 1
+        else:
+            last_ac = ranking_data.accepted
+        rank_data.append({'user': ranking_data.user_name, 'rank': rank,
+                          'Accepted': ranking_data.accepted, 'unrated': ranking_data.unrated})
     return rank_data
 
 
 # 处理一下有排名并列时直接切片导致的问题
 def slice_ranking_data(rank: list[dict], lim: int) -> list[dict]:
-    max_rank = rank[min(len(rank), lim) - 1]['rank']
+    max_rank = min(lim, rank[len(rank) - 1]['rank'])
     return [ranking_data for ranking_data in rank if ranking_data['rank'] <= max_rank]
 
 
@@ -137,10 +143,12 @@ def calculate_height(strings: list[StyledString]) -> int:
     return height
 
 
-def calculate_ranking_height(rankings: list[list[dict]]) -> int:
+def calculate_ranking_height(config: Config, rankings: list[list[dict]]) -> int:
     height = 0
     for ranking in rankings:
         for item in ranking:
+            if item['unrated'] and not config.get_config("extras")["Hydro"]["show_unrated"]:  # 不显示的话不计算unrated的高度
+                continue
             height += item['user'].height + 40 + 32
         height -= 32
     return height
@@ -214,9 +222,11 @@ def draw_horizontal_gradient_round_rect(image: Image, x: int, y: int, width: int
     draw_round_rect(image, paint, x, y, width, height, round_size)
 
 
-def draw_rank_detail(image: Image, ranking: list[dict], padding_bottom: int, current_y: int) -> int:
+def draw_rank_detail(config: Config, image: Image, ranking: list[dict], padding_bottom: int, current_y: int) -> int:
     pre_rank = ""
     for rank in ranking:
+        if rank['unrated'] and not config.get_config("extras")["Hydro"]["show_unrated"]:  # 不显示的话不画
+            continue
         progress_len = 360 + 440 * rank['progress']
         line_y = current_y
         current_x = 128 + 32
@@ -237,6 +247,7 @@ def draw_rank_detail(image: Image, ranking: list[dict], padding_bottom: int, cur
 
         current_x = max(progress_len + 128, current_x + ImgConvert.calculate_string_width(rank['user'])) + 36
         current_y = line_y + 40
+        rank['val'].set_font_color(Color(0, 0, 0, 100 / 255 if rank['unrated'] else 1))
         current_y = draw_text(image, rank['val'], 32, current_y, x=current_x)
 
         tile_colors = [  # 这里有问题
@@ -441,7 +452,7 @@ class MiscBoardGenerator:
                 top_10_subtitle, top_10_title,
                 full_rank_subtitle, full_rank_title,
                 cp
-            ]) + calculate_ranking_height([top_5_detail, top_10_detail, full_rank_detail])
+            ]) + calculate_ranking_height(config, [top_5_detail, top_10_detail, full_rank_detail])
                             + 1380 + 232)  # 1380是所有padding（现在可能不是）
 
             output_img = pixie.Image(1280, total_height + 300)
@@ -455,7 +466,7 @@ class MiscBoardGenerator:
             current_y -= 86
             current_y = draw_text(output_img, top_5_mark, 32, current_y,
                                   x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
-            current_y = draw_rank_detail(output_img, top_5_detail, 108, current_y)
+            current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
 
             current_y = draw_submit_detail(output_img,
                                            total_submits_title, total_submits_detail,
@@ -476,11 +487,11 @@ class MiscBoardGenerator:
             current_y -= 86
             current_y = draw_text(output_img, top_10_mark, 32, current_y,
                                   x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
-            current_y = draw_rank_detail(output_img, top_10_detail, 108, current_y)
+            current_y = draw_rank_detail(config, output_img, top_10_detail, 108, current_y)
 
             current_y = draw_text(output_img, full_rank_subtitle, 16, current_y)
             current_y = draw_text(output_img, full_rank_title, 16, current_y)
-            current_y = draw_rank_detail(output_img, full_rank_detail, 108, current_y)
+            current_y = draw_rank_detail(config, output_img, full_rank_detail, 108, current_y)
 
             draw_text(output_img, cp, 108, current_y)
 
@@ -551,7 +562,7 @@ class MiscBoardGenerator:
                     hourly_title, hourly_detail,
                     top_5_subtitle, top_5_title,
                     cp
-                ]) + calculate_ranking_height([tops_detail, top_5_detail])
+                ]) + calculate_ranking_height(config, [tops_detail, top_5_detail])
                                 + 960 + 232)  # 940是所有padding（现在可能不是）
 
                 output_img = pixie.Image(1280, total_height + 300)
@@ -559,7 +570,7 @@ class MiscBoardGenerator:
 
                 current_y = draw_text(output_img, tops_subtitle, 16, current_y)
                 current_y = draw_text(output_img, tops_title, 16, current_y)
-                current_y = draw_rank_detail(output_img, tops_detail, 108, current_y)
+                current_y = draw_rank_detail(config, output_img, tops_detail, 108, current_y)
 
                 current_y = draw_submit_detail(output_img,
                                                total_submits_title, total_submits_detail,
@@ -575,7 +586,7 @@ class MiscBoardGenerator:
                 current_y -= 86
                 current_y = draw_text(output_img, top_5_mark, 32, current_y,
                                       x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
-                current_y = draw_rank_detail(output_img, top_5_detail, 108, current_y)
+                current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
 
                 draw_text(output_img, cp, 108, current_y)
 
@@ -615,7 +626,7 @@ class MiscBoardGenerator:
                     total_submits_title, total_submits_detail,
                     top_10_subtitle, top_10_title,
                     cp
-                ]) + calculate_ranking_height([top_10_detail])
+                ]) + calculate_ranking_height(config, [top_10_detail])
                                 + 272 + 232)  # 576是所有padding（现在可能不是）
 
                 output_img = pixie.Image(1280, total_height + 300)
@@ -644,7 +655,7 @@ class MiscBoardGenerator:
                 current_y -= 86
                 current_y = draw_text(output_img, top_10_mark, 32, current_y,
                                       x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
-                current_y = draw_rank_detail(output_img, top_10_detail, 108, current_y)
+                current_y = draw_rank_detail(config, output_img, top_10_detail, 108, current_y)
 
                 draw_text(output_img, cp, 108, current_y)
 

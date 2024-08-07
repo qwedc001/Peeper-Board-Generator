@@ -28,7 +28,7 @@ class SubmissionData:
 
 class RankingData:
 
-    def __init__(self, user_name: str, accepted: str, uid: str, rank: str,unrated:bool):
+    def __init__(self, user_name: str, accepted: str, uid: str, rank: str, unrated: bool):
         self.user_name = user_name
         self.accepted = accepted
         self.uid = uid
