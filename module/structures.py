@@ -28,15 +28,16 @@ class SubmissionData:
 
 class RankingData:
 
-    def __init__(self, user_name: str, accepted: str, uid: str, rank: str):
+    def __init__(self, user_name: str, accepted: str, uid: str, rank: str, unrated: bool):
         self.user_name = user_name
         self.accepted = accepted
         self.uid = uid
         self.rank = rank
+        self.unrated = unrated
 
     @classmethod
     def from_json(cls, json_data: dict):
-        return RankingData(json_data['user_name'], json_data['accepted'], json_data['uid'], json_data['rank'])
+        return RankingData(json_data['user_name'], json_data['accepted'], json_data['uid'], json_data['rank'],json_data['unrated'])
 
 
 class DailyJson:
