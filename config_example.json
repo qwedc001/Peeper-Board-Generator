@@ -10,6 +10,13 @@
       "password": "[Your-Password]"
     }
   },
+  "extras": {
+    "Hydro": {
+      "excludeUid": [],
+      "excludeRegDate": "YYYYY-MM-DD",
+      "show_unrated": true
+    }
+  },
   "data": "data",
   "url": "[Your-OJ-Base-URL]",
   "oj_name": "[Your-OJ-Name]",
