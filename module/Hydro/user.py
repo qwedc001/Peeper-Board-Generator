@@ -34,7 +34,7 @@ def fetch_user(config: Config, uid: str) -> UserData:
     mail_base64 = "".join(html.xpath('//a[@data-tooltip="复制电子邮件"]/@data-copy'))
     user.mail = base64.b64decode(mail_base64).decode() if mail_base64 else ""
     user.qq = infer_qq(html, user.mail)
-    user.qq_name = get_qq_name(user.qq) if user.qq else ""
+    # user.qq_name = get_qq_name(user.qq) if user.qq else ""
     status_and_progress = "".join(html.xpath('//div[@class="media__body profile-header__main"]/p/text() | //div['
                                              '@class="media__body profile-header__main"]/p/*/text()')).split("\n")
     user.status = "".join(s.strip() for s in status_and_progress[:-1])

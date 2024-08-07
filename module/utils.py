@@ -1,9 +1,13 @@
+import difflib
 import json
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Tuple
 import requests
+
 from module.config import Config
+from module.handler import BasicHandler
 from module.structures import DailyJson
 
 headers = {
@@ -24,6 +28,39 @@ def get_qq_name(qq: str):
         return res.json()['data']['name']
     else:
         raise Exception("获取QQ昵称失败")
+
+
+def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
+    try:
+        load_json(config, False)
+    except FileNotFoundError:
+        logging.info("未找到用户排名文件，正在进行更新")
+        handler.save_daily("now")
+    finally:
+        data = load_json(config, False)
+    rankings = data.rankings
+    res = difflib.get_close_matches(name, [ranking.user_name for ranking in rankings], cutoff=0.4, n=1)[0]
+    if res:
+        for ranking in rankings:
+            if ranking.user_name == res:
+                return handler.fetch_user(ranking.uid)
+    else:
+        return "未找到用户"
+
+
+def search_user_by_uid(config: Config, uid: str, handler: BasicHandler):
+    try:
+        load_json(config, False)
+    except FileNotFoundError:
+        logging.info("未找到用户排名文件，正在进行更新")
+        handler.save_daily("now")
+    finally:
+        data = load_json(config, False)
+    rankings = data.rankings
+    for ranking in rankings:
+        if ranking.uid == uid:
+            return handler.fetch_user(ranking.uid)
+    return "未找到用户"
 
 
 def get_yesterday_timestamp() -> Tuple[int, int]:
