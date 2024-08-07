@@ -11,6 +11,7 @@ import sys
 
 config = Config()
 url = config.get_config("url")
+VERSION_INFO = "v1.2.0"
 
 
 class DefaultHelpParser(argparse.ArgumentParser):
@@ -34,20 +35,25 @@ if __name__ == "__main__":
         logger.addHandler(file_handler)
 
         logging.debug("程序开始工作")
-        parser = DefaultHelpParser(description='Hydro Bot Args Parser')
+        parser = DefaultHelpParser(description='Peeper-Board-Generator OJ榜单图片生成器')
         required_para = parser.add_mutually_exclusive_group(required=True)
+        required_para.add_argument('--version', action="store_true", help='版本号信息')
         required_para.add_argument('--full', action="store_true", help='生成昨日榜单')
         required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
-        parser.add_argument('--version', action="store_true", help='版本号信息')
+        parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
         parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
-        parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)', required=True)
+
         args = parser.parse_args()
         if not args.verdict:
             args.verdict = ALIAS_MAP["AC"]
         else:
             args.verdict = ALIAS_MAP[args.verdict]
+        if not args.output:
+            args.output = os.path.join(config.work_dir, config.get_config('data'), "output.png")
         handler = HydroHandler(config, url)
-
+        if args.version:
+            print(f"Peeper-Board-Generator {VERSION_INFO}")
+            sys.exit(0)
         if args.full:
             logging.info("正在生成昨日榜单")
             handler.save_daily("full")
