@@ -58,16 +58,18 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
 
 
 def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
-    max_val = tops[0][key]  # 以key作为排名依据
+    max_val = tops[0][key][-1] if isinstance(tops[0][key], tuple) else tops[0][key]  # 以key作为排名依据
+
     ranking_list = []
 
     for top in tops:
         unrated = True if top.get('unrated') else False
-        record = {'progress': int(top[key]) / int(max_val),
+        cnt = top[key][-1] if isinstance(top[key], tuple) else top[key]
+        record = {'progress': int(cnt) / int(max_val),
                   'unrated': unrated,
                   'rank': StyledString(config, "*" if unrated else str(top['rank']), 'H', 64),
                   'user': StyledString(config, str(top['user']), 'B', 36),
-                  'val': StyledString(config, str(top[key]), 'H', 36)}
+                  'val': StyledString(config, str(cnt), 'H', 36)}
         ranking_list.append(record)
 
     return ranking_list
@@ -130,7 +132,7 @@ def pack_verdict_rank_data(verdict_desc: dict, verdict: str) -> list[dict]:
     total_board = []
     rank = 1
     for i, (user, verdict_cnt) in enumerate(verdict_desc.items()):
-        if i > 0 and verdict_cnt != verdict_desc[list(verdict_desc.keys())[i - 1]]:
+        if i > 0 and verdict_cnt[1] != verdict_desc[list(verdict_desc.keys())[i - 1]][1]:
             rank = i + 1
         total_board.append({"user": user, f"{verdict}": verdict_cnt, "rank": rank})
     return total_board
@@ -358,6 +360,19 @@ def draw_submit_detail(image: Image,
     return current_y
 
 
+def check_parallel_play_of_the_oj(data: list) -> bool:
+    top1_cnt = data[0]['Accepted'][1]
+    parallel = False
+    for i, item in enumerate(data):
+        if i == 0:
+            continue
+        if item['Accepted'][1] == top1_cnt:
+            parallel = True
+        break
+
+    return parallel
+
+
 class MiscBoardGenerator:
 
     @staticmethod
@@ -380,8 +395,11 @@ class MiscBoardGenerator:
             # 对于 full 榜单的图形逻辑
             rank_data = pack_rank_data(rank)
 
+            play_of_the_oj_is_parallel = check_parallel_play_of_the_oj(data.total_board)
             play_of_the_oj_title = StyledString(config, f"昨日卷王", 'B', 36)
             play_of_the_oj = StyledString(config, data.play_of_the_oj, 'H', 72)
+            play_of_the_oj_time = StyledString(config, f"于 {datetime.fromtimestamp(data.total_board[0]['Accepted'][0])
+                                               .strftime("%H:%M:%S")} 率先通过，成为卷王中的卷王", 'M', 28)
 
             top_5_subtitle = StyledString(config, "过题数榜单", "B", 36)
             top_5_title = StyledString(config, "昨日过题数", "H", 72)
@@ -453,13 +471,17 @@ class MiscBoardGenerator:
                 full_rank_subtitle, full_rank_title,
                 cp
             ]) + calculate_ranking_height(config, [top_5_detail, top_10_detail, full_rank_detail])
-                            + 1380 + 232)  # 1380是所有padding（现在可能不是）
+               + (calculate_height([play_of_the_oj_time]) if play_of_the_oj_is_parallel else -16)
+                            + 1396 + 240)  # 1396是所有padding（现在可能不是）
 
             output_img = pixie.Image(1280, total_height + 300)
             current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
 
             current_y = draw_text(output_img, play_of_the_oj_title, 16, current_y)
-            current_y = draw_text(output_img, play_of_the_oj, 108, current_y)
+            current_y = draw_text(output_img, play_of_the_oj, 16 if play_of_the_oj_is_parallel else 108, current_y)
+            if play_of_the_oj_is_parallel:  # 并列时显示最早通过时间
+                play_of_the_oj_time.set_font_color(Color(0, 0, 0, 136 / 255))
+                current_y = draw_text(output_img, play_of_the_oj_time, 108, current_y)
 
             current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
             current_y = draw_text(output_img, top_5_title, 16, current_y)
