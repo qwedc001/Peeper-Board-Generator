@@ -51,13 +51,17 @@ options:
 
 Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `oj_name` 字段更改。
 
-### 昨日榜单 (--full)
+### 昨日榜单 (`--full`)
 
 <img src="example_full.png" style="zoom:50%;" />
 
-### 从今日0点到当前时间的榜单 (--now)
+### 从今日0点到当前时间的榜单 (`--now`)
 
 <img src="example_now.png" style="zoom:50%;" />
+
+### 从今日0点到当前时间的 Wrong Answer 榜单 (`--now --verdict WA`)
+
+<img src="example_verdict_wa.png" style="zoom:50%;" />
 
 ## 致谢
 
