@@ -66,7 +66,7 @@ def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
 
 
 def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
-    result: dict[str, dict[str, tuple[int,int]]] = {}  # 外层str: verdict, 内层str: user_name
+    result: dict[str, dict[str, tuple[int, int]]] = {}  # 外层str: verdict, 内层str: user_name
     for submission in submission_list:
         if submission.verdict not in result:
             result[submission.verdict] = {}
