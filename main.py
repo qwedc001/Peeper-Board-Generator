@@ -13,7 +13,7 @@ import sys
 
 config = Config()
 url = config.get_config("url")
-VERSION_INFO = "v1.2.0"
+VERSION_INFO = "v1.1.0"
 
 
 class DefaultHelpParser(argparse.ArgumentParser):
