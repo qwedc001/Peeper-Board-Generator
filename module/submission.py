@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Union
+from typing import Union, Dict, Any
 
 from module.structures import SubmissionData, UserData
 
@@ -66,15 +66,21 @@ def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
 
 
 def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
-    result: dict[Union[str, int], Union[dict[str, int], dict[str, int]]] = {}  # 这一段是 PyCharm 自动加的类型提示
+    result: dict[str, dict[str, tuple[int,int]]] = {}  # 外层str: verdict, 内层str: user_name
     for submission in submission_list:
         if submission.verdict not in result:
             result[submission.verdict] = {}
         if submission.user.name not in result[submission.verdict]:
-            result[submission.verdict][submission.user.name] = 0
-        result[submission.verdict][submission.user.name] += 1
+            result[submission.verdict][submission.user.name] = (submission.at,0)
+        earliest_submission,cnt = result[submission.verdict][submission.user.name]
+        cnt += 1
+        if submission.at < earliest_submission:
+            result[submission.verdict][submission.user.name] = (submission.at,cnt)
+        else:
+            result[submission.verdict][submission.user.name] = (earliest_submission,cnt)
     for verdict in result:
-        result[verdict] = dict(sorted(result[verdict].items(), key=lambda x: x[1], reverse=True))
+        # 先按照提交次数降序，同次数再按照提交时间升序
+        result[verdict] = dict(sorted(result[verdict].items(), key=lambda x: (-x[1][1], x[1][0])))
     return result
 
 
