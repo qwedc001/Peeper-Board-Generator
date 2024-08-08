@@ -56,6 +56,8 @@ if __name__ == "__main__":
         handler = HydroHandler(config, url)
         if args.version:
             print(f"Peeper-Board-Generator {VERSION_INFO}")
+            with open(args.output, "w",encoding='utf-8') as f:
+                f.write(f"Peeper-Board-Generator {VERSION_INFO}")
             sys.exit(0)
         if args.full:
             logging.info("正在生成昨日榜单")
