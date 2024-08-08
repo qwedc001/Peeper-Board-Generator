@@ -36,7 +36,7 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
     result = {}
     verdict_desc = rank_by_verdict(submissions)[verdict]
     logging.debug(verdict_desc)
-    result['play_of_the_oj'] = max(verdict_desc, key=verdict_desc.get)  # 昨日
+    result['play_of_the_oj'] = next(iter(verdict_desc))  # 昨日
     total_board = pack_verdict_rank_data(verdict_desc, verdict)
     result['top_five'] = slice_ranking_data(total_board, 5)  # 昨日
     result['total_board'] = total_board  # 昨日 / 今日
@@ -398,8 +398,9 @@ class MiscBoardGenerator:
             play_of_the_oj_is_parallel = check_parallel_play_of_the_oj(data.total_board)
             play_of_the_oj_title = StyledString(config, f"昨日卷王", 'B', 36)
             play_of_the_oj = StyledString(config, data.play_of_the_oj, 'H', 72)
-            play_of_the_oj_time = StyledString(config, f"于 {datetime.fromtimestamp(data.total_board[0]['Accepted'][0])
-                                               .strftime("%H:%M:%S")} 率先通过，成为卷王中的卷王", 'M', 28)
+            play_of_the_oj_time_text = \
+                f'于 {datetime.fromtimestamp(data.total_board[0]["Accepted"][0]).strftime("%H:%M:%S")} 率先通过，成为卷王中的卷王'
+            play_of_the_oj_time = StyledString(config, play_of_the_oj_time_text, 'M', 28)
 
             top_5_subtitle = StyledString(config, "过题数榜单", "B", 36)
             top_5_title = StyledString(config, "昨日过题数", "H", 72)
