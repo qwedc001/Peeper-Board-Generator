@@ -74,11 +74,15 @@ class HydroHandler(BasicHandler):
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
         logging.info("正在根据昨日排名和今日提交计算当前排名")
         json_file = f'daily-{get_date_string(True)}.json'
+        file_timestamp = os.stat(
+            os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)).st_mtime
         file_path = os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)
         with open(file_path, "r", encoding="utf-8") as f:
             content = json.load(f)
         ranking = DailyJson.from_json(content).rankings
         for submission in submissions:
+            if submission.at < file_timestamp:
+                continue
             if submission.verdict == "Accepted":
                 for rank in ranking:
                     if submission.user.uid == rank.uid:
