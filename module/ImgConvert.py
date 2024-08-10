@@ -29,7 +29,7 @@ class Color:
 class StyledString:
     def __init__(self, config: Config, content: str, font_type: str, font_size: int,
                  font_color: Tuple[int, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
-        file_path = os.path.join(config.work_dir, config.get_config()["data"], f'OPPOSans-{font_type}.ttf')
+        file_path = os.path.join(config.work_dir, "data", f'OPPOSans-{font_type}.ttf')
         self.content = content
         self.line_multiplier = line_multiplier
         # 尝试加载字体

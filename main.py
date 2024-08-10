@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
         console_handler = logging.StreamHandler(sys.stderr)
         console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-        file_handler = logging.FileHandler(os.path.join(config.work_dir, "info.log"),encoding='utf-8')
+        file_handler = logging.FileHandler(os.path.join(config.work_dir, "info.log"), encoding='utf-8')
         file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 
         logger.addHandler(console_handler)
@@ -51,11 +51,10 @@ if __name__ == "__main__":
         else:
             args.verdict = ALIAS_MAP[args.verdict]
         if not args.output:
-            args.output = os.path.join(config.work_dir, config.get_config()["data"],
-                                       "output.png") if args.full or args.now else os.path.join(config.work_dir,
-                                                                                                config.get_config()[
-                                                                                                    "data"],
-                                                                                                "output.txt")
+            args.output = os.path.join(config.work_dir, "data",
+                                       f'{config.get_config()["file_prefix"]}-output.png') \
+                if args.full or args.now else os.path.join(config.work_dir, "data",
+                                                           f'{config.get_config()["file_prefix"]}-output.txt')
         handler = HydroHandler(config, url)
         if args.version:
             print(f"Peeper-Board-Generator {VERSION_INFO}")
@@ -66,7 +65,7 @@ if __name__ == "__main__":
             logging.info("正在生成昨日榜单")
             handler.save_daily("full")
             output_img = MiscBoardGenerator.generate_image(config, "full",
-                                                           os.path.join(config.work_dir, config.get_config()["data"],
+                                                           os.path.join(config.work_dir,"data",
                                                                         f'logo.png'))
             output_img.write_file(args.output)
             logging.info(f"生成图片成功，路径为{args.output}")
@@ -74,7 +73,7 @@ if __name__ == "__main__":
             logging.info("正在生成0点到现在时间的榜单")
             handler.save_daily("now")
             output_img = MiscBoardGenerator.generate_image(config, "now",
-                                                           os.path.join(config.work_dir, config.get_config()["data"],
+                                                           os.path.join(config.work_dir, "data",
                                                                         f'logo.png'), verdict=args.verdict)
             output_img.write_file(args.output)
             logging.info(f"生成图片成功，路径为{args.output}")

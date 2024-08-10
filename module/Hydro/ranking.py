@@ -13,8 +13,8 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     logging.info("开始获取排行榜记录")
     result = []
     page = 1
-    exclude_uid: list = config.get_config()["extras"]["Hydro"]["excludeUid"]
-    exclude_date = config.get_config()["extras"]["Hydro"]["excludeRegDate"]
+    exclude_uid: list = config.get_config()["excludeUid"]
+    exclude_date = config.get_config()["excludeRegDate"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()
     logging.info(f"排除规则：uid 在列表{exclude_uid}，注册时间早于{exclude_date}(换算为时间戳为{exclude_time})的用户")
     while True:

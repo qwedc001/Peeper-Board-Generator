@@ -10,12 +10,14 @@
     "show_unrated": true,
     "data": "data",
     "url": "[Your-OJ-Base-URL]",
-    "oj_name": "[Your-OJ-Name]"
+    "oj_name": "[Your-OJ-Name]",
+    "file_prefix": "[Your-Default-File-Prefix]"
   },
   {
     "handler": "Codeforces",
     "credentials": {
       "api": "[Your-Codeforces-API-Key]"
-    }
+    },
+    "file_prefix": "[Your-Default-File-Prefix]"
   }
 ]
