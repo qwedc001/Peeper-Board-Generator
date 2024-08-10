@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Union, Dict, Any
 
 from module.structures import SubmissionData, UserData
 

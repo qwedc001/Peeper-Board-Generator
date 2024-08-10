@@ -148,7 +148,7 @@ def calculate_ranking_height(config: Config, rankings: list[list[dict]]) -> int:
     height = 0
     for ranking in rankings:
         for item in ranking:
-            if item['unrated'] and not config.get_config("extras")["Hydro"]["show_unrated"]:  # 不显示的话不计算unrated的高度
+            if item['unrated'] and not config.get_config()["extras"]["Hydro"]["show_unrated"]:  # 不显示的话不计算unrated的高度
                 continue
             height += item['user'].height + 40 + 32
         height -= 32
@@ -226,7 +226,7 @@ def draw_horizontal_gradient_round_rect(image: Image, x: int, y: int, width: int
 def draw_rank_detail(config: Config, image: Image, ranking: list[dict], padding_bottom: int, current_y: int) -> int:
     pre_rank = ""
     for rank in ranking:
-        if rank['unrated'] and not config.get_config("extras")["Hydro"]["show_unrated"]:  # 不显示的话不画
+        if rank['unrated'] and not config.get_config()["extras"]["Hydro"]["show_unrated"]:  # 不显示的话不画
             continue
         progress_len = 360 + 440 * rank['progress']
         line_y = current_y
@@ -379,7 +379,7 @@ class MiscBoardGenerator:
                        logo_path: str, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         eng_full_name = StyledString(config,
-                                     f'{get_date_string(board_type == "full", ".")}  {config.get_config("oj_name")} Rank List',
+                                     f'{get_date_string(board_type == "full", ".")}  {config.get_config()["oj_name"]} Rank List',
                                      'H', 36)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
@@ -454,7 +454,7 @@ class MiscBoardGenerator:
             full_rank_title = StyledString(config, "昨日 OJ 总榜", "H", 72)
             full_rank_detail = pack_ranking_list(config, data.total_board, verdict)
 
-            cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
+            cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
                                       f'©Peeper-Board-Generator Dev Team.\n'
                                       f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                               line_multiplier=1.32)
@@ -572,7 +572,7 @@ class MiscBoardGenerator:
                 top_5_mark = StyledString(config, "Top 5th", "H", 48)
                 top_5_detail = pack_ranking_list(config, top_five, verdict)
 
-                cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
@@ -638,7 +638,7 @@ class MiscBoardGenerator:
                 top_10_mark = StyledString(config, "Top 10th", "H", 48)
                 top_10_detail = pack_ranking_list(config, top_ten, verdict)  # todo doubt.
 
-                cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)

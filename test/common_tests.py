@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from module.Hydro.entry import HydroHandler
@@ -5,7 +6,7 @@ from module.config import Config
 from module.utils import fuzzy_search_user, search_user_by_uid
 
 config = Config(os.path.join(os.path.dirname(__file__), ".."))
-oj_url = config.get_config("url")
+oj_url = config.get_config()["url"]
 
 class TestSearch(unittest.TestCase):
     def test_fuzzy(self):

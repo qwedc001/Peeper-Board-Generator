@@ -12,11 +12,8 @@ class Config:
             self.jsonCfg['url'] = self.jsonCfg['url'] + '/'
         config_file.close()
 
-    def get_config(self, key):
-        return self.jsonCfg[key]
+    def get_config(self):
+        return self.jsonCfg
 
     def set_config(self, key, value):
         self.jsonCfg[key] = value
-
-    def get_work_path(self):
-        return self.work_dir
