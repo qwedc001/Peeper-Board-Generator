@@ -571,6 +571,7 @@ class MiscBoardGenerator:
                 top_5_subtitle = StyledString(config, "训练榜单", "B", 36)
                 top_5_title = StyledString(config, "题数排名", "H", 72)
                 top_5_mark = StyledString(config, "Top 5th", "H", 48)
+                top_5_tip = StyledString(config, "为不存在\"重复提交往日已AC的题目\"条件下的过题数理论值", 'M', 28)
                 top_5_detail = pack_ranking_list(config, top_five, verdict)
 
                 cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
@@ -583,10 +584,10 @@ class MiscBoardGenerator:
                     total_submits_title, total_submits_detail, verdict_detail,
                     first_ac_title, first_ac_who, first_ac_detail,
                     hourly_title, hourly_detail,
-                    top_5_subtitle, top_5_title,
+                    top_5_subtitle, top_5_title, top_5_tip,
                     cp
                 ]) + calculate_ranking_height(config, [tops_detail, top_5_detail])
-                                + 960 + 232)  # 940是所有padding（现在可能不是）
+                                + 990 + 232)  # 986是所有padding
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
@@ -607,8 +608,10 @@ class MiscBoardGenerator:
                 current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
                 current_y = draw_text(output_img, top_5_title, 16, current_y)
                 current_y -= 86
-                current_y = draw_text(output_img, top_5_mark, 32, current_y,
+                current_y = draw_text(output_img, top_5_mark, 20, current_y,
                                       x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
+                top_5_tip.set_font_color(Color(0, 0, 0, 136 / 255))
+                current_y = draw_text(output_img, top_5_tip, 32, current_y)
                 current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
 
                 draw_text(output_img, cp, 108, current_y)
