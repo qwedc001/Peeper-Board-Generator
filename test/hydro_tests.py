@@ -7,9 +7,9 @@ from module.Hydro.submission import fetch_submissions
 from module.Hydro.user import fetch_user
 from module.submission import *
 from module.utils import *
-from module.config import Config
+from module.config import Configs
 
-config = Config(os.path.join(os.path.dirname(__file__), ".."))
+config = Configs(os.path.join(os.path.dirname(__file__), "..")).get_config("Hydro")[0]
 oj_url = config.get_config()["url"]
 
 

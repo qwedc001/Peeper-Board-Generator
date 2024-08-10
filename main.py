@@ -2,7 +2,7 @@ import logging
 import os
 import traceback
 
-from module.config import Config
+from module.config import Configs
 from module.Hydro.entry import HydroHandler
 from module.board.misc import MiscBoardGenerator
 import argparse
@@ -11,7 +11,7 @@ from module.utils import search_user_by_uid, fuzzy_search_user
 from module.verdict import ALIAS_MAP
 import sys
 
-config = Config(os.path.dirname(__file__))
+config = Configs(os.path.dirname(__file__)).get_config("Hydro")[0]
 url = config.get_config()["url"]
 VERSION_INFO = "v1.1.0"
 

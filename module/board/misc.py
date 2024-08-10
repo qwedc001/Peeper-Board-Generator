@@ -148,7 +148,7 @@ def calculate_ranking_height(config: Config, rankings: list[list[dict]]) -> int:
     height = 0
     for ranking in rankings:
         for item in ranking:
-            if item['unrated'] and not config.get_config()["extras"]["Hydro"]["show_unrated"]:  # 不显示的话不计算unrated的高度
+            if item['unrated'] and not config.get_config()["show_unrated"]:  # 不显示的话不计算unrated的高度
                 continue
             height += item['user'].height + 40 + 32
         height -= 32
@@ -226,7 +226,7 @@ def draw_horizontal_gradient_round_rect(image: Image, x: int, y: int, width: int
 def draw_rank_detail(config: Config, image: Image, ranking: list[dict], padding_bottom: int, current_y: int) -> int:
     pre_rank = ""
     for rank in ranking:
-        if rank['unrated'] and not config.get_config()["extras"]["Hydro"]["show_unrated"]:  # 不显示的话不画
+        if rank['unrated'] and not config.get_config()["show_unrated"]:  # 不显示的话不画
             continue
         progress_len = 360 + 440 * rank['progress']
         line_y = current_y

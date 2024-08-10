@@ -2,10 +2,10 @@ import os
 import unittest
 
 from module.Hydro.entry import HydroHandler
-from module.config import Config
+from module.config import Configs
 from module.utils import fuzzy_search_user, search_user_by_uid
 
-config = Config(os.path.join(os.path.dirname(__file__), ".."))
+config = Configs(os.path.join(os.path.dirname(__file__), "..")).get_config("Hydro")[0]
 oj_url = config.get_config()["url"]
 
 

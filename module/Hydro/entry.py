@@ -34,7 +34,7 @@ class HydroHandler(BasicHandler):
     def save_daily(self, mode: str):
         logging.info("开始保存 json 数据")
         logging.info("尝试登录获取新 Session")
-        credentials = self.config.get_config()["credentials"]["Hydro"]
+        credentials = self.config.get_config()["credentials"]
         if credentials is not None:
             session = self.login(credentials)
             self.config.set_config("session", session)

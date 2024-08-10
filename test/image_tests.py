@@ -5,9 +5,9 @@ import pixie
 
 from module.ImgConvert import StyledString
 from module.board.misc import MiscBoardGenerator
-from module.config import Config
+from module.config import Configs
 
-config = Config(os.path.join(os.path.dirname(__file__), ".."))
+config = Configs(os.path.join(os.path.dirname(__file__), "..")).get_config("Hydro")[0]
 
 
 class GenerateTest(unittest.TestCase):
