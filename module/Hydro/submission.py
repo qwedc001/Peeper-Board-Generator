@@ -49,8 +49,9 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
             user = UserData(name, uid)
             score = submission['score']
             verdict = STATUS_VERDICT[submission['status']]
-            problem_name = problem_json[str(submission['pid'])]['title']
+            problem_id = str(submission['pid'])
+            problem_name = problem_json[problem_id]['title']
             at = int(submission_timestamp)
-            result.append(SubmissionData(user, score, verdict, problem_name, at))
+            result.append(SubmissionData(user, score, verdict, problem_id, problem_name, at))
         page += 1
     return result
