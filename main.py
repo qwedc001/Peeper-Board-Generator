@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
         console_handler = logging.StreamHandler(sys.stderr)
         console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-        file_handler = logging.FileHandler(os.path.join(os.path.dirname(__file__), "info.log"))
+        file_handler = logging.FileHandler(os.path.join(config.work_dir, "info.log"),encoding='utf-8')
         file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
 
         logger.addHandler(console_handler)
