@@ -65,7 +65,7 @@ if __name__ == "__main__":
             logging.info("正在生成昨日榜单")
             handler.save_daily("full")
             output_img = MiscBoardGenerator.generate_image(config, "full",
-                                                           os.path.join(config.work_dir,"data",
+                                                           os.path.join(config.work_dir, "data",
                                                                         f'logo.png'))
             output_img.write_file(args.output)
             logging.info(f"生成图片成功，路径为{args.output}")

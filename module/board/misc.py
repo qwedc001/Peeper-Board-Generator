@@ -376,7 +376,7 @@ class MiscBoardGenerator:
 
     @staticmethod
     def generate_image(config: Config, board_type: str,
-                       logo_path: str, verdict: str = "Accepted") -> Image:
+                       logo_path, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         eng_full_name = StyledString(config,
                                      f'{get_date_string(board_type == "full", ".")}  '

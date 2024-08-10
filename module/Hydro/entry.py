@@ -74,7 +74,7 @@ class HydroHandler(BasicHandler):
         logging.info("正在根据昨日排名和今日提交计算当前排名")
         json_file = f'{self.config.get_config()["file_prefix"]}-{get_date_string(True)}.json'
         file_timestamp = os.stat(
-            os.path.join(self.config.work_dir,"data", json_file)).st_mtime
+            os.path.join(self.config.work_dir, "data", json_file)).st_mtime
         file_path = os.path.join(self.config.work_dir, "data", json_file)
         with open(file_path, "r", encoding="utf-8") as f:
             content = json.load(f)
