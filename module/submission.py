@@ -73,7 +73,7 @@ def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
         if submission.verdict not in result:
             result[submission.verdict] = {}
         if submission.user.name not in result[submission.verdict]:
-            result[submission.verdict][submission.user.name] = (submission.at,0)
+            result[submission.verdict][submission.user.name] = (submission.at, 0)
         earliest_submission, cnt = result[submission.verdict][submission.user.name]
 
         if submission.verdict == "Accepted" and (submission.user.uid, submission.problem_id) not in problem_ac_list:
