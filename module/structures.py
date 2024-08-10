@@ -37,7 +37,8 @@ class RankingData:
 
     @classmethod
     def from_json(cls, json_data: dict):
-        return RankingData(json_data['user_name'], json_data['accepted'], json_data['uid'], json_data['rank'],json_data['unrated'])
+        return RankingData(json_data['user_name'], json_data['accepted'],
+                           json_data['uid'], json_data['rank'], json_data['unrated'])
 
 
 class DailyJson:

@@ -70,13 +70,13 @@ def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
         if submission.verdict not in result:
             result[submission.verdict] = {}
         if submission.user.name not in result[submission.verdict]:
-            result[submission.verdict][submission.user.name] = (submission.at,0)
-        earliest_submission,cnt = result[submission.verdict][submission.user.name]
+            result[submission.verdict][submission.user.name] = (submission.at, 0)
+        earliest_submission, cnt = result[submission.verdict][submission.user.name]
         cnt += 1
         if submission.at < earliest_submission:
-            result[submission.verdict][submission.user.name] = (submission.at,cnt)
+            result[submission.verdict][submission.user.name] = (submission.at, cnt)
         else:
-            result[submission.verdict][submission.user.name] = (earliest_submission,cnt)
+            result[submission.verdict][submission.user.name] = (earliest_submission, cnt)
     for verdict in result:
         # 先按照提交次数降序，同次数再按照提交时间升序
         result[verdict] = dict(sorted(result[verdict].items(), key=lambda x: (-x[1][1], x[1][0])))

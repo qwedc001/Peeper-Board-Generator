@@ -379,7 +379,8 @@ class MiscBoardGenerator:
                        logo_path: str, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         eng_full_name = StyledString(config,
-                                     f'{get_date_string(board_type == "full", ".")}  {config.get_config()["oj_name"]} Rank List',
+                                     f'{get_date_string(board_type == "full", ".")}  '
+                                     f'{config.get_config()["oj_name"]} Rank List',
                                      'H', 36)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
@@ -636,7 +637,7 @@ class MiscBoardGenerator:
                 top_10_subtitle = StyledString(config, "分类型提交榜单", "B", 36)
                 top_10_title = StyledString(config, f"{alias[verdict]} 排行榜", "H", 72)
                 top_10_mark = StyledString(config, "Top 10th", "H", 48)
-                top_10_detail = pack_ranking_list(config, top_ten, verdict)  # todo doubt.
+                top_10_detail = pack_ranking_list(config, top_ten, verdict)
 
                 cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'

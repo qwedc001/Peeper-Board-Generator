@@ -26,7 +26,8 @@ def fetch_user(config: Config, uid: str) -> UserData:
     logging.info("开始获取用户记录")
     url = config.get_config()["url"] + f'user/{uid}'
     user_headers = headers
-    headers['Cookie'] = f'sid={config.get_config()["cookie"]["sid"]};sid.sig={config.get_config()["cookie"]["sid_sig"]};'
+    headers['Cookie'] = (f'sid={config.get_config()["cookie"]["sid"]};'
+                         f'sid.sig={config.get_config()["cookie"]["sid_sig"]};')
     response_text = requests.get(url, headers=user_headers)
     html = etree.HTML(response_text.text)
     user_name = "".join(s.strip() for s in html.xpath('//div[@class="media__body profile-header__main"]/h1/text()'))

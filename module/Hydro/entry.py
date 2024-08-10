@@ -48,7 +48,7 @@ class HydroHandler(BasicHandler):
                 os.path.join(self.config.work_dir, self.config.get_config()["data"], json_file)).st_mtime
 
             logging.info(
-                f"{json_file} 文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
+                f"{json_file}文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
             if datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d') == get_date_string(False):
                 logging.info("昨日 json 数据已固定，跳过爬取")
             else:

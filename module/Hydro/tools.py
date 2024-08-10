@@ -13,9 +13,13 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
     url = oj_url + 'manage/script'
     rp_headers = json_headers
     if config.get_config()["session"] is not None:
-        rp_headers['Cookie'] = f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+        rp_headers[
+            'Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+                         f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
     else:
-        rp_headers['Cookie'] = f'sid={config.get_config()["cookie"]["sid"]};sid.sig={config.get_config()["cookie"]["sid_sig"]};'
+        rp_headers[
+            'Cookie'] = (f'sid={config.get_config()["cookie"]["sid"]};'
+                         f'sid.sig={config.get_config()["cookie"]["sid_sig"]};')
     rp_headers['Content-Type'] = 'application/json'
     data = f'{{"args":"","id":"{req_type}"}}'
     response_create_task = requests.post(url, headers=rp_headers, data=data)

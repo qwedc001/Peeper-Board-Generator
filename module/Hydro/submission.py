@@ -20,9 +20,11 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
     page = 1
     headers = json_headers
     if config.get_config()["session"] is not None:
-        headers['Cookie'] = f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+        headers['Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+                             f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
     else:
-        headers['Cookie'] = f'sid={config.get_config()["session"]["sid"]};sid.sig={config.get_config()["session"]["sid_sig"]};'
+        headers['Cookie'] = (f'sid={config.get_config()["session"]["sid"]};'
+                             f'sid.sig={config.get_config()["session"]["sid_sig"]};')
     while not out_of_date:
         url = config.get_config()["url"] + f'record?all=1&page={page}'
         response_json = requests.get(url, headers=headers).json()
@@ -30,7 +32,8 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
         user_json = response_json['udict']
         problem_json = response_json['pdict']
         for submission in record_json:
-            if submission['lang'] == '-' or ('contest' in submission and submission['contest'] == '000000000000000000000000'):
+            if submission['lang'] == '-' or ('contest' in submission
+                                             and submission['contest'] == '000000000000000000000000'):
                 # 自测提交记录，不计入
                 continue
             if "hackTarget" in submission:
