@@ -36,7 +36,6 @@ if __name__ == "__main__":
         logger.addHandler(console_handler)
         logger.addHandler(file_handler)
 
-        logging.debug("程序开始工作")
         parser = DefaultHelpParser(description='Peeper-Board-Generator OJ榜单图片生成器')
         required_para = parser.add_mutually_exclusive_group(required=True)
         required_para.add_argument('--version', action="store_true", help='版本号信息')

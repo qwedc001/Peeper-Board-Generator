@@ -35,13 +35,11 @@ def fetch_rankings(config: Config) -> list[RankingData]:
             unrated = False
             if int(uid) in exclude_uid:
                 unrated = True
-                logging.debug(f"用户 {user_name} 已被规则排除。")
+                logging.debug(f"用户 {user_name} 已被 uid 规则排除。")
             reg_time = isoparse(reg_date_json[uid]).timestamp()
             if exclude_time > reg_time:
                 unrated = True
-                logging.debug(f"用户 {user_name} 注册时间早于{exclude_date}，已被排除。")
-            logging.debug(f"用户 {user_name} 的排名为 {rank}，已解决题目数为 {accepted}。{'该用户计入排行榜' if not unrated else '该用户已被排除。'}")
-            logging.debug(f"注册时间为 {reg_time}，排除时间为 {exclude_time}")
+                logging.debug(f"用户 {user_name} 注册时间早于 {exclude_date} ，已被排除。")
             result.append(RankingData(user_name, accepted, uid, rank, unrated))
         page += 1
     return result

@@ -35,7 +35,6 @@ class MiscBoard:
 def generate_board_data(submissions: list[SubmissionData], verdict: str) -> MiscBoard:
     result = {}
     verdict_desc = rank_by_verdict(submissions)[verdict]
-    logging.debug(verdict_desc)
     result['play_of_the_oj'] = next(iter(verdict_desc))  # 昨日
     total_board = pack_verdict_rank_data(verdict_desc, verdict)
     result['top_five'] = slice_ranking_data(total_board, 5)  # 昨日

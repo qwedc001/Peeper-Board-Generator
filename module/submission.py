@@ -43,7 +43,7 @@ def get_most_popular_problem(submission_list: list[SubmissionData]) -> tuple[str
             submission_user_dict[submission.problem_name].append(submission.user.name)
             logging.debug(f"检测到新提交用户{submission.user.name}，题目{submission.problem_name}，已记录。")
         else:
-            logging.debug(f"检测到重复提交用户{submission.user.name}，题目{submission.problem_name}，已忽略。")
+            continue
     max_problem = max(problem_dict, key=problem_dict.get)
     return max_problem, problem_dict[max_problem]
 

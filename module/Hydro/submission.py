@@ -9,13 +9,12 @@ from dateutil.parser import isoparse
 
 
 def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData]:
-    logging.info("开始获取提交记录")
+    time_str = "昨日" if is_yesterday else "今日"
+    logging.info(f"开始获取{time_str}提交记录")
     result = []
     if is_yesterday:
-        logging.debug("获取昨日提交记录")
         time_start, time_end = get_yesterday_timestamp()
     else:
-        logging.debug("获取今日提交记录")
         time_start, time_end = get_today_timestamp()
     out_of_date = False
     page = 1
