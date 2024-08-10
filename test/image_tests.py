@@ -7,7 +7,7 @@ from module.ImgConvert import StyledString
 from module.board.misc import MiscBoardGenerator
 from module.config import Config
 
-config = Config("../config.json")
+config = Config(os.path.join(os.path.dirname(__file__), ".."))
 
 
 class GenerateTest(unittest.TestCase):

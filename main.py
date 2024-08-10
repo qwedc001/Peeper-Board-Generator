@@ -11,7 +11,7 @@ from module.utils import search_user_by_uid, fuzzy_search_user
 from module.verdict import ALIAS_MAP
 import sys
 
-config = Config()
+config = Config(os.path.dirname(__file__))
 url = config.get_config("url")
 VERSION_INFO = "v1.1.0"
 

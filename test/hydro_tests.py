@@ -9,7 +9,7 @@ from module.submission import *
 from module.utils import *
 from module.config import Config
 
-config = Config("../config.json")
+config = Config(os.path.join(os.path.dirname(__file__), ".."))
 oj_url = config.get_config("url")
 
 
