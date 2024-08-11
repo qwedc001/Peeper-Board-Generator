@@ -39,6 +39,9 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
             if "hackTarget" in submission:
                 # hack记录，不计入
                 continue
+            if "judgeAt" not in submission:
+                # pending or 异常数据，不计入
+                continue
             submission_timestamp = isoparse(submission['judgeAt']).timestamp()
             if submission_timestamp > time_end:
                 # 不在记录时域范围内
