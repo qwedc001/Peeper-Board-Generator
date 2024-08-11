@@ -76,7 +76,9 @@ def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
             result[submission.verdict][submission.user.name] = (submission.at, 0)
         earliest_submission, cnt = result[submission.verdict][submission.user.name]
 
-        if submission.verdict == "Accepted" and (submission.user.uid, submission.problem_id) not in problem_ac_list:
+        if submission.verdict != 'Accepted':
+            cnt += 1
+        elif (submission.user.uid, submission.problem_id) not in problem_ac_list:
             cnt += 1  # 去除同一道题的重复AC (本函数不影响AC率计算，所以直接不算个数即可)
             problem_ac_list.append((submission.user.uid, submission.problem_id))
 
