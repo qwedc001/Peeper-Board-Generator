@@ -9,8 +9,7 @@ def get_first_ac(submission_list: list[SubmissionData]) -> SubmissionData:
     for submission in submission_list[::-1]:
         if submission.verdict == 'Accepted':
             return submission
-    return SubmissionData(UserData("好像今天没有人AC", "-1"), 0, "Wait WHAT",
-                          "114514", "Never gonna give you up", 1919810)
+    return SubmissionData(UserData("好像今天没有人AC", "-1"), 0, "Wait WHAT", "Never gonna give you up", 114514)
 
 
 def get_hourly_submissions(submission_list: list[SubmissionData]) -> dict:
@@ -68,24 +67,17 @@ def classify_by_verdict(submission_list: list[SubmissionData]) -> dict:
 
 def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
     result: dict[str, dict[str, tuple[int, int]]] = {}  # 外层str: verdict, 内层str: user_name
-    problem_ac_list: list[tuple[str, str]] = []  # uid, pid
-
     for submission in submission_list:
         if submission.verdict not in result:
             result[submission.verdict] = {}
         if submission.user.name not in result[submission.verdict]:
             result[submission.verdict][submission.user.name] = (submission.at,0)
-        earliest_submission, cnt = result[submission.verdict][submission.user.name]
-
-        if submission.verdict == "Accepted" and (submission.user.uid, submission.problem_id) not in problem_ac_list:
-            cnt += 1  # 去除同一道题的重复AC (本函数不影响AC率计算，所以直接不算个数即可)
-            problem_ac_list.append((submission.user.uid, submission.problem_id))
-
+        earliest_submission,cnt = result[submission.verdict][submission.user.name]
+        cnt += 1
         if submission.at < earliest_submission:
-            result[submission.verdict][submission.user.name] = (submission.at, cnt)
+            result[submission.verdict][submission.user.name] = (submission.at,cnt)
         else:
-            result[submission.verdict][submission.user.name] = (earliest_submission, cnt)
-
+            result[submission.verdict][submission.user.name] = (earliest_submission,cnt)
     for verdict in result:
         # 先按照提交次数降序，同次数再按照提交时间升序
         result[verdict] = dict(sorted(result[verdict].items(), key=lambda x: (-x[1][1], x[1][0])))

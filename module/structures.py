@@ -12,20 +12,18 @@ class UserData:
 
 class SubmissionData:
 
-    def __init__(self, user: UserData, score: int, verdict: str, problem_id: str, problem_name: str, at: int):
+    def __init__(self, user: UserData, score: int, verdict: str, problem_name: str, at: int):
         self.user = user
         self.score = score
         self.verdict = verdict
-        self.problem_id = problem_id
         self.problem_name = problem_name
         self.at = at
 
     @classmethod
     def from_json(cls, json_data: dict):
         return SubmissionData(UserData(json_data['user']['name'], json_data['user']['uid']),
-                              json_data['score'], json_data['verdict'],
-                              json_data['problem_id'] if 'problem_id' in json_data else "",  # 做个判空兼容一下
-                              json_data['problem_name'], json_data['at'])
+                              json_data['score'], json_data['verdict'], json_data['problem_name'],
+                              json_data['at'])
 
 
 class RankingData:

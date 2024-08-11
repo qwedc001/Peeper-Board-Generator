@@ -80,16 +80,13 @@ class HydroHandler(BasicHandler):
         with open(file_path, "r", encoding="utf-8") as f:
             content = json.load(f)
         ranking = DailyJson.from_json(content).rankings
-        problem_ac_list: list[tuple[str, str]] = []  # uid, pid
         for submission in submissions:
-            if submission.at < file_timestamp or submission.verdict != "Accepted":
+            if submission.at < file_timestamp:
                 continue
-            if (submission.user.uid, submission.problem_id) in problem_ac_list:
-                continue  # 排除同一道题重复ac
-            problem_ac_list.append((submission.user.uid, submission.problem_id))
-            for rank in ranking:
-                if submission.user.uid == rank.uid:
-                    rank.accepted = str(int(rank.accepted) + 1)
+            if submission.verdict == "Accepted":
+                for rank in ranking:
+                    if submission.user.uid == rank.uid:
+                        rank.accepted = str(int(rank.accepted) + 1)
         # 根据新的accepted 数量重新排序
         ranking.sort(key=lambda x: x.accepted, reverse=True)
         for i in range(len(ranking)):
