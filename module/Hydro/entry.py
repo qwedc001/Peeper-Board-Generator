@@ -40,7 +40,7 @@ class HydroHandler(BasicHandler):
             self.config.set_config("session", session)
             logging.info("Session 获取成功")
         if mode == "full":  # 检查昨日榜单的json文件日期是否为今日，如果是则跳过执行
-            json_file = f'{self.config.get_config()["file_prefix"]}-{get_date_string(True)}.json'
+            json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
             if not os.path.exists(os.path.join(self.config.work_dir, "data", json_file)):
                 logging.info(f"昨日json数据{json_file}不存在")
                 self.get_yesterday()
@@ -54,16 +54,16 @@ class HydroHandler(BasicHandler):
             else:
                 self.get_yesterday()
         elif mode == "now":  # 检查昨日榜单文件是否生成
-            json_file = f'{self.config.get_config()["file_prefix"]}-{get_date_string(True)}.json'
+            json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
             file_path = os.path.join(self.config.work_dir, "data", json_file)
             if not os.path.exists(file_path):
                 logging.info("昨日json数据不存在")
                 self.get_yesterday()
-        logging.info("重载今日数据")
-        today_submissions = fetch_submissions(self.config, False)
-        ranking = self.calculate_ranking(today_submissions)
-        daily = DailyJson(today_submissions, ranking)
-        save_json(self.config, daily, False)
+            logging.info("重载今日数据")
+            today_submissions = fetch_submissions(self.config, False)
+            ranking = self.calculate_ranking(today_submissions)
+            daily = DailyJson(today_submissions, ranking)
+            save_json(self.config, daily, False)
 
     def login(self, credentials: dict) -> Session:
         with requests.Session() as session:
@@ -72,7 +72,7 @@ class HydroHandler(BasicHandler):
 
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
         logging.info("正在根据昨日排名和今日提交计算当前排名")
-        json_file = f'{self.config.get_config()["file_prefix"]}-{get_date_string(True)}.json'
+        json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
         file_timestamp = os.stat(
             os.path.join(self.config.work_dir, "data", json_file)).st_mtime
         file_path = os.path.join(self.config.work_dir, "data", json_file)

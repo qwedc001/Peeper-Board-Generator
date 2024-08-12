@@ -83,7 +83,7 @@ def get_date_string(is_yesterday: bool, split: str = '-') -> str:
 
 
 def load_json(config: Config, is_yesterday: bool) -> DailyJson:
-    json_file = f'{config.get_config()["file_prefix"]}-{get_date_string(is_yesterday)}.json'
+    json_file = f'{config.get_config()["id"]}-{get_date_string(is_yesterday)}.json'
     file_path = os.path.join(config.work_dir, "data", json_file)
     with open(file_path, "r", encoding="utf-8") as f:
         content = json.load(f)
@@ -92,7 +92,7 @@ def load_json(config: Config, is_yesterday: bool) -> DailyJson:
 
 
 def save_json(config: Config, data: DailyJson, is_yesterday: bool = False):
-    json_file = f'{config.get_config()["file_prefix"]}-{get_date_string(is_yesterday)}.json'
+    json_file = f'{config.get_config()["id"]}-{get_date_string(is_yesterday)}.json'
     file_path = os.path.join(config.work_dir, "data", json_file)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))

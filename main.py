@@ -52,9 +52,9 @@ if __name__ == "__main__":
             args.verdict = ALIAS_MAP[args.verdict]
         if not args.output:
             args.output = os.path.join(config.work_dir, "data",
-                                       f'{config.get_config()["file_prefix"]}-output.png') \
+                                       f'{config.get_config()["id"]}-output.png') \
                 if args.full or args.now else os.path.join(config.work_dir, "data",
-                                                           f'{config.get_config()["file_prefix"]}-output.txt')
+                                                           f'{config.get_config()["id"]}-output.txt')
         handler = HydroHandler(config, url)
         if args.version:
             print(f"Peeper-Board-Generator {VERSION_INFO}")

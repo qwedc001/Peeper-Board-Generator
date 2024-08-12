@@ -10,15 +10,15 @@
     "show_unrated": true,
     "data": "data",
     "url": "[Your-OJ-Base-URL]",
-    "board_name": "[Your-Board-Name]",
-    "file_prefix": "[Your-Default-File-Prefix]"
+    "id": "[Identifier-With-No-Space]",
+    "board_name": "[Your-Board-Name]"
   },
   {
     "handler": "Codeforces",
     "credentials": {
       "api": "[Your-Codeforces-API-Key]"
     },
-    "file_prefix": "[Your-Default-File-Prefix]",
+    "id": "[Identifier-With-No-Space]",
     "board_name": "[Your-Board-Name]"
   }
 ]
