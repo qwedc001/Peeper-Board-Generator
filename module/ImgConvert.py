@@ -137,7 +137,7 @@ class ImgConvert:
             while text_width > max_width:
                 # 简单的文本分割逻辑，考虑是不是需要更复杂的分割逻辑
                 n = text_width // max_width
-                sub_pos = len(temp_text) // n
+                sub_pos = int(len(temp_text) // n)
                 draw_text = temp_text[:sub_pos]
                 draw_width, _ = text_size(draw_text, font=styled_string.font)
 

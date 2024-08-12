@@ -13,6 +13,9 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     logging.info("开始获取排行榜记录")
     result = []
     page = 1
+    if config.get_config()["session"] is not None:
+        headers['Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+                             f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
     exclude_uid: list = config.get_config()["excludeUid"]
     exclude_date = config.get_config()["excludeRegDate"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()
@@ -25,7 +28,7 @@ def fetch_rankings(config: Config) -> list[RankingData]:
         reg_date_json = {str(user['_id']): user['regat'] for user in response_json}
         if len(response_html.xpath('//div[@class="nothing-icon"]')) > 0:
             break
-        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr'):
+        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr')[1:]:
             user_name = "".join(people.xpath("./td[@class='col--user']/span/a[contains(@class, "
                                              "'user-profile-name')]/text()")).strip()
             accepted = "".join(people.xpath("./td[@class='col--ac']/text()")).strip()
