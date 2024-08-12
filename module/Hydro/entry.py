@@ -18,10 +18,10 @@ from module.utils import save_json, get_date_string, load_json
 
 class HydroHandler(BasicHandler):
 
-    def __init__(self, config: Config, url: str):
+    def __init__(self, config: Config):
         super().__init__("HydroHandler")
         self.config = config
-        self.url = url
+        self.url = self.config.get_config()['url']
 
     def get_yesterday(self):
         logging.info("开始爬取昨日数据")

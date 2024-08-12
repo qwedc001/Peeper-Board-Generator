@@ -12,8 +12,8 @@ class Configs:
         for config in self.json_configs:
             self.configs.append(Config(self.work_dir, config))
 
-    def get_config(self, handler: str):
-        return [config for config in self.configs if config.handler == handler]
+    def get_configs(self):
+        return self.configs
 
 
 class Config:
