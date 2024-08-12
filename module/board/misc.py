@@ -402,7 +402,8 @@ class MiscBoardGenerator:
         eng_full_name = StyledString(config,
                                      f'{get_date_string(board_type == "full", ".")}  '
                                      f'{config.get_config()["board_name"]} Rank List',
-                                     'H', 36)
+                                     'H', 36,
+                                     line_multiplier=1.2)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
 
@@ -415,6 +416,7 @@ class MiscBoardGenerator:
             rank = today.rankings
             # 对于 full 榜单的图形逻辑
             rank_data = pack_rank_data(rank)
+            has_ac_submission = len([s for s in yesterday.submissions if s.verdict == "Accepted"]) > 0
 
             submission_none_subtitle = StyledString(config, "记录为空", 'B', 36)
             submission_none_title = StyledString(config, "昨日无AC提交", 'H', 72)
@@ -490,7 +492,7 @@ class MiscBoardGenerator:
                     calculate_height([title, eng_full_name]) +
                     (
                         calculate_height([submission_none_subtitle, submission_none_title]) + 124
-                        if len(yesterday.submissions) == 0
+                        if not has_ac_submission
                         else (calculate_height([play_of_the_oj_title, play_of_the_oj,
                                                 top_5_subtitle, top_5_title,
                                                 total_submits_title, total_submits_detail, verdict_detail,
@@ -507,12 +509,12 @@ class MiscBoardGenerator:
                     ) +
                     calculate_height([cp]) +
                     (calculate_height([play_of_the_oj_time]) if play_of_the_oj_is_parallel else -16)
-            ) + 240
+            ) + 180
 
             output_img = pixie.Image(1280, total_height + 300)
             current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
 
-            if len(yesterday.submissions) == 0:
+            if not has_ac_submission:
                 current_y = draw_text(output_img, submission_none_subtitle, 16, current_y)
                 current_y = draw_text(output_img, submission_none_title, 108, current_y)
             else:
@@ -577,6 +579,7 @@ class MiscBoardGenerator:
                 rank = today.rankings
                 # 对于 now 榜单的图形逻辑
                 rank_data = pack_rank_data(rank)
+                has_ac_submission = len([s for s in today.submissions if s.verdict == verdict]) > 0
 
                 tops_subtitle = StyledString(config, "过题数榜单", "B", 36)
                 tops_title = StyledString(config, "今日过题数", "H", 72)
@@ -631,7 +634,7 @@ class MiscBoardGenerator:
                         calculate_height([title, eng_full_name]) +
                         (
                             calculate_height([submission_none_subtitle, submission_none_title]) + 124
-                            if len(today.submissions) == 0
+                            if not has_ac_submission
                             else (calculate_height([tops_subtitle, tops_title,
                                                     total_submits_title, total_submits_detail, verdict_detail,
                                                     first_ac_title, first_ac_who, first_ac_detail,
@@ -644,12 +647,12 @@ class MiscBoardGenerator:
                                   calculate_ranking_height(config, [top_5_detail]) + 148)
                         ) +
                         calculate_height([cp])
-                ) + 240
+                ) + 180
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
 
-                if len(today.submissions) == 0:
+                if not has_ac_submission:
                     current_y = draw_text(output_img, submission_none_subtitle, 16, current_y)
                     current_y = draw_text(output_img, submission_none_title, 108, current_y)
                 else:
@@ -722,7 +725,7 @@ class MiscBoardGenerator:
                                   calculate_ranking_height(config, [top_10_detail]) + 272)
                         ) +
                         calculate_height([cp])
-                ) + 240
+                ) + 180
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)

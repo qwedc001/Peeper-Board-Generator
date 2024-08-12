@@ -12,9 +12,9 @@ from module.verdict import ALIAS_MAP
 import sys
 
 configs = Configs(os.path.dirname(__file__)).get_configs()
-VERSION_INFO = "v1.1.0"
+VERSION_INFO = "v1.2.0"
 
-subhandlers = {
+sub_handlers = {
     'Hydro': HydroHandler,
     "Codeforces": "TODO"
 }
@@ -29,14 +29,14 @@ class DefaultHelpParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
-def generate(cur_config: Config,multi: bool = False):
+def generate(cur_config: Config, multi: bool = False):
     logging.info(f"正在生成 {cur_config.get_config()['board_name']} 榜单")
     if not args.output or multi:
         args.output = os.path.join(work_dir, "data",
                                    f'{cur_config.get_config()["id"]}-output.png') \
             if args.full or args.now else os.path.join(work_dir, "data",
                                                        f'{cur_config.get_config()["id"]}-output.txt')
-    handler = subhandlers.get(cur_config.get_config()['handler'])(cur_config)
+    handler = sub_handlers.get(cur_config.get_config()['handler'])(cur_config)
     if args.full:
         logging.info("正在生成昨日榜单")
         handler.save_daily("full")
@@ -68,7 +68,7 @@ def generate(cur_config: Config,multi: bool = False):
 if __name__ == "__main__":
     try:
         logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)
+        logger.setLevel(logging.INFO)
 
         console_handler = logging.StreamHandler(sys.stderr)
         console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
@@ -101,7 +101,7 @@ if __name__ == "__main__":
         if not args.id:
             # 生成全部榜单
             for config in configs:
-                generate(config,True)
+                generate(config, True)
         else:
             # 生成指定 id 的榜单
             for config in configs:
