@@ -49,7 +49,7 @@ options:
 
 ## 样例图片
 
-Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `oj_name` 字段更改。
+Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `board_name` 字段更改。
 
 ### 昨日榜单 (`--full`)
 

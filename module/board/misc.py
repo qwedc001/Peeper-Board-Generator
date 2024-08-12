@@ -66,7 +66,6 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
 def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
     if len(tops) == 0:
         return []
-
     max_val = tops[0][key][-1] if isinstance(tops[0][key], tuple) else tops[0][key]  # 以key作为排名依据
 
     ranking_list = []
@@ -402,7 +401,7 @@ class MiscBoardGenerator:
         today = load_json(config, False)
         eng_full_name = StyledString(config,
                                      f'{get_date_string(board_type == "full", ".")}  '
-                                     f'{config.get_config()["oj_name"]} Rank List',
+                                     f'{config.get_config()["board_name"]} Rank List',
                                      'H', 36)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
@@ -482,7 +481,7 @@ class MiscBoardGenerator:
             full_rank_title = StyledString(config, "昨日 OJ 总榜", "H", 72)
             full_rank_detail = pack_ranking_list(config, data.total_board, verdict)
 
-            cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
+            cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
                                       f'©Peeper-Board-Generator Dev Team.\n'
                                       f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                               line_multiplier=1.32)
@@ -624,7 +623,7 @@ class MiscBoardGenerator:
                 top_5_tip = StyledString(config, "为不存在\"重复提交往日已AC的题目\"条件下的过题数理论值", 'M', 28)
                 top_5_detail = pack_ranking_list(config, top_five, verdict)
 
-                cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
@@ -708,7 +707,7 @@ class MiscBoardGenerator:
                 top_10_mark = StyledString(config, "Top 10th", "H", 48)
                 top_10_detail = pack_ranking_list(config, top_ten, verdict)
 
-                cp = StyledString(config, f'Generated from {config.get_config()["oj_name"]}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
