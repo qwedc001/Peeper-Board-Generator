@@ -28,7 +28,7 @@ pip install -r requirements.txt
 ```
 2. 编写配置文件
 
-请参照 `config.example.json` 编写配置文件，将其保存为 `config.json`。
+请参照 `config_example.json` 编写配置文件，将其保存为 `configs.json`。
 
 3. 运行程序
 ```bash
@@ -49,7 +49,7 @@ options:
 
 ## 样例图片
 
-Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `board_name` 字段更改。
+Tip: 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_name` 字段更改。
 
 ### 昨日榜单 (`--full`)
 
