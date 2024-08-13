@@ -34,8 +34,13 @@ class MiscBoard:
 
 def generate_board_data(submissions: list[SubmissionData], verdict: str) -> MiscBoard:
     result = {}
-    verdict_desc = rank_by_verdict(submissions)[verdict]
-    logging.debug(verdict_desc)
+
+    verdict_desc = rank_by_verdict(submissions).get(verdict)
+    if verdict_desc is None:
+        return MiscBoard("", [], pack_verdict_rank_data(None, verdict),
+                         0, get_first_ac(submissions), {}, 0, 0, {},
+                         ("", 0), 0)
+
     result['play_of_the_oj'] = next(iter(verdict_desc))  # 昨日
     total_board = pack_verdict_rank_data(verdict_desc, verdict)
     result['top_five'] = slice_ranking_data(total_board, 5)  # 昨日
@@ -48,6 +53,7 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
     result['hourly_data'] = get_hourly_submissions(submissions)  # 昨日 / 今日
     result['popular_problem'] = get_most_popular_problem(submissions)  # 昨日 / 今日
     result['users_submitted'] = count_users_submitted(submissions)  # 昨日 / 今日
+
     board = MiscBoard(play_of_the_oj=result['play_of_the_oj'], top_five=result['top_five'],
                       total_board=result['total_board'], total_submits=result['total_submits'],
                       first_ac=result['first_ac'], verdict_data=result['verdict_data'], avg_score=result['avg_score'],
@@ -58,6 +64,8 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
 
 
 def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
+    if len(tops) == 0:
+        return []
     max_val = tops[0][key][-1] if isinstance(tops[0][key], tuple) else tops[0][key]  # 以key作为排名依据
 
     ranking_list = []
@@ -76,6 +84,9 @@ def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
 
 
 def pack_verdict_detail(verdict_data: dict) -> str:
+    if verdict_data is None:
+        return ""
+
     alias = {val: key for key, val in ALIAS_MAP.items()}
     verdict_detail = ''
 
@@ -91,6 +102,9 @@ def pack_verdict_detail(verdict_data: dict) -> str:
 
 
 def pack_hourly_detail(hourly_data: dict) -> dict:
+    if len(hourly_data) == 0:
+        return {}
+
     max_hourly_submit = max(hourly[1] for (time, hourly) in hourly_data.items())
     hourly_detail = {'distribution': [], 'hot_time': 0, 'hot_count': 0, 'hot_ac': 0.0}
 
@@ -98,7 +112,7 @@ def pack_hourly_detail(hourly_data: dict) -> dict:
         hourly_detail['distribution'].append({'hot_prop': hourly[1] / max_hourly_submit,  # 这个用来画柱状图
                                               'ac_prop': hourly[0]})
         if hourly[1] == max_hourly_submit:
-            hourly_detail['hot_time'] = int(time)  # 所以为什么要转str呢？
+            hourly_detail['hot_time'] = int(time)
             hourly_detail['hot_count'] = hourly[1]
             hourly_detail['hot_ac'] = max(hourly_detail['hot_ac'], hourly[0])
 
@@ -124,11 +138,17 @@ def pack_rank_data(rank: list[RankingData]) -> list[dict]:
 
 # 处理一下有排名并列时直接切片导致的问题
 def slice_ranking_data(rank: list[dict], lim: int) -> list[dict]:
+    if len(rank) == 0:
+        return []
+
     max_rank = min(lim, rank[len(rank) - 1]['rank'])
     return [ranking_data for ranking_data in rank if ranking_data['rank'] <= max_rank]
 
 
-def pack_verdict_rank_data(verdict_desc: dict, verdict: str) -> list[dict]:
+def pack_verdict_rank_data(verdict_desc: dict | None, verdict: str) -> list[dict]:
+    if verdict_desc is None:
+        return [{"user": "", f"{verdict}": (0, 1), "rank": -1}]
+
     total_board = []
     rank = 1
     for i, (user, verdict_cnt) in enumerate(verdict_desc.items()):
@@ -149,7 +169,7 @@ def calculate_ranking_height(config: Config, rankings: list[list[dict]]) -> int:
     height = 0
     for ranking in rankings:
         for item in ranking:
-            if item['unrated'] and not config.get_config("extras")["Hydro"]["show_unrated"]:  # 不显示的话不计算unrated的高度
+            if item['unrated'] and not config.get_config()["show_unrated"]:  # 不显示的话不计算unrated的高度
                 continue
             height += item['user'].height + 40 + 32
         height -= 32
@@ -227,7 +247,7 @@ def draw_horizontal_gradient_round_rect(image: Image, x: int, y: int, width: int
 def draw_rank_detail(config: Config, image: Image, ranking: list[dict], padding_bottom: int, current_y: int) -> int:
     pre_rank = ""
     for rank in ranking:
-        if rank['unrated'] and not config.get_config("extras")["Hydro"]["show_unrated"]:  # 不显示的话不画
+        if rank['unrated'] and not config.get_config()["show_unrated"]:  # 不显示的话不画
             continue
         progress_len = 360 + 440 * rank['progress']
         line_y = current_y
@@ -377,11 +397,13 @@ class MiscBoardGenerator:
 
     @staticmethod
     def generate_image(config: Config, board_type: str,
-                       logo_path: str, verdict: str = "Accepted") -> Image:
+                       logo_path, verdict: str = "Accepted") -> Image:
         today = load_json(config, False)
         eng_full_name = StyledString(config,
-                                     f'{get_date_string(board_type == "full", ".")}  {config.get_config("oj_name")} Rank List',
-                                     'H', 36)
+                                     f'{get_date_string(board_type == "full", ".")}  '
+                                     f'{config.get_config()["board_name"]} Rank List',
+                                     'H', 36,
+                                     line_multiplier=1.2)
         if board_type == "full":
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
 
@@ -394,6 +416,12 @@ class MiscBoardGenerator:
             rank = today.rankings
             # 对于 full 榜单的图形逻辑
             rank_data = pack_rank_data(rank)
+            has_ac_submission = len([s for s in yesterday.submissions if s.verdict == "Accepted"]) > 0
+
+            submission_none_subtitle = StyledString(config, "记录为空", 'B', 36)
+            submission_none_title = StyledString(config, "昨日无AC提交", 'H', 72)
+            ranking_none_subtitle = StyledString(config, "暂无排行", 'B', 36)
+            ranking_none_title = StyledString(config, "当前排行榜为空", 'H', 72)
 
             play_of_the_oj_is_parallel = check_parallel_play_of_the_oj(data.total_board)
             play_of_the_oj_title = StyledString(config, f"昨日卷王", 'B', 36)
@@ -423,11 +451,11 @@ class MiscBoardGenerator:
             ac_rate_detail_sub = StyledString(config, "." + ac_rate_split[1], 'H', 72)
 
             verdict_detail_text = (f'收到 {data.users_submitted} 个人的提交，'
-                                   f'其中包含 {pack_verdict_detail(data.verdict_data["verdicts"])}')
+                                   f'其中包含 {pack_verdict_detail(data.verdict_data.get("verdicts"))}')
             verdict_detail = StyledString(config, verdict_detail_text, 'M', 28)
 
             hourly_data = pack_hourly_detail(data.hourly_data)
-            hourly_text = (
+            hourly_text = "" if len(hourly_data) == 0 else (
                 f'提交高峰时段为 {"{:02d}:00 - {:02d}:59".format(hourly_data["hot_time"], hourly_data["hot_time"])}. '
                 f'在 {hourly_data["hot_count"]} 份提交中，通过率为 {"{:.2f}".format(hourly_data["hot_ac"] * 100)}%.')
 
@@ -455,72 +483,95 @@ class MiscBoardGenerator:
             full_rank_title = StyledString(config, "昨日 OJ 总榜", "H", 72)
             full_rank_detail = pack_ranking_list(config, data.total_board, verdict)
 
-            cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
+            cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
                                       f'©Peeper-Board-Generator Dev Team.\n'
                                       f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                               line_multiplier=1.32)
 
-            total_height = (calculate_height([
-                title, eng_full_name,
-                play_of_the_oj_title, play_of_the_oj,
-                top_5_subtitle, top_5_title,
-                total_submits_title, total_submits_detail, verdict_detail,
-                first_ac_title, first_ac_who, first_ac_detail,
-                popular_problem_title, popular_problem_name, popular_problem_detail,
-                hourly_title, hourly_detail,
-                top_10_subtitle, top_10_title,
-                full_rank_subtitle, full_rank_title,
-                cp
-            ]) + calculate_ranking_height(config, [top_5_detail, top_10_detail, full_rank_detail])
-               + (calculate_height([play_of_the_oj_time]) if play_of_the_oj_is_parallel else -16)
-                            + 1396 + 240)  # 1396是所有padding（现在可能不是）
+            total_height = (
+                    calculate_height([title, eng_full_name]) +
+                    (
+                        calculate_height([submission_none_subtitle, submission_none_title]) + 124
+                        if not has_ac_submission
+                        else (calculate_height([play_of_the_oj_title, play_of_the_oj,
+                                                top_5_subtitle, top_5_title,
+                                                total_submits_title, total_submits_detail, verdict_detail,
+                                                first_ac_title, first_ac_who, first_ac_detail,
+                                                popular_problem_title, popular_problem_name, popular_problem_detail,
+                                                hourly_title, hourly_detail,
+                                                full_rank_subtitle, full_rank_title]) +
+                              calculate_ranking_height(config, [top_5_detail, full_rank_detail]) + 1248)
+                    ) + (
+                        calculate_height([ranking_none_subtitle, ranking_none_title]) + 124
+                        if len(rank) == 0
+                        else (calculate_height([top_10_subtitle, top_10_title]) +
+                              calculate_ranking_height(config, [top_10_detail]) + 148)
+                    ) +
+                    calculate_height([cp]) +
+                    (calculate_height([play_of_the_oj_time]) if play_of_the_oj_is_parallel else -16)
+            ) + 180
 
             output_img = pixie.Image(1280, total_height + 300)
             current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
 
-            current_y = draw_text(output_img, play_of_the_oj_title, 16, current_y)
-            current_y = draw_text(output_img, play_of_the_oj, 16 if play_of_the_oj_is_parallel else 108, current_y)
-            if play_of_the_oj_is_parallel:  # 并列时显示最早通过时间
-                play_of_the_oj_time.set_font_color(Color(0, 0, 0, 136 / 255))
-                current_y = draw_text(output_img, play_of_the_oj_time, 108, current_y)
+            if not has_ac_submission:
+                current_y = draw_text(output_img, submission_none_subtitle, 16, current_y)
+                current_y = draw_text(output_img, submission_none_title, 108, current_y)
+            else:
+                current_y = draw_text(output_img, play_of_the_oj_title, 16, current_y)
+                current_y = draw_text(output_img, play_of_the_oj, 16 if play_of_the_oj_is_parallel else 108, current_y)
+                if play_of_the_oj_is_parallel:  # 并列时显示最早通过时间
+                    play_of_the_oj_time.set_font_color(Color(0, 0, 0, 136 / 255))
+                    current_y = draw_text(output_img, play_of_the_oj_time, 108, current_y)
 
-            current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
-            current_y = draw_text(output_img, top_5_title, 16, current_y)
-            current_y -= 86
-            current_y = draw_text(output_img, top_5_mark, 32, current_y,
-                                  x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
-            current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
+                current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
+                current_y = draw_text(output_img, top_5_title, 16, current_y)
+                current_y -= 86
+                current_y = draw_text(output_img, top_5_mark, 32, current_y,
+                                      x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
+                current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
 
-            current_y = draw_submit_detail(output_img,
-                                           total_submits_title, total_submits_detail,
-                                           ave_score_title, ave_score_detail_main, ave_score_detail_sub,
-                                           ac_rate_title, ac_rate_detail_main, ac_rate_detail_sub,
-                                           verdict_detail,
-                                           hourly_title, hourly_data, hourly_detail,
-                                           first_ac_title, first_ac_who, first_ac_detail,
-                                           current_y)
+                current_y = draw_submit_detail(output_img,
+                                               total_submits_title, total_submits_detail,
+                                               ave_score_title, ave_score_detail_main, ave_score_detail_sub,
+                                               ac_rate_title, ac_rate_detail_main, ac_rate_detail_sub,
+                                               verdict_detail,
+                                               hourly_title, hourly_data, hourly_detail,
+                                               first_ac_title, first_ac_who, first_ac_detail,
+                                               current_y)
 
-            current_y = draw_text(output_img, popular_problem_title, 16, current_y)
-            current_y = draw_text(output_img, popular_problem_name, 16, current_y)
-            popular_problem_detail.set_font_color(Color(0, 0, 0, 136 / 255))
-            current_y = draw_text(output_img, popular_problem_detail, 108, current_y)
+                current_y = draw_text(output_img, popular_problem_title, 16, current_y)
+                current_y = draw_text(output_img, popular_problem_name, 16, current_y)
+                popular_problem_detail.set_font_color(Color(0, 0, 0, 136 / 255))
+                current_y = draw_text(output_img, popular_problem_detail, 108, current_y)
 
-            current_y = draw_text(output_img, top_10_subtitle, 16, current_y)
-            current_y = draw_text(output_img, top_10_title, 16, current_y)
-            current_y -= 86
-            current_y = draw_text(output_img, top_10_mark, 32, current_y,
-                                  x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
-            current_y = draw_rank_detail(config, output_img, top_10_detail, 108, current_y)
+            if len(rank) == 0:
+                current_y = draw_text(output_img, ranking_none_subtitle, 16, current_y)
+                current_y = draw_text(output_img, ranking_none_title, 108, current_y)
+            else:
+                current_y = draw_text(output_img, top_10_subtitle, 16, current_y)
+                current_y = draw_text(output_img, top_10_title, 16, current_y)
+                current_y -= 86
+                current_y = draw_text(output_img, top_10_mark, 32, current_y,
+                                      x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
+                current_y = draw_rank_detail(config, output_img, top_10_detail, 108, current_y)
 
-            current_y = draw_text(output_img, full_rank_subtitle, 16, current_y)
-            current_y = draw_text(output_img, full_rank_title, 16, current_y)
-            current_y = draw_rank_detail(config, output_img, full_rank_detail, 108, current_y)
+            if len(yesterday.submissions) != 0:
+                current_y = draw_text(output_img, full_rank_subtitle, 16, current_y)
+                current_y = draw_text(output_img, full_rank_title, 16, current_y)
+                current_y = draw_rank_detail(config, output_img, full_rank_detail, 108, current_y)
 
             draw_text(output_img, cp, 108, current_y)
 
             return output_img
 
         if board_type == "now":
+            alias = {val: key for key, val in ALIAS_MAP.items()}
+            submission_none_subtitle = StyledString(config, "记录为空", 'B', 36)
+            submission_none_title = StyledString(config, f"今日无{alias[verdict]}提交", 'H', 72)
+            ranking_none_subtitle = StyledString(config, "暂无排行", 'B', 36)
+            ranking_none_title = StyledString(config, "当前排行榜为空", 'H', 72)
+
             if verdict == "Accepted":
                 title = StyledString(config, "今日当前提交榜单", 'H', 96)
 
@@ -528,6 +579,7 @@ class MiscBoardGenerator:
                 rank = today.rankings
                 # 对于 now 榜单的图形逻辑
                 rank_data = pack_rank_data(rank)
+                has_ac_submission = len([s for s in today.submissions if s.verdict == verdict]) > 0
 
                 tops_subtitle = StyledString(config, "过题数榜单", "B", 36)
                 tops_title = StyledString(config, "今日过题数", "H", 72)
@@ -549,11 +601,11 @@ class MiscBoardGenerator:
                 ac_rate_detail_sub = StyledString(config, "." + ac_rate_split[1], 'H', 72)
 
                 verdict_detail_text = (f'收到 {data.users_submitted} 个人的提交，'
-                                       f'其中包含 {pack_verdict_detail(data.verdict_data["verdicts"])}')
+                                       f'其中包含 {pack_verdict_detail(data.verdict_data.get("verdicts"))}')
                 verdict_detail = StyledString(config, verdict_detail_text, 'M', 28)
 
                 hourly_data = pack_hourly_detail(data.hourly_data)
-                hourly_text = (
+                hourly_text = "" if len(hourly_data) == 0 else (
                     f'提交高峰时段为 {"{:02d}:00 - {:02d}:59".format(hourly_data["hot_time"], hourly_data["hot_time"])}. '
                     f'在 {hourly_data["hot_count"]} 份提交中，通过率为 {"{:.2f}".format(hourly_data["hot_ac"] * 100)}%.')
 
@@ -574,62 +626,78 @@ class MiscBoardGenerator:
                 top_5_tip = StyledString(config, "为不存在\"重复提交往日已AC的题目\"条件下的过题数理论值", 'M', 28)
                 top_5_detail = pack_ranking_list(config, top_five, verdict)
 
-                cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
-                total_height = (calculate_height([
-                    title, eng_full_name,
-                    tops_subtitle, tops_title,
-                    total_submits_title, total_submits_detail, verdict_detail,
-                    first_ac_title, first_ac_who, first_ac_detail,
-                    hourly_title, hourly_detail,
-                    top_5_subtitle, top_5_title, top_5_tip,
-                    cp
-                ]) + calculate_ranking_height(config, [tops_detail, top_5_detail])
-                                + 990 + 232)  # 986是所有padding
+                total_height = (
+                        calculate_height([title, eng_full_name]) +
+                        (
+                            calculate_height([submission_none_subtitle, submission_none_title]) + 124
+                            if not has_ac_submission
+                            else (calculate_height([tops_subtitle, tops_title,
+                                                    total_submits_title, total_submits_detail, verdict_detail,
+                                                    first_ac_title, first_ac_who, first_ac_detail,
+                                                    hourly_title, hourly_detail]) +
+                                  calculate_ranking_height(config, [tops_detail]) + 842)
+                        ) + (
+                            calculate_height([ranking_none_subtitle, ranking_none_title]) + 124
+                            if len(rank) == 0
+                            else (calculate_height([top_5_subtitle, top_5_title, top_5_tip]) +
+                                  calculate_ranking_height(config, [top_5_detail]) + 148)
+                        ) +
+                        calculate_height([cp])
+                ) + 180
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
 
-                current_y = draw_text(output_img, tops_subtitle, 16, current_y)
-                current_y = draw_text(output_img, tops_title, 16, current_y)
-                current_y = draw_rank_detail(config, output_img, tops_detail, 108, current_y)
+                if not has_ac_submission:
+                    current_y = draw_text(output_img, submission_none_subtitle, 16, current_y)
+                    current_y = draw_text(output_img, submission_none_title, 108, current_y)
+                else:
+                    current_y = draw_text(output_img, tops_subtitle, 16, current_y)
+                    current_y = draw_text(output_img, tops_title, 16, current_y)
+                    current_y = draw_rank_detail(config, output_img, tops_detail, 108, current_y)
 
-                current_y = draw_submit_detail(output_img,
-                                               total_submits_title, total_submits_detail,
-                                               ave_score_title, ave_score_detail_main, ave_score_detail_sub,
-                                               ac_rate_title, ac_rate_detail_main, ac_rate_detail_sub,
-                                               verdict_detail,
-                                               hourly_title, hourly_data, hourly_detail,
-                                               first_ac_title, first_ac_who, first_ac_detail,
-                                               current_y)
+                    current_y = draw_submit_detail(output_img,
+                                                   total_submits_title, total_submits_detail,
+                                                   ave_score_title, ave_score_detail_main, ave_score_detail_sub,
+                                                   ac_rate_title, ac_rate_detail_main, ac_rate_detail_sub,
+                                                   verdict_detail,
+                                                   hourly_title, hourly_data, hourly_detail,
+                                                   first_ac_title, first_ac_who, first_ac_detail,
+                                                   current_y)
 
-                current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
-                current_y = draw_text(output_img, top_5_title, 16, current_y)
-                current_y -= 86
-                current_y = draw_text(output_img, top_5_mark, 20, current_y,
-                                      x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
-                top_5_tip.set_font_color(Color(0, 0, 0, 136 / 255))
-                current_y = draw_text(output_img, top_5_tip, 32, current_y)
-                current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
+                if len(rank) == 0:
+                    current_y = draw_text(output_img, ranking_none_subtitle, 16, current_y)
+                    current_y = draw_text(output_img, ranking_none_title, 108, current_y)
+                else:
+                    current_y = draw_text(output_img, top_5_subtitle, 16, current_y)
+                    current_y = draw_text(output_img, top_5_title, 16, current_y)
+                    current_y -= 86
+                    current_y = draw_text(output_img, top_5_mark, 20, current_y,
+                                          x=ImgConvert.calculate_string_width(top_5_title) + 128 + 28)
+                    top_5_tip.set_font_color(Color(0, 0, 0, 136 / 255))
+                    current_y = draw_text(output_img, top_5_tip, 32, current_y)
+                    current_y = draw_rank_detail(config, output_img, top_5_detail, 108, current_y)
 
                 draw_text(output_img, cp, 108, current_y)
 
                 return output_img
             else:
-                alias = {val: key for key, val in ALIAS_MAP.items()}
                 title = StyledString(config, f"今日当前{alias[verdict]}榜单", 'H', 96)
                 data = generate_board_data(today.submissions, verdict)
-                rank = rank_by_verdict([s for s in today.submissions if s.verdict == verdict])[
-                    verdict]  # { username: submissionCnt}
+                rank = (rank_by_verdict([s for s in today.submissions if s.verdict == verdict])
+                        .get(verdict))  # { username: submissionCnt}
                 # 对于分 verdict 的 now 榜单的图形逻辑
                 rank_data = pack_verdict_rank_data(rank, verdict)
 
                 total_submits_title = StyledString(config, "提交总数", 'B', 36)
                 total_submits_detail = StyledString(config, str(data.total_submits), 'H', 72)
 
-                prop_val = sum(item[verdict] for item in data.total_board) / data.total_submits * 100
+                prop_val = 0 if data.total_submits == 0 else (
+                        sum(item[verdict][1] for item in data.total_board) / data.total_submits * 100)
                 prop_split = format(prop_val, '.2f').split(".")  # 分割小数
 
                 prop_title = StyledString(config, f"{verdict} 占比", 'B', 36)
@@ -640,48 +708,56 @@ class MiscBoardGenerator:
                 top_10_subtitle = StyledString(config, "分类型提交榜单", "B", 36)
                 top_10_title = StyledString(config, f"{alias[verdict]} 排行榜", "H", 72)
                 top_10_mark = StyledString(config, "Top 10th", "H", 48)
-                top_10_detail = pack_ranking_list(config, top_ten, verdict)  # todo doubt.
+                top_10_detail = pack_ranking_list(config, top_ten, verdict)
 
-                cp = StyledString(config, f'Generated from {config.get_config("oj_name")}.\n'
+                cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
                                           f'©Peeper-Board-Generator Dev Team.\n'
                                           f'At {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}', 'B', 24,
                                   line_multiplier=1.32)
 
-                total_height = (calculate_height([
-                    title, eng_full_name,
-                    total_submits_title, total_submits_detail,
-                    top_10_subtitle, top_10_title,
-                    cp
-                ]) + calculate_ranking_height(config, [top_10_detail])
-                                + 272 + 232)  # 576是所有padding（现在可能不是）
+                total_height = (
+                        calculate_height([title, eng_full_name]) +
+                        (
+                            calculate_height([submission_none_subtitle, submission_none_title]) + 124
+                            if not rank or len(rank) == 0
+                            else (calculate_height([total_submits_title, total_submits_detail,
+                                                    top_10_subtitle, top_10_title]) +
+                                  calculate_ranking_height(config, [top_10_detail]) + 272)
+                        ) +
+                        calculate_height([cp])
+                ) + 180
 
                 output_img = pixie.Image(1280, total_height + 300)
                 current_y = draw_basic_content(output_img, total_height, title, eng_full_name, 168, logo_path)
 
-                begin_y = current_y
+                if not rank or len(rank) == 0:
+                    current_y = draw_text(output_img, submission_none_subtitle, 16, current_y)
+                    current_y = draw_text(output_img, submission_none_title, 108, current_y)
+                else:
+                    begin_y = current_y
 
-                current_y = draw_text(output_img, total_submits_title, 16, current_y)
-                draw_text(output_img, total_submits_detail, 16, current_y)
-                current_y = begin_y
-                total_submits_width = max(
-                    ImgConvert.calculate_string_width(total_submits_title),
-                    ImgConvert.calculate_string_width(total_submits_detail)
-                )
+                    current_y = draw_text(output_img, total_submits_title, 16, current_y)
+                    draw_text(output_img, total_submits_detail, 16, current_y)
+                    current_y = begin_y
+                    total_submits_width = max(
+                        ImgConvert.calculate_string_width(total_submits_title),
+                        ImgConvert.calculate_string_width(total_submits_detail)
+                    )
 
-                current_y = draw_text(output_img, prop_title, 16, current_y, x=total_submits_width + 128 + 150)
-                # 保持在同一行
-                draw_text(output_img, prop_detail_main, 32, current_y, x=total_submits_width + 128 + 150)
-                prop_detail_sub.set_font_color(Color(0, 0, 0, 64 / 255))
-                current_y = draw_text(output_img, prop_detail_sub, 108, current_y,
-                                      x=ImgConvert.calculate_string_width(
-                                          prop_detail_main) + total_submits_width + 128 + 150)
+                    current_y = draw_text(output_img, prop_title, 16, current_y, x=total_submits_width + 128 + 150)
+                    # 保持在同一行
+                    draw_text(output_img, prop_detail_main, 32, current_y, x=total_submits_width + 128 + 150)
+                    prop_detail_sub.set_font_color(Color(0, 0, 0, 64 / 255))
+                    current_y = draw_text(output_img, prop_detail_sub, 108, current_y,
+                                          x=ImgConvert.calculate_string_width(
+                                              prop_detail_main) + total_submits_width + 128 + 150)
 
-                current_y = draw_text(output_img, top_10_subtitle, 16, current_y)
-                current_y = draw_text(output_img, top_10_title, 16, current_y)
-                current_y -= 86
-                current_y = draw_text(output_img, top_10_mark, 32, current_y,
-                                      x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
-                current_y = draw_rank_detail(config, output_img, top_10_detail, 108, current_y)
+                    current_y = draw_text(output_img, top_10_subtitle, 16, current_y)
+                    current_y = draw_text(output_img, top_10_title, 16, current_y)
+                    current_y -= 86
+                    current_y = draw_text(output_img, top_10_mark, 32, current_y,
+                                          x=ImgConvert.calculate_string_width(top_10_title) + 128 + 28)
+                    current_y = draw_rank_detail(config, output_img, top_10_detail, 108, current_y)
 
                 draw_text(output_img, cp, 108, current_y)
 

@@ -2,7 +2,6 @@ import datetime
 import json
 import logging
 import os
-import time
 
 import requests
 from requests import Session
@@ -19,10 +18,10 @@ from module.utils import save_json, get_date_string, load_json
 
 class HydroHandler(BasicHandler):
 
-    def __init__(self, config: Config, url: str):
+    def __init__(self, config: Config):
         super().__init__("HydroHandler")
         self.config = config
-        self.url = url
+        self.url = self.config.get_config()['url']
 
     def get_yesterday(self):
         logging.info("开始爬取昨日数据")
@@ -35,28 +34,28 @@ class HydroHandler(BasicHandler):
     def save_daily(self, mode: str):
         logging.info("开始保存 json 数据")
         logging.info("尝试登录获取新 Session")
-        credentials = self.config.get_config("credentials")["Hydro"]
+        credentials = self.config.get_config()["credentials"]
         if credentials is not None:
             session = self.login(credentials)
             self.config.set_config("session", session)
             logging.info("Session 获取成功")
         if mode == "full":  # 检查昨日榜单的json文件日期是否为今日，如果是则跳过执行
-            json_file = f'daily-{get_date_string(True)}.json'
-            if not os.path.exists(os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)):
+            json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
+            if not os.path.exists(os.path.join(self.config.work_dir, "data", json_file)):
                 logging.info(f"昨日json数据{json_file}不存在")
                 self.get_yesterday()
             file_timestamp = os.stat(
-                os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)).st_mtime
+                os.path.join(self.config.work_dir, "data", json_file)).st_mtime
 
             logging.info(
-                f"{json_file} 文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
+                f"{json_file}文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
             if datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d') == get_date_string(False):
                 logging.info("昨日 json 数据已固定，跳过爬取")
             else:
                 self.get_yesterday()
         elif mode == "now":  # 检查昨日榜单文件是否生成
-            json_file = f'daily-{get_date_string(True)}.json'
-            file_path = os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)
+            json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
+            file_path = os.path.join(self.config.work_dir, "data", json_file)
             if not os.path.exists(file_path):
                 logging.info("昨日json数据不存在")
                 self.get_yesterday()
@@ -73,10 +72,10 @@ class HydroHandler(BasicHandler):
 
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
         logging.info("正在根据昨日排名和今日提交计算当前排名")
-        json_file = f'daily-{get_date_string(True)}.json'
+        json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
         file_timestamp = os.stat(
-            os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)).st_mtime
-        file_path = os.path.join(self.config.work_dir, self.config.get_config('data'), json_file)
+            os.path.join(self.config.work_dir, "data", json_file)).st_mtime
+        file_path = os.path.join(self.config.work_dir, "data", json_file)
         with open(file_path, "r", encoding="utf-8") as f:
             content = json.load(f)
         ranking = DailyJson.from_json(content).rankings

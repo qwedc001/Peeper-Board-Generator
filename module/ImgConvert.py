@@ -1,6 +1,7 @@
 import os
 
 import random
+import re
 from typing import Tuple
 
 from pixie import pixie, Font, Image
@@ -29,7 +30,7 @@ class Color:
 class StyledString:
     def __init__(self, config: Config, content: str, font_type: str, font_size: int,
                  font_color: Tuple[int, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
-        file_path = os.path.join(config.work_dir, config.get_config('data'), f'OPPOSans-{font_type}.ttf')
+        file_path = os.path.join(config.work_dir, "data", f'OPPOSans-{font_type}.ttf')
         self.content = content
         self.line_multiplier = line_multiplier
         # 尝试加载字体
@@ -42,7 +43,7 @@ class StyledString:
                 self.font.paint.color = pixie.Color(font_color[0], font_color[1], font_color[2], font_color[3])
         except IOError:
             raise IOError(f"无法加载字体文件: {file_path}")
-        self.height = ImgConvert.calculate_string_height(file_path, font_size, content, line_multiplier=line_multiplier)
+        self.height = ImgConvert.draw_string(None, self, 0, 0, draw=False)
 
     def set_font_color(self, font_color: pixie.Color):
         self.font.paint.color = font_color
@@ -62,53 +63,10 @@ class ImgConvert:
     @staticmethod
     def calculate_string_width(content: StyledString):
         # 获取文本的宽度
-        text_width, text_height = text_size(content.content, content.font)
+        text_width, _ = text_size(content.content, content.font)
 
         # 返回文本的宽度  
         return text_width
-
-    """  
-    计算文本在给定字体和大小下的高度。  
-  
-    :param font_type:       字体文件 
-    :param font_size:       字体大小  
-    :param content:         要测量的文本内容  
-    :param max_width:       文本最大长度
-    :param line_multiplier  行距
-    :return:                文本的高度
-    """
-
-    @staticmethod
-    def calculate_string_height(font_type, font_size, content, max_width=MAX_WIDTH, line_multiplier=1.0):
-
-        try:
-            # 加载字体
-            font = pixie.read_font(font_type)
-            font.size = font_size
-        except IOError:
-            print(f"无法加载字体文件: {font_type}")
-            return 0
-
-        x, y = 0, 0
-        line_height = font.layout_bounds("A").y  # 使用'A'的高度作为行高，这通常是一个合理的近似值
-
-        words = content.split()
-        line = []
-
-        for word in words:
-            # 尝试将单词添加到当前行
-            test_width, _ = text_size(content, font=font)
-
-            if test_width <= max_width:
-                line.append(word)
-            else:
-                # 如果当前行太宽，则绘制它并开始新行
-                y += line_height * line_multiplier
-                line = [word]
-
-        total_height = y + line_height * line_multiplier  # 确保总高度包括最后一行  
-
-        return int(total_height)
 
     """  
     绘制文本
@@ -119,39 +77,72 @@ class ImgConvert:
     :param y                文本左上角的纵坐标
     :param max_width        文本最大长度
     :param line_multiplier  行距
+    :param draw             是否绘制
+    :return                 计算得到的高度
     """
 
     @staticmethod
-    def draw_string(image: Image, styled_string: StyledString, x, y, max_width=MAX_WIDTH):
+    def draw_string(image: Image | None, styled_string: StyledString, x, y, max_width=MAX_WIDTH,
+                    draw: bool = True) -> int:
         offset = 0
         lines = styled_string.content.split("\n")
+        text_height = styled_string.font.layout_bounds("A").y
 
         for line in lines:
             if not line.strip():  # 忽略空行  
-                offset += int(styled_string.font.getbbox('A')[3] * styled_string.line_multiplier)
+                offset += int(text_height * styled_string.line_multiplier)
                 continue
 
-            text_width, text_height = text_size(line, font=styled_string.font)
-            temp_text = line
+            text_width, _ = text_size(line, font=styled_string.font)
+            words: list[str] = re.findall(r'\s+\S+|\S+|\s+', line)  # 分割为单词，并把空格放在单词前面处理
+            draw_text = ""
+            line_x = 0
+            first_line = True
 
-            while text_width > max_width:
-                # 简单的文本分割逻辑，考虑是不是需要更复杂的分割逻辑
-                n = text_width // max_width
-                sub_pos = len(temp_text) // n
-                draw_text = temp_text[:sub_pos]
-                draw_width, _ = text_size(draw_text, font=styled_string.font)
+            for word in words:
+                text_width, _ = text_size(word, font=styled_string.font)
+                line_x += text_width
 
-                while draw_width > max_width and sub_pos > 0:
-                    sub_pos -= 1
-                    draw_text = temp_text[:sub_pos]
-                    draw_width, _ = text_size(draw_text, font=styled_string.font)
+                if line_x <= max_width:
+                    draw_text += word
+                else:  # 将该单词移到下一行
+                    if len(draw_text) > 0:
+                        if draw:
+                            image.fill_text(styled_string.font, draw_text, pixie.translate(x, y + offset))
+                        offset += int(text_height * styled_string.line_multiplier)
+                        first_line = False
 
-                image.fill_text(styled_string.font, draw_text, pixie.translate(x, y + offset))
+                    if not first_line:
+                        word = word.replace(" ", "")  # 保证除了第一行，每一行开头不是空格
+                        text_width, _ = text_size(word, font=styled_string.font)
+
+                    while text_width > max_width:  # 简单的文本分割逻辑，一行塞不下就断开
+                        n = text_width // max_width
+                        sub_pos = int(len(word) // n)
+                        draw_text = word[:sub_pos]
+                        draw_width, _ = text_size(draw_text, font=styled_string.font)
+
+                        while draw_width > max_width and sub_pos > 0:  # 微调，保证不溢出
+                            sub_pos -= 1
+                            draw_text = word[:sub_pos]
+                            draw_width, _ = text_size(draw_text, font=styled_string.font)
+
+                        if draw:
+                            image.fill_text(styled_string.font, draw_text, pixie.translate(x, y + offset))
+                        offset += int(text_height * styled_string.line_multiplier)
+                        first_line = False
+                        word = word[sub_pos:]
+                        text_width -= draw_width
+
+                    draw_text = word
+                    line_x = text_width
+
+            if len(draw_text) > 0:
+                if draw:
+                    image.fill_text(styled_string.font, draw_text, pixie.translate(x, y + offset))
                 offset += int(text_height * styled_string.line_multiplier)
-                temp_text = temp_text[sub_pos:]
-                text_width -= draw_width
-            image.fill_text(styled_string.font, temp_text, pixie.translate(x, y + offset))
-            offset += int(text_height * styled_string.line_multiplier)
+
+        return offset
 
     """  
     给图片应用覆盖色
@@ -178,19 +169,23 @@ class ImgConvert:
 
     class GradientColors:
         colors = [
-            ["#C6FFDD", "#FBD786", "#f7797d"],
-            ["#009FFF", "#ec2F4B"],
-            ["#22c1c3", "#fdbb2d"],
+            ["#C6FFDD", "#FBD786", "#F7797D"],
+            ["#009FFF", "#EC2F4B"],
+            ["#22C1C3", "#FDBB2D"],
             ["#3A1C71", "#D76D77", "#FFAF7B"],
-            ["#00c3ff", "#ffff1c"],
+            ["#00C3FF", "#FFFF1C"],
             ["#FEAC5E", "#C779D0", "#4BC0C8"],
             ["#C9FFBF", "#FFAFBD"],
             ["#FC354C", "#0ABFBC"],
             ["#355C7D", "#6C5B7B", "#C06C84"],
             ["#00F260", "#0575E6"],
             ["#FC354C", "#0ABFBC"],
-            ["#833ab4", "#fd1d1d", "#fcb045"],
-            ["#FC466B", "#3F5EFB"]
+            ["#833AB4", "#FD1D1D", "#FCB045"],
+            ["#FC466B", "#3F5EFB"],
+            ["#BBD2C5", "#536976", "#292E49"],
+            ["#40E0D0", "#FF8C00", "#FF0080"],
+            ["#3A1C71", "#D76D77", "#FFAF7B"],
+            ["#FC00FF", "#00DBDE"]
         ]
 
         @staticmethod

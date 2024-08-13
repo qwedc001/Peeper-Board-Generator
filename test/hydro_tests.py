@@ -7,10 +7,10 @@ from module.Hydro.submission import fetch_submissions
 from module.Hydro.user import fetch_user
 from module.submission import *
 from module.utils import *
-from module.config import Config
+from module.config import Configs
 
-config = Config("../config.json")
-oj_url = config.get_config("url")
+config = Configs(os.path.join(os.path.dirname(__file__), "..")).get_config("Hydro")[0]
+oj_url = config.get_config()["url"]
 
 
 def load_submission_json() -> tuple[list[SubmissionData], list[SubmissionData]]:
@@ -37,8 +37,8 @@ def load_submission_json() -> tuple[list[SubmissionData], list[SubmissionData]]:
 
 class TestUtil(unittest.TestCase):
     def test_qq(self):
-        number = config.get_config("test")['qq']['number']
-        name = config.get_config("test")['qq']['name']
+        number = config.get_config()["test"]['qq']['number']
+        name = config.get_config()["test"]['qq']['name']
         self.assertEqual(get_qq_name(number), name)
 
     def test_reload_rp(self):
@@ -112,7 +112,7 @@ class TestSubmissionModule(unittest.TestCase):
 
 class TestUserModule(unittest.TestCase):
     def test_fetch_user(self):
-        uid = config.get_config("test")['user']['uid']
+        uid = config.get_config()["test"]['user']['uid']
         result = fetch_user(config, uid)
         with open("user.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
@@ -128,7 +128,7 @@ class TestStructure(unittest.TestCase):
         ranking_data = fetch_rankings(config)
         daily_json = DailyJson(submission_data, ranking_data)
         save_json(config, daily_json)
-        file_path = os.path.join(config.work_dir, config.get_config('data'), f'daily-{get_date_string(False)}.json')
+        file_path = os.path.join(config.work_dir, config.get_config()["data"], f'daily-{get_date_string(False)}.json')
         self.assertTrue(os.path.exists(file_path))
 
     def test_daily_json_load(self):
@@ -139,7 +139,7 @@ class TestStructure(unittest.TestCase):
 class TestLogin(unittest.TestCase):
     def test_login(self):
         handler = HydroHandler(config, oj_url)
-        credentials = config.get_config("credentials")["Hydro"]
+        credentials = config.get_config()["credentials"]["Hydro"]
         session = handler.login(credentials)
         self.assertTrue(session is not None)
 

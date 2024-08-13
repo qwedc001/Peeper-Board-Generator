@@ -1,0 +1,24 @@
+[
+  {
+    "handler": "Hydro",
+    "credentials": {
+      "uname": "[Your-Hydro-Admin-UserName]",
+      "password": "[Your-Password]"
+    },
+    "excludeUid": [],
+    "excludeRegDate": "YYYY-MM-DD",
+    "show_unrated": true,
+    "data": "data",
+    "url": "[Your-OJ-Base-URL]",
+    "id": "[Identifier-With-No-Space]",
+    "board_name": "[Your-Board-Name]"
+  },
+  {
+    "handler": "Codeforces",
+    "credentials": {
+      "api": "[Your-Codeforces-API-Key]"
+    },
+    "id": "[Identifier-With-No-Space]",
+    "board_name": "[Your-Board-Name]"
+  }
+]

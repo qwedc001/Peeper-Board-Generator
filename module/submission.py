@@ -1,6 +1,5 @@
 import logging
 import time
-from typing import Union, Dict, Any
 
 from module.structures import SubmissionData, UserData
 
@@ -44,7 +43,7 @@ def get_most_popular_problem(submission_list: list[SubmissionData]) -> tuple[str
             submission_user_dict[submission.problem_name].append(submission.user.name)
             logging.debug(f"检测到新提交用户{submission.user.name}，题目{submission.problem_name}，已记录。")
         else:
-            logging.debug(f"检测到重复提交用户{submission.user.name}，题目{submission.problem_name}，已忽略。")
+            continue
     max_problem = max(problem_dict, key=problem_dict.get)
     return max_problem, problem_dict[max_problem]
 
@@ -74,10 +73,12 @@ def rank_by_verdict(submission_list: list[SubmissionData]) -> dict:
         if submission.verdict not in result:
             result[submission.verdict] = {}
         if submission.user.name not in result[submission.verdict]:
-            result[submission.verdict][submission.user.name] = (submission.at,0)
+            result[submission.verdict][submission.user.name] = (submission.at, 0)
         earliest_submission, cnt = result[submission.verdict][submission.user.name]
 
-        if submission.verdict == "Accepted" and (submission.user.uid, submission.problem_id) not in problem_ac_list:
+        if submission.verdict != 'Accepted':
+            cnt += 1
+        elif (submission.user.uid, submission.problem_id) not in problem_ac_list:
             cnt += 1  # 去除同一道题的重复AC (本函数不影响AC率计算，所以直接不算个数即可)
             problem_ac_list.append((submission.user.uid, submission.problem_id))
 

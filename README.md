@@ -49,19 +49,19 @@ options:
 
 ## 样例图片
 
-Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `oj_name` 字段更改。
+Tip: 图片中 "YOUR Online Judge" 字样可在 `config.json` 中的 `board_name` 字段更改。
 
 ### 昨日榜单 (`--full`)
 
-<img src="example_full.png" style="zoom:50%;" />
+<img src="example_full.png" style="zoom:50%;" alt="昨日榜单" />
 
 ### 从今日0点到当前时间的榜单 (`--now`)
 
-<img src="example_now.png" style="zoom:50%;" />
+<img src="example_now.png" style="zoom:50%;" alt="今日榜单" />
 
 ### 从今日0点到当前时间的 Wrong Answer 榜单 (`--now --verdict WA`)
 
-<img src="example_verdict_wa.png" style="zoom:50%;" />
+<img src="example_verdict_wa.png" style="zoom:50%;" alt="今日特定 verdict 榜单" />
 
 ## 致谢
 

@@ -1,4 +1,5 @@
 config.json
+configs.json
 /.idea
 
 test/*
