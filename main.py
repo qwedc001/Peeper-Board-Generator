@@ -16,7 +16,7 @@ VERSION_INFO = "v1.2.0"
 
 sub_handlers = {
     'Hydro': HydroHandler,
-    "Codeforces": "TODO"
+    "Codeforces": "TODO" # TODO: 1.3版本支持
 }
 
 work_dir = os.path.dirname(__file__)
