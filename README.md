@@ -34,17 +34,22 @@ pip install -r requirements.txt
 ```bash
 python main.py --help
 
-usage: main.py [-h] (--full | --now) [--version] [--verdict VERDICT] [--output FILE]
+usage: main.py [-h] (--version | --full | --now | --query_uid QUERY_UID | --query_name QUERY_NAME) [--output OUTPUT] [--verdict VERDICT] [--id ID]
 
-Hydro Bot Args Parser
+Peeper-Board-Generator OJ榜单图片生成器
 
 options:
-  -h, --help         show this help message and exit
-  --full             生成昨日榜单
-  --now              生成从今日0点到当前时间的榜单
-  --version          版本号信息
-  --verdict VERDICT  指定榜单对应verdict (使用简写)
-  --output OUTPUT    指定生成图片的路径 (包含文件名)
+  -h, --help            show this help message and exit
+  --version             版本号信息
+  --full                生成昨日榜单
+  --now                 生成从今日0点到当前时间的榜单
+  --query_uid QUERY_UID
+                        根据 uid 查询指定用户的信息
+  --query_name QUERY_NAME
+                        根据用户名查询指定用户的信息
+  --output OUTPUT       指定生成图片的路径 (包含文件名)
+  --verdict VERDICT     指定榜单对应verdict (使用简写)
+  --id ID               生成指定 id 的榜单(留空则生成全部榜单)
 ```
 
 ## 样例图片
