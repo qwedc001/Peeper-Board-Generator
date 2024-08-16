@@ -97,6 +97,12 @@ class HydroHandler(BasicHandler):
 
     def fetch_user(self, uid: str):
         logging.info(f"正在获取用户 {uid} 的信息")
+        logging.info("尝试登录获取新 Session")
+        credentials = self.config.get_config()["credentials"]
+        if credentials is not None:
+            session = self.login(credentials)
+            self.config.set_config("session", session)
+            logging.info("Session 获取成功")
         user = fetch_user(self.config, uid)
         result_text = f'用户 {user.name} 的信息如下：\n' \
                       f'用户邮箱：{user.mail}\n' \
