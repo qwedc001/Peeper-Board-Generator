@@ -77,6 +77,6 @@ Tip: 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_nam
 
 ## 致谢
 
-**Dev Team**: FJNU-[Floating-Ocean](https://github.com/Floating-Ocean)，QLU-[qwedc001](https://github.com/qwedc001)
+**Dev Team**: FJNU-[Floating-Ocean](https://github.com/Floating-Ocean)，QLU-[qwedc001](https://github.com/qwedc001)，Other-[浅梦](https://github.com/1804040636)
 
 **贡献者**: QLU-[Euphria](https://github.com/Euphria)
