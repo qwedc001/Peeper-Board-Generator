@@ -3,11 +3,29 @@
   <strong>免费，开源的 OJ 榜单生成器</strong><br>
 </div><br>
 
+<div align="center">
+    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits">
+        <img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/qwedc001/Peeper-Board-Generator?style=flat-square">
+    </a>
+    <a href="https://github.com/qwedc001/Peeper-Board-Generator/releases/latest">
+        <img alt="GitHub Release" src="https://img.shields.io/github/v/release/qwedc001/Peeper-Board-Generator?style=flat-square&label=Peeper-Board-Generator">
+    </a>
+    <a href="https://github.com/qwedc001/Peeper-Board-Generator/graphs/contributors">
+        <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/qwedc001/Peeper-Board-Generator?style=flat-square">
+    </a>
+    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits">
+        <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/y/qwedc001/Peeper-Board-Generator?style=flat-square">
+    </a>
+</div>
+
+
 特点：
 
 - **高度模块化**: 允许用户自定义模块（分为 OJ 爬取模块和榜单生成模块），方便用户开发更多的榜单主题和接入更多 OJ。
 - **灵活**: 支持命令行调用程序直接生图 / QQ Bot 调用(coming soon)
 - **内置大量单元测试**: 方便用户二次开发时对开发模块进行快速测试
+
+用户群：[995417734](https://qm.qq.com/q/Bt45INhxB0)
 
 欢迎接入更多的 OJ 以及编写更多的榜单样式，欢迎提交 issue 和 pr。
 
@@ -28,7 +46,7 @@ pip install -r requirements.txt
 ```
 2. 编写配置文件
 
-请参照 `config_example.json` 编写配置文件，将其保存为 `configs.json`。
+请参照 `configs_example.json` 编写配置文件，将其保存为 `configs.json`。
 
 3. 运行程序
 ```bash
