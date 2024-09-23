@@ -201,7 +201,7 @@ class ImgConvert:
             while len(now_colors) < 2 or len(now_colors) > 3:
                 color_idx = random.randint(0, len(ImgConvert.GradientColors.colors) - 1)
                 now_colors = ImgConvert.GradientColors.colors[color_idx]["colors"]
-                color_name = f"#{color_idx + 1} {ImgConvert.GradientColors.colors[color_idx]["name"]}"
+                color_name = f"#{color_idx + 1} {ImgConvert.GradientColors.colors[color_idx]['name']}"
 
             if random.randint(0, 100) < 50:
                 now_colors.reverse()

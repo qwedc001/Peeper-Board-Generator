@@ -452,7 +452,7 @@ def draw_round_rect(image: Image, paint: Paint, x: int, y: int, width: int, heig
 
 def draw_background(image: Image, width: int, height: int, colors: list[str], positions: list[float]):
     image.fill(pixie.Color(0, 0, 0, 1))  # 填充黑色背景
-    paint = Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.ANGULAR_GRADIENT_PAINT)  # 准备渐变色画笔
+    paint = Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.RADIAL_GRADIENT_PAINT)  # 准备渐变色画笔
     paint_mask = Paint(pixie.SOLID_PAINT)  # 准备蒙版画笔
     paint_mask.color = pixie.Color(1, 1, 1, 0.7)  # 设置蒙版颜色
     for i in range(len(colors)):
