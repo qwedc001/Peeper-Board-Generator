@@ -39,10 +39,10 @@ def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
     finally:
         data = load_json(config, False)
     rankings = data.rankings
-    res = difflib.get_close_matches(name, [ranking.user_name for ranking in rankings], cutoff=0.4, n=1)[0]
-    if res:
+    res = difflib.get_close_matches(name, [ranking.user_name for ranking in rankings], cutoff=0.4, n=1)
+    if len(res) > 0:
         for ranking in rankings:
-            if ranking.user_name == res:
+            if ranking.user_name == res[0]:
                 return handler.fetch_user(ranking.uid)
     else:
         return "未找到用户"

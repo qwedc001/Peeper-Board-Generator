@@ -623,7 +623,7 @@ class MiscBoardGenerator:
                 top_5_subtitle = StyledString(config, "训练榜单", "B", 36)
                 top_5_title = StyledString(config, "题数排名", "H", 72)
                 top_5_mark = StyledString(config, "Top 5th", "H", 48)
-                top_5_tip = StyledString(config, "为不存在\"重复提交往日已AC的题目\"条件下的过题数理论值", 'M', 28)
+                top_5_tip = StyledString(config, "为存在\"重复提交往日已AC的题目\"条件下的过题数理论值", 'M', 28)
                 top_5_detail = pack_ranking_list(config, top_five, verdict)
 
                 cp = StyledString(config, f'Generated from {config.get_config()["board_name"]}.\n'
