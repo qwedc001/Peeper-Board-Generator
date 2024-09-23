@@ -2,6 +2,7 @@ import difflib
 import json
 import logging
 import os
+import random
 from datetime import datetime, timedelta
 from typing import Tuple
 import requests
@@ -73,6 +74,20 @@ def get_today_timestamp() -> Tuple[int, int]:
     today_start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_end = datetime.now()
     return int(today_start.timestamp()), int(today_end.timestamp())
+
+def rand_tips(config: Config):
+    # 构建列表
+    tips_all = []
+    tip_files = [os.path.join(config.work_dir,"data","tips.json"),os.path.join(config.work_dir,"data","tips.json")]
+    for file in tip_files:
+        if os.path.exists(file):
+            with open(file,"r") as f:
+                tips = json.load(f)
+                for tip in tips:
+                    tips_all.append(tip)
+                f.close()
+    return random.choice(tips_all)
+
 
 
 def get_date_string(is_yesterday: bool, split: str = '-') -> str:
