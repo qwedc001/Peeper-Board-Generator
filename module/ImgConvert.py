@@ -1,3 +1,4 @@
+import json
 import os
 
 import random
@@ -181,31 +182,27 @@ class ImgConvert:
         return tinted_image
 
     class GradientColors:
-        colors = [
-            ["#C6FFDD", "#FBD786", "#F7797D"],
-            ["#009FFF", "#EC2F4B"],
-            ["#22C1C3", "#FDBB2D"],
-            ["#3A1C71", "#D76D77", "#FFAF7B"],
-            ["#00C3FF", "#FFFF1C"],
-            ["#FEAC5E", "#C779D0", "#4BC0C8"],
-            ["#C9FFBF", "#FFAFBD"],
-            ["#FC354C", "#0ABFBC"],
-            ["#355C7D", "#6C5B7B", "#C06C84"],
-            ["#00F260", "#0575E6"],
-            ["#FC354C", "#0ABFBC"],
-            ["#833AB4", "#FD1D1D", "#FCB045"],
-            ["#FC466B", "#3F5EFB"],
-            ["#BBD2C5", "#536976", "#292E49"],
-            ["#40E0D0", "#FF8C00", "#FF0080"],
-            ["#3A1C71", "#D76D77", "#FFAF7B"],
-            ["#FC00FF", "#00DBDE"]
-        ]
+        colors = []
 
         @staticmethod
-        def generate_gradient() -> tuple[list[str], list[float]]:
-            now_colors = ImgConvert.GradientColors.colors[random.randint(0, len(ImgConvert.GradientColors.colors) - 1)]
-            if random.randint(0, 1):
+        def load_colors(config: Config):
+            if len(ImgConvert.GradientColors.colors) > 0:
+                return
+
+            file_path = os.path.join(config.work_dir, "data", 'gradients.json')
+            with open(file_path, 'r') as f:
+                ImgConvert.GradientColors.colors = json.load(f)
+
+        @staticmethod
+        def generate_gradient(config: Config) -> tuple[list[str], list[float]]:
+            ImgConvert.GradientColors.load_colors(config)
+
+            now_colors = []
+            while len(now_colors) < 2 or len(now_colors) > 3:
+                color_idx = random.randint(0, len(ImgConvert.GradientColors.colors) - 1)
+                now_colors = ImgConvert.GradientColors.colors[color_idx]["colors"]
+
+            if random.randint(0, 100) < 50:
                 now_colors.reverse()
-            colors_list = [color for color in now_colors]
             position_list = [0.0, 1.0] if len(now_colors) == 2 else [0.0, 0.5, 1.0]
-            return colors_list, position_list
+            return now_colors, position_list

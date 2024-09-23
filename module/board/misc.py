@@ -415,7 +415,7 @@ def draw_round_rect(image: Image, paint: Paint, x: int, y: int, width: int, heig
 
 def draw_background(image: Image, width: int, height: int, colors: list[str], positions: list[float]):
     image.fill(pixie.Color(0, 0, 0, 1))  # 填充黑色背景
-    paint = Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.RADIAL_GRADIENT_PAINT)  # 准备渐变色画笔
+    paint = Paint(pixie.LINEAR_GRADIENT_PAINT if len(colors) == 2 else pixie.ANGULAR_GRADIENT_PAINT)  # 准备渐变色画笔
     paint_mask = Paint(pixie.SOLID_PAINT)  # 准备蒙版画笔
     paint_mask.color = pixie.Color(1, 1, 1, 0.7)  # 设置蒙版颜色
     for i in range(len(colors)):
@@ -429,9 +429,9 @@ def draw_background(image: Image, width: int, height: int, colors: list[str], po
     image.draw(mask, blend_mode=pixie.NORMAL_BLEND)
 
 
-def draw_basic_content(image: Image, total_height: int, title: StyledString,
+def draw_basic_content(config: Config, image: Image, total_height: int, title: StyledString,
                        subtitle: StyledString, current_y: int, logo_path: str) -> int:
-    current_gradient, gradient_positions = ImgConvert.GradientColors.generate_gradient()
+    current_gradient, gradient_positions = ImgConvert.GradientColors.generate_gradient(config)
     # 全部换用pixie
     draw_background(image, 1280, total_height + 336, current_gradient, gradient_positions)
     accent_color = pixie.parse_color(current_gradient[0])
@@ -648,7 +648,7 @@ class MiscBoardGenerator:
         total_paddings = 108 * len(sections) + 12
         output_img = pixie.Image(1280, total_height + total_paddings + 336)
 
-        current_y = draw_basic_content(output_img, total_height + total_paddings,
+        current_y = draw_basic_content(config, output_img, total_height + total_paddings,
                                        title, eng_full_name, 168, logo_path)
 
         for section in sections:
