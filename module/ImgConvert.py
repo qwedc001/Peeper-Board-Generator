@@ -29,7 +29,7 @@ class Color:
 
 class StyledString:
     def __init__(self, config: Config, content: str, font_type: str, font_size: int,
-                 font_color: Tuple[int, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
+                 font_color: Tuple[float, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
         file_path = os.path.join(config.work_dir, "data", f'OPPOSans-{font_type}.ttf')
         self.content = content
         self.line_multiplier = line_multiplier
@@ -52,38 +52,51 @@ class StyledString:
 class ImgConvert:
     MAX_WIDTH = 1024
 
-    """  
-    计算文本在给定字体和大小下的长度（宽度）。  
-  
-    :param font: 字体
-    :param content: 要测量的文本内容  
-    :return: 文本的宽度（像素）  
-    """
-
     @staticmethod
-    def calculate_string_width(content: StyledString):
+    def calculate_string_width(content: StyledString) -> int:
+        """
+        计算文本在给定字体和大小下的长度（宽度）。
+
+        :param content: 要测量的文本内容
+        :return: 文本的宽度（像素）
+        """
+
         # 获取文本的宽度
         text_width, _ = text_size(content.content, content.font)
 
         # 返回文本的宽度  
         return text_width
 
-    """  
-    绘制文本
-  
-    :param draw             目标图层
-    :param styled_string    包装后的文本内容
-    :param x                文本左上角的横坐标 
-    :param y                文本左上角的纵坐标
-    :param max_width        文本最大长度
-    :param line_multiplier  行距
-    :param draw             是否绘制
-    :return                 计算得到的高度
-    """
+    @staticmethod
+    def calculate_height(strings: list[StyledString | None]) -> int:
+        """
+        计算多个文本的高度。
+
+        :param strings: 文本
+        :return: 总高度
+        """
+
+        height = 0
+        for string in strings:
+            if string:  # 允许传None进来，减少代码复杂度
+                height += string.height
+        return height
 
     @staticmethod
     def draw_string(image: Image | None, styled_string: StyledString, x, y, max_width=MAX_WIDTH,
                     draw: bool = True) -> int:
+        """
+        绘制文本
+
+        :param image            目标图片
+        :param styled_string    包装后的文本内容
+        :param x                文本左上角的横坐标
+        :param y                文本左上角的纵坐标
+        :param max_width        文本最大长度
+        :param draw             是否绘制
+        :return                 计算得到的高度
+        """
+
         offset = 0
         lines = styled_string.content.split("\n")
         text_height = styled_string.font.layout_bounds("A").y
@@ -144,16 +157,16 @@ class ImgConvert:
 
         return offset
 
-    """  
-    给图片应用覆盖色
-  
-    :param image        目标图片
-    :param tint         覆盖色
-    :return             处理完后的图片
-    """
-
     @staticmethod
     def apply_tint(image_path: str, tint: pixie.Color) -> Image:
+        """
+        给图片应用覆盖色
+
+        :param image_path   目标图片位置
+        :param tint         覆盖色
+        :return             处理完后的图片
+        """
+
         image = pixie.read_image(image_path)
         width, height = image.width, image.height
         tinted_image = pixie.Image(width, height)

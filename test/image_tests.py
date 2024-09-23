@@ -7,7 +7,7 @@ from module.ImgConvert import StyledString
 from module.board.misc import MiscBoardGenerator
 from module.config import Configs
 
-config = Configs(os.path.join(os.path.dirname(__file__), "..")).get_config("Hydro")[0]
+config = Configs(os.path.dirname(__file__)).get_configs()[0]
 
 
 class GenerateTest(unittest.TestCase):
