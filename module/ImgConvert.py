@@ -194,15 +194,16 @@ class ImgConvert:
                 ImgConvert.GradientColors.colors = json.load(f)
 
         @staticmethod
-        def generate_gradient(config: Config) -> tuple[list[str], list[float]]:
+        def generate_gradient(config: Config) -> tuple[list[str], list[float], str]:
             ImgConvert.GradientColors.load_colors(config)
 
-            now_colors = []
+            now_colors, color_name = [], ""
             while len(now_colors) < 2 or len(now_colors) > 3:
                 color_idx = random.randint(0, len(ImgConvert.GradientColors.colors) - 1)
                 now_colors = ImgConvert.GradientColors.colors[color_idx]["colors"]
+                color_name = f"#{color_idx + 1} {ImgConvert.GradientColors.colors[color_idx]["name"]}"
 
             if random.randint(0, 100) < 50:
                 now_colors.reverse()
             position_list = [0.0, 1.0] if len(now_colors) == 2 else [0.0, 0.5, 1.0]
-            return now_colors, position_list
+            return now_colors, position_list, color_name

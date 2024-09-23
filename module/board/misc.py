@@ -163,6 +163,9 @@ class Section:
     def __init__(self, config: Config):
         self.config = config
 
+    def get_columns(self):
+        return 1
+
     @abstractmethod
     def draw(self, output_img: Image, x: int, y: int) -> int:
         pass
@@ -183,25 +186,43 @@ class RankSection(Section):
         self.hint = StyledString(config, hint, 'M', 28, font_color=(0, 0, 0, 136 / 255)) if hint else None
         self.tops = StyledString(config, f"Top {tops}th", "H", 48) if tops != -1 else None
 
+    def get_columns(self):  # 最多4栏
+        ok_cnt = len([rank for rank in self.rank_data if not (
+                rank['unrated'] and not self.config.get_config()["show_unrated"])])
+        return min(4, 1 + ok_cnt // 25)
+
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
 
-        current_y = draw_text(output_img, self.subtitle, 16, current_y)
-        current_y = draw_text(output_img, self.title, 16 if self.hint else 32, current_y)
+        current_y = draw_text(output_img, self.subtitle, 16, x, current_y)
+        current_y = draw_text(output_img, self.title, 16 if self.hint else 32, x, current_y)
         if self.tops:
             current_y -= 86 if self.hint else 102
-            current_y = draw_text(output_img, self.tops, 16 if self.hint else 32, current_y,
-                                  x=ImgConvert.calculate_string_width(self.title) + 128 + 28)
+            current_y = draw_text(output_img, self.tops, 16 if self.hint else 32,
+                                  ImgConvert.calculate_string_width(self.title) + x + 28, current_y)
         if self.hint:
-            current_y = draw_text(output_img, self.hint, 32, current_y)
+            current_y = draw_text(output_img, self.hint, 32, x, current_y)
 
+        ok_cnt = len([rank for rank in self.rank_data if not (
+                rank['unrated'] and not self.config.get_config()["show_unrated"])])
+        cnt_per_column = (ok_cnt + self.get_columns() - 1) // self.get_columns()
         pre_rank = ""
+        cnt, begin_x, begin_y = 0, x + 32, current_y
+        max_current_y = current_y
+
         for rank in self.rank_data:
             if rank['unrated'] and not self.config.get_config()["show_unrated"]:  # 不显示的话不画
                 continue
+
+            cnt += 1  # 处理多栏
+            if cnt > cnt_per_column:
+                cnt = 1
+                begin_x += ImgConvert.MAX_WIDTH + 32  # 切换到下一栏
+                current_y = begin_y
+
+            current_x = begin_x
             progress_len = 360 + 440 * rank['progress']
             line_y = current_y
-            current_x = 128 + 32
             same_rank = False
             if rank['unrated']:
                 rank['rank'].set_font_color(Color(0, 0, 0, 100 / 255))
@@ -210,17 +231,18 @@ class RankSection(Section):
                 rank['rank'].set_font_color(Color(0, 0, 0, 0 if same_rank else 1))
                 pre_rank = rank['rank'].content
             current_y = line_y + 8
-            draw_text(output_img, rank['rank'], 12, current_y, x=current_x)
+            draw_text(output_img, rank['rank'], 12, current_x, current_y)
 
             current_x += ImgConvert.calculate_string_width(rank['rank']) + 28
             current_y = line_y + 40
             rank['user'].set_font_color(Color(0, 0, 0, 100 / 255 if rank['unrated'] else 1))
-            draw_text(output_img, rank['user'], 12, current_y, x=current_x)
+            draw_text(output_img, rank['user'], 12, current_x, current_y)
 
-            current_x = max(progress_len + 128, current_x + ImgConvert.calculate_string_width(rank['user'])) + 36
+            current_x = (max(progress_len + begin_x - 32, current_x + ImgConvert.calculate_string_width(rank['user']))
+                         + 36)
             current_y = line_y + 40
             rank['val'].set_font_color(Color(0, 0, 0, 100 / 255 if rank['unrated'] else 1))
-            current_y = draw_text(output_img, rank['val'], 32, current_y, x=current_x)
+            current_y = draw_text(output_img, rank['val'], 32, current_x, current_y)
 
             tile_colors = [
                 Color(0, 0, 0, (12 if rank['unrated'] else (10 if same_rank else 18)) / 255),
@@ -229,21 +251,34 @@ class RankSection(Section):
             ]
             tile_positions = [0.0, 0.5, 1.0]
 
-            draw_horizontal_gradient_round_rect(output_img, 128, line_y + 38, progress_len, 52,
+            draw_horizontal_gradient_round_rect(output_img, begin_x - 32, line_y + 38, progress_len, 52,
                                                 tile_colors, tile_positions)
 
-        return current_y - 32
+            max_current_y = max(max_current_y, current_y)
+
+        return max_current_y - 32
 
     def get_height(self):
         height = ImgConvert.calculate_height([self.title, self.subtitle, self.hint]) + 48
         if self.hint:
             height += 32
+
+        ok_cnt = len([rank for rank in self.rank_data if not (
+                rank['unrated'] and not self.config.get_config()["show_unrated"])])
+        cnt_per_column = (ok_cnt + self.get_columns() - 1) // self.get_columns()
+        cnt = 0
+
         for item in self.rank_data:
             if item['unrated'] and not self.config.get_config()["show_unrated"]:  # 不显示的话不计算unrated的高度
                 continue
+
+            cnt += 1
+            if cnt > cnt_per_column:
+                break
+
             height += item['user'].height + 40 + 32
-        height -= 32
-        return height
+
+        return height - 32
 
 
 class SubmitDetailSection(Section):
@@ -278,8 +313,8 @@ class SubmitDetailSection(Section):
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
 
-        current_y = draw_text(output_img, self.total_submits_title, 16, current_y)
-        draw_text(output_img, self.total_submits_detail, 16 if self.verdict_detail else 0, current_y)
+        current_y = draw_text(output_img, self.total_submits_title, 16, x, current_y)
+        draw_text(output_img, self.total_submits_detail, 16 if self.verdict_detail else 0, x, current_y)
         current_y = y  # 保持在同一行
         total_submits_width = max(
             ImgConvert.calculate_string_width(self.total_submits_title),
@@ -287,11 +322,11 @@ class SubmitDetailSection(Section):
         ) + 132
 
         if self.ave_score_title:
-            current_y = draw_text(output_img, self.ave_score_title, 16, current_y,
-                                  x=total_submits_width + 128)
-            draw_text(output_img, self.ave_score_detail_main, 0, current_y, x=total_submits_width + 128)
-            draw_text(output_img, self.ave_score_detail_sub, 16 if self.verdict_detail else 0, current_y,
-                      x=ImgConvert.calculate_string_width(self.ave_score_detail_main) + total_submits_width + 128)
+            current_y = draw_text(output_img, self.ave_score_title, 16, total_submits_width + x, current_y)
+            draw_text(output_img, self.ave_score_detail_main, 0, total_submits_width + x, current_y)
+            draw_text(output_img, self.ave_score_detail_sub, 16 if self.verdict_detail else 0,
+                      ImgConvert.calculate_string_width(self.ave_score_detail_main) + total_submits_width + x,
+                      current_y)
             current_y = y
 
             total_submits_width += max(
@@ -300,14 +335,14 @@ class SubmitDetailSection(Section):
                     self.ave_score_detail_sub)
             ) + 132
 
-        current_y = draw_text(output_img, self.verdict_prop_title, 16, current_y, x=total_submits_width + 128)
-        draw_text(output_img, self.verdict_prop_detail_main, 0, current_y, x=total_submits_width + 128)
-        current_y = draw_text(output_img, self.verdict_prop_detail_sub, 16 if self.verdict_detail else 0, current_y,
-                              x=ImgConvert.calculate_string_width(
-                                  self.verdict_prop_detail_main) + total_submits_width + 128)
+        current_y = draw_text(output_img, self.verdict_prop_title, 16, total_submits_width + x, current_y)
+        draw_text(output_img, self.verdict_prop_detail_main, 0, total_submits_width + x, current_y)
+        current_y = draw_text(output_img, self.verdict_prop_detail_sub, 16 if self.verdict_detail else 0,
+                              ImgConvert.calculate_string_width(
+                                  self.verdict_prop_detail_main) + total_submits_width + x, current_y)
 
         if self.verdict_detail:
-            current_y = draw_text(output_img, self.verdict_detail, 0, current_y)
+            current_y = draw_text(output_img, self.verdict_detail, 0, x, current_y)
 
         return current_y
 
@@ -332,9 +367,9 @@ class HourlyDistributionSection(Section):
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
-        current_y = draw_text(output_img, self.hourly_title, 24, current_y)
-        current_y = draw_vertical_graph(output_img, self.hourly_data, 40, current_y)
-        current_y = draw_text(output_img, self.hourly_detail, 0, current_y)
+        current_y = draw_text(output_img, self.hourly_title, 24, x, current_y)
+        current_y = draw_vertical_graph(output_img, self.hourly_data, 40, x, current_y)
+        current_y = draw_text(output_img, self.hourly_detail, 0, x, current_y)
         return current_y
 
     def get_height(self):
@@ -354,10 +389,10 @@ class SimpleTextSection(Section):
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
-        current_y = draw_text(output_img, self.subtitle, 16, current_y)
-        current_y = draw_text(output_img, self.title, 16 if self.hint else 0, current_y)
+        current_y = draw_text(output_img, self.subtitle, 16, x, current_y)
+        current_y = draw_text(output_img, self.title, 16 if self.hint else 0, x, current_y)
         if self.hint:
-            current_y = draw_text(output_img, self.hint, 0, current_y)
+            current_y = draw_text(output_img, self.hint, 0, x, current_y)
         return current_y
 
     def get_height(self):
@@ -366,22 +401,23 @@ class SimpleTextSection(Section):
 
 
 class CopyrightSection(Section):
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, gradient_name: str):
         super().__init__(config)
         self.module_name = StyledString(config, "Peeper Board Generator", 'H', 36,
                                         font_color=(0, 0, 0, 208 / 255))
         self.module_version = StyledString(config, "v1.2.0", 'B', 20,
                                            font_color=(0, 0, 0, 208 / 255))  # todo
         self.generation_info = StyledString(config, f'Generated at {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}.\n'
-                                                    f'From {config.get_config()["board_name"]}.', 'B', 20,
+                                                    f'From {config.get_config()["board_name"]}.\n'
+                                                    f'{gradient_name}.', 'B', 20,
                                             line_multiplier=1.32, font_color=(0, 0, 0, 136 / 255))
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
-        draw_text(output_img, self.module_name, 16, current_y)
-        current_y = draw_text(output_img, self.module_version, 24, current_y + 16,
-                              x=ImgConvert.calculate_string_width(self.module_name) + 12 + 128)
-        current_y = draw_text(output_img, self.generation_info, 0, current_y)
+        draw_text(output_img, self.module_name, 16, x, current_y)
+        current_y = draw_text(output_img, self.module_version, 24,
+                              ImgConvert.calculate_string_width(self.module_name) + 12 + x, current_y + 16)
+        current_y = draw_text(output_img, self.generation_info, 0, x, current_y)
         return current_y
 
     def get_height(self):
@@ -389,9 +425,9 @@ class CopyrightSection(Section):
                 + 24)
 
 
-def draw_text(image: Image, content: StyledString, padding_bottom: int, current_y: int, x: int = 128) -> int:
-    ImgConvert.draw_string(image, content, x, current_y)
-    return current_y + ImgConvert.calculate_height([content]) + padding_bottom
+def draw_text(image: Image, content: StyledString, padding_bottom: int, x: int, y: int) -> int:
+    ImgConvert.draw_string(image, content, x, y)
+    return y + ImgConvert.calculate_height([content]) + padding_bottom
 
 
 # 这个java自带 (Color.darker)
@@ -429,20 +465,20 @@ def draw_background(image: Image, width: int, height: int, colors: list[str], po
     image.draw(mask, blend_mode=pixie.NORMAL_BLEND)
 
 
-def draw_basic_content(config: Config, image: Image, total_height: int, title: StyledString,
-                       subtitle: StyledString, current_y: int, logo_path: str) -> int:
-    current_gradient, gradient_positions = ImgConvert.GradientColors.generate_gradient(config)
+def draw_basic_content(image: Image, total_width: int, total_height: int,
+                       title: StyledString, subtitle: StyledString, current_y: int, logo_path: str,
+                       current_gradient: list[str], gradient_positions: list[float]) -> int:
     # 全部换用pixie
-    draw_background(image, 1280, total_height + 336, current_gradient, gradient_positions)
+    draw_background(image, total_width + 256, total_height + 336, current_gradient, gradient_positions)
     accent_color = pixie.parse_color(current_gradient[0])
     accent_dark_color = darken_color(darken_color(darken_color(accent_color)))
 
     logo_tinted = ImgConvert.apply_tint(logo_path, accent_dark_color).resize(140, 140)
     image.draw(logo_tinted, pixie.translate(108, 160))
     title.set_font_color(accent_dark_color)
-    current_y = draw_text(image, title, 12, current_y, x=260)
+    current_y = draw_text(image, title, 12, 260, current_y)
     subtitle.set_font_color(Color(accent_dark_color.r, accent_dark_color.g, accent_dark_color.b, 136 / 255))
-    current_y = draw_text(image, subtitle, 108, current_y)
+    current_y = draw_text(image, subtitle, 108, 128, current_y)
 
     return current_y
 
@@ -457,7 +493,7 @@ def draw_horizontal_gradient_round_rect(image: Image, x: int, y: int, width: int
     draw_round_rect(image, paint, x, y, width, height, round_size)
 
 
-def draw_vertical_graph(image: Image, data: dict, padding_bottom: int, current_y: int, x: int = 128) -> int:
+def draw_vertical_graph(image: Image, data: dict, padding_bottom: int, x, current_y: int) -> int:
     current_x = x + 26
     current_y += 8
 
@@ -471,10 +507,10 @@ def draw_vertical_graph(image: Image, data: dict, padding_bottom: int, current_y
     sub_tile_paint.color = pixie.Color(0, 0, 0, 16 / 255)
 
     # 绘制左半边框
-    draw_rect(image, outline_paint, 128, current_y, 24, 4)
-    draw_rect(image, outline_paint, 128, current_y + 4, 4, 20)
-    draw_rect(image, outline_paint, 128, current_y + 240, 24, 4)
-    draw_rect(image, outline_paint, 128, current_y + 220, 4, 20)
+    draw_rect(image, outline_paint, x, current_y, 24, 4)
+    draw_rect(image, outline_paint, x, current_y + 4, 4, 20)
+    draw_rect(image, outline_paint, x, current_y + 240, 24, 4)
+    draw_rect(image, outline_paint, x, current_y + 220, 4, 20)
 
     for item in data['distribution']:
         progress_len = 24 + 176 * item['hot_prop']
@@ -523,7 +559,9 @@ class MiscBoardGenerator:
                                      'H', 36,
                                      line_multiplier=1.2)
         sections: list[Section] = []  # 各板块
-        copyright_section = CopyrightSection(config)
+
+        current_gradient, gradient_positions, gradient_name = ImgConvert.GradientColors.generate_gradient(config)
+        copyright_section = CopyrightSection(config, gradient_name)
 
         if board_type == "full":  # 对于 full 榜单的图形逻辑
             title = StyledString(config, "昨日卷王天梯榜", 'H', 96)
@@ -634,24 +672,74 @@ class MiscBoardGenerator:
                                                             verdict_prop_title=f"{verdict} 占比")
 
                 today_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10), verdict)
-                today_top_10_section = RankSection(config, f"{alias[verdict]} 排行榜", "分类型提交榜单", today_top_10, tops=10)
+                today_top_10_section = RankSection(config, f"{alias[verdict]} 排行榜", "分类型提交榜单", today_top_10,
+                                                   tops=10)
 
                 if len(rank) == 0:
                     sections.append(ranking_none_section)
                 else:
                     sections.extend([submit_detail_section, today_top_10_section])
 
-        sections.append(copyright_section)
+        # 下面的分栏基于 跨多栏的内容只有一个 的假设
+        total_columns = max([section.get_columns() for section in sections])
+        total_width = (ImgConvert.MAX_WIDTH + 32) * total_columns
+        sections_column_id = [0 for _ in range(len(sections))]
+        one_column_heights = [section.get_height() for section in sections if section.get_columns() == 1]
+        one_column_height = max(sum(one_column_heights) // total_columns, max(one_column_heights))  # 保证至少能塞下一个
 
-        total_height = sum([section.get_height() for section in sections])
-        total_height += ImgConvert.calculate_height([title, eng_full_name])
-        total_paddings = 108 * len(sections) + 12
-        output_img = pixie.Image(1280, total_height + total_paddings + 336)
+        current_column, current_height = 0, 0  # 分栏（策略：第一栏可以超出，后面不超出第一栏）
+        for idx, section in enumerate(sections):
+            if section.get_columns() > 1 or current_column >= total_columns:
+                sections_column_id[idx] = 0
+                continue
+            if current_height + section.get_height() > one_column_height:
+                current_column += 1
+                current_height = 0
+            sections_column_id[idx] = current_column % total_columns
+            current_height += section.get_height() + 108
 
-        current_y = draw_basic_content(config, output_img, total_height + total_paddings,
-                                       title, eng_full_name, 168, logo_path)
+        total_height = ImgConvert.calculate_height([title, eng_full_name]) + 108 + 12
+        column_current_height = [0 for _ in range(total_columns)]
 
-        for section in sections:
-            current_y = section.draw(output_img, 128, current_y) + 108
+        for i, section in enumerate(sections):
+            idx = sections_column_id[i]
+
+            # 保证当前栏不会把跨越的某一栏挡住
+            if section.get_columns() >= 1:
+                current_max_height = 0
+                for j in range(section.get_columns()):
+                    current_max_height = max(current_max_height, column_current_height[idx + j])
+                for j in range(section.get_columns()):
+                    column_current_height[idx + j] = current_max_height
+
+            for j in range(section.get_columns()):
+                column_current_height[idx + j] += section.get_height() + 108
+
+        total_height += max(column_current_height)
+        total_height += copyright_section.get_height()
+
+        output_img = pixie.Image(total_width + 256, total_height + 336)
+        begin_y = draw_basic_content(output_img, total_width, total_height,
+                                     title, eng_full_name, 168, logo_path,
+                                     current_gradient, gradient_positions)
+
+        column_current_height = [begin_y for _ in range(total_columns)]
+        for i, section in enumerate(sections):
+            idx = sections_column_id[i]
+
+            # 保证当前栏不会把跨越的某一栏挡住
+            if section.get_columns() >= 1:
+                current_max_height = 0
+                for j in range(section.get_columns()):
+                    current_max_height = max(current_max_height, column_current_height[idx + j])
+                for j in range(section.get_columns()):
+                    column_current_height[idx + j] = current_max_height
+
+            current_y = section.draw(output_img, 128 + idx * (ImgConvert.MAX_WIDTH + 32),
+                                     column_current_height[idx]) + 108
+            for j in range(section.get_columns()):
+                column_current_height[idx + j] = current_y
+
+        copyright_section.draw(output_img, 128, max(column_current_height))
 
         return output_img
