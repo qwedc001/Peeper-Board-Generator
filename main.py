@@ -29,7 +29,7 @@ class DefaultHelpParser(argparse.ArgumentParser):
         sys.exit(2)
 
 
-def generate(cur_config: Config, multi: bool = False):
+def generate(cur_config: Config, multi: bool = False,seperate_cols: bool = False):
     logging.info(f"正在生成 {cur_config.get_config()['board_name']} 榜单")
     if not args.output or multi:
         args.output = os.path.join(work_dir, "data",
@@ -88,6 +88,7 @@ if __name__ == "__main__":
         parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
         parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
         parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')
+        parser.add_argument('--seperate_col',action='store_true',help='是否启用分栏特性')
         args = parser.parse_args()
         if args.version:
             print(f"Peeper-Board-Generator {VERSION_INFO}")
@@ -101,12 +102,12 @@ if __name__ == "__main__":
         if not args.id:
             # 生成全部榜单
             for config in configs:
-                generate(config, True)
+                generate(config, True,args.seperate_col)
         else:
             # 生成指定 id 的榜单
             for config in configs:
                 if config.get_config()['id'] == args.id:
-                    generate(config)
+                    generate(config,args.seperate_col)
                     break
         with open(os.path.join(work_dir, "last_traceback.log"), "w", encoding='utf-8') as f:
             f.write("ok")
