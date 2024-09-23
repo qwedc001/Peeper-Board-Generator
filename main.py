@@ -7,12 +7,12 @@ from module.config import Configs, Config
 from module.board.misc import MiscBoardGenerator
 import argparse
 
+from module.constants import VERSION_INFO
 from module.utils import search_user_by_uid, fuzzy_search_user
 from module.verdict import ALIAS_MAP
 import sys
 
 configs = Configs(os.path.dirname(__file__)).get_configs()
-VERSION_INFO = "v1.2.0"
 
 sub_handlers = {
     'Hydro': HydroHandler,

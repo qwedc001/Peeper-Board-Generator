@@ -1,0 +1,1 @@
+VERSION_INFO = "v1.2.1"

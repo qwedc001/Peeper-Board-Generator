@@ -8,6 +8,7 @@ from pixie import pixie, Image, Color, Paint
 
 from module.ImgConvert import StyledString, ImgConvert
 from module.config import Config
+from module.constants import VERSION_INFO
 from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
     get_most_popular_problem, count_users_submitted
@@ -405,8 +406,8 @@ class CopyrightSection(Section):
         super().__init__(config)
         self.module_name = StyledString(config, "Peeper Board Generator", 'H', 36,
                                         font_color=(0, 0, 0, 208 / 255))
-        self.module_version = StyledString(config, "v1.2.0", 'B', 20,
-                                           font_color=(0, 0, 0, 208 / 255))  # todo
+        self.module_version = StyledString(config, VERSION_INFO, 'B', 20,
+                                           font_color=(0, 0, 0, 208 / 255))
         self.generation_info = StyledString(config, f'Generated at {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}.\n'
                                                     f'From {config.get_config()["board_name"]}.\n'
                                                     f'{gradient_name}.', 'B', 20,
