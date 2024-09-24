@@ -51,6 +51,7 @@
       "尝试自己构造测试数据来测试代码的正确性。",
       "试试 Monaspace 字体吧！它看起来真的很舒服！",
       "#define int long long",
+      "别tm #define int long long了",
       "ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);",
       "cout << fixed << setprecision(2);"
     ]
@@ -62,7 +63,9 @@
       "来唱歌！咕！咕！咕！咕！咕咕咕咕咕！",
       "噔噔噔 噔噔 噔噔 噔噔噔噔噔噔",
       "小心翼翼千万别被发现。",
-      "I super, explosion."
+      "I super, explosion.",
+      "DABCABCTOABCABDAAEABCABCTOVRRREBAEEABCABCJAABCABBAAEABCABCJAVRRREBAE",
+      "O-oooooooooo AAAAE-A-A-I-A-U- JO-oooooooooooo AAE-O-A-A-U-U-A- E-eee-ee-eee AAAAE-A-E-I-E-A- JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA"
     ]
   },
   {
