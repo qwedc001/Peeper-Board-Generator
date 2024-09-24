@@ -66,30 +66,33 @@ def generate(cur_config: Config, multi: bool = False,seperate_cols: bool = False
 
 
 if __name__ == "__main__":
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+
+    console_handler = logging.StreamHandler(sys.stderr)
+    console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    file_handler = logging.FileHandler(os.path.join(work_dir, "info.log"), encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+
+    logger.addHandler(console_handler)
+    logger.addHandler(file_handler)
+    parser = DefaultHelpParser(description='Peeper-Board-Generator OJ榜单图片生成器')
+    required_para = parser.add_mutually_exclusive_group(required=True)
+    required_para.add_argument('--version', action="store_true", help='版本号信息')
+    required_para.add_argument('--full', action="store_true", help='生成昨日榜单')
+    required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
+    required_para.add_argument('--query_uid', type=str, help='根据 uid 查询指定用户的信息')
+    required_para.add_argument('--query_name', type=str, help='根据用户名查询指定用户的信息')
+    parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
+    parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
+    parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')
+    parser.add_argument('--seperate_col',action='store_true',help='是否启用分栏特性')
+    parser.add_argument('--performance_statistics',action='store_true',help='性能测试')
+    statistics_file = open(os.path.join(work_dir, "performance.log"), 'w',encoding='utf-8')
     try:
-        logger = logging.getLogger()
-        logger.setLevel(logging.INFO)
-
-        console_handler = logging.StreamHandler(sys.stderr)
-        console_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-        file_handler = logging.FileHandler(os.path.join(work_dir, "info.log"), encoding='utf-8')
-        file_handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
-
-        logger.addHandler(console_handler)
-        logger.addHandler(file_handler)
-
-        parser = DefaultHelpParser(description='Peeper-Board-Generator OJ榜单图片生成器')
-        required_para = parser.add_mutually_exclusive_group(required=True)
-        required_para.add_argument('--version', action="store_true", help='版本号信息')
-        required_para.add_argument('--full', action="store_true", help='生成昨日榜单')
-        required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
-        required_para.add_argument('--query_uid', type=str, help='根据 uid 查询指定用户的信息')
-        required_para.add_argument('--query_name', type=str, help='根据用户名查询指定用户的信息')
-        parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
-        parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
-        parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')
-        parser.add_argument('--seperate_col',action='store_true',help='是否启用分栏特性')
         args = parser.parse_args()
+        if not args.performance_statistics:
+            statistics_file.close()
         if args.version:
             print(f"Peeper-Board-Generator {VERSION_INFO}")
             with open(args.output, "w", encoding='utf-8') as f:
@@ -102,11 +105,13 @@ if __name__ == "__main__":
         if not args.id:
             # 生成全部榜单
             for config in configs:
+                config.set_config('statistic_file',statistics_file)
                 generate(config, True,args.seperate_col)
         else:
             # 生成指定 id 的榜单
             for config in configs:
                 if config.get_config()['id'] == args.id:
+                    config.set_config('statistic_file',statistics_file)
                     generate(config,args.seperate_col)
                     break
         with open(os.path.join(work_dir, "last_traceback.log"), "w", encoding='utf-8') as f:
@@ -115,3 +120,6 @@ if __name__ == "__main__":
         logging.error(e, exc_info=True)
         with open(os.path.join(work_dir, "last_traceback.log"), "w", encoding='utf-8') as f:
             traceback.print_exc(file=f)
+    finally:
+        if statistics_file:
+            statistics_file.close()
