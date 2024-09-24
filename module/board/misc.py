@@ -179,18 +179,20 @@ class Section:
 class RankSection(Section):
 
     def __init__(self, config: Config,
-                 title: str, subtitle: str, rank_data: list[dict], hint: str = None, tops: int = -1):
+                 title: str, subtitle: str, rank_data: list[dict], hint: str = None, tops: int = -1,
+                 separate_columns: bool = False):
         super().__init__(config)
         self.title = StyledString(config, title, "H", 72)
         self.subtitle = StyledString(config, subtitle, "B", 36)
         self.rank_data = rank_data
         self.hint = StyledString(config, hint, 'M', 28, font_color=(0, 0, 0, 136 / 255)) if hint else None
         self.tops = StyledString(config, f"Top {tops}th", "H", 48) if tops != -1 else None
+        self.limit_column = 3 if separate_columns else 1
 
     def get_columns(self):  # 最多4栏
         ok_cnt = len([rank for rank in self.rank_data if not (
                 rank['unrated'] and not self.config.get_config()["show_unrated"])])
-        return min(4, 1 + ok_cnt // 25)
+        return min(self.limit_column, 1 + ok_cnt // 32)
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
@@ -557,7 +559,7 @@ class MiscBoardGenerator:
 
     @staticmethod
     def generate_image(config: Config, board_type: str,
-                       logo_path, verdict: str = "Accepted") -> Image:
+                       logo_path, verdict: str = "Accepted", separate_columns: bool = False) -> Image:
         today = load_json(config, False)
         title = StyledString(config, "Unknown Board", 'H', 96)
         eng_full_name = StyledString(config,
@@ -593,7 +595,8 @@ class MiscBoardGenerator:
                                                        play_of_the_oj_time_text if play_of_the_oj_is_parallel else None)
 
             yesterday_top_5_data = pack_ranking_list(config, data.top_five, verdict)
-            yesterday_top_5_section = RankSection(config, "昨日过题数", "过题数榜单", yesterday_top_5_data, tops=5)
+            yesterday_top_5_section = RankSection(config, "昨日过题数", "过题数榜单", yesterday_top_5_data, tops=5,
+                                                  separate_columns=separate_columns)
 
             submit_detail_section = SubmitDetailSection(config, data.total_submits, data.ac_rate, data.users_submitted,
                                                         pack_verdict_detail(data.verdict_data.get("verdicts")),
@@ -609,10 +612,12 @@ class MiscBoardGenerator:
                                                         f'共有 {data.popular_problem[1]} 个人提交本题')
 
             total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10), verdict)
-            total_rank_top_10_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_10, tops=10)
+            total_rank_top_10_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_10, tops=10,
+                                                    separate_columns=separate_columns)
 
             yesterday_full_detail = pack_ranking_list(config, data.total_board, verdict)
-            yesterday_full_section = RankSection(config, "昨日 OJ 总榜", "完整榜单", yesterday_full_detail)
+            yesterday_full_section = RankSection(config, "昨日 OJ 总榜", "完整榜单", yesterday_full_detail,
+                                                 separate_columns=separate_columns)
 
             # 注册板块
             if not has_ac_submission:
@@ -641,7 +646,8 @@ class MiscBoardGenerator:
                 has_ac_submission = len([s for s in today.submissions if s.verdict == verdict]) > 0
 
                 today_tops_detail = pack_ranking_list(config, data.total_board, verdict)
-                today_tops_section = RankSection(config, "今日过题数", "过题数榜单", today_tops_detail)
+                today_tops_section = RankSection(config, "今日过题数", "过题数榜单", today_tops_detail,
+                                                 separate_columns=separate_columns)
 
                 submit_detail_section = SubmitDetailSection(config, data.total_submits, data.ac_rate,
                                                             data.users_submitted,
@@ -656,7 +662,8 @@ class MiscBoardGenerator:
 
                 total_rank_top_5 = pack_ranking_list(config, slice_ranking_data(rank_data, 5), verdict)
                 total_rank_top_5_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_5, tops=5,
-                                                       hint="为存在\"重复提交往日已AC的题目\"条件下的过题数理论值")
+                                                       hint="为存在\"重复提交往日已AC的题目\"条件下的过题数理论值",
+                                                       separate_columns=separate_columns)
 
                 if not has_ac_submission:
                     sections.append(submission_none_section)
@@ -680,7 +687,7 @@ class MiscBoardGenerator:
 
                 today_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10), verdict)
                 today_top_10_section = RankSection(config, f"{alias[verdict]} 排行榜", "分类型提交榜单", today_top_10,
-                                                   tops=10)
+                                                   tops=10, separate_columns=separate_columns)
 
                 if len(rank) == 0:
                     sections.append(ranking_none_section)
