@@ -12,7 +12,7 @@ from module.constants import VERSION_INFO
 from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
     get_most_popular_problem, count_users_submitted
-from module.utils import load_json, get_date_string
+from module.utils import load_json, get_date_string, rand_tips
 from module.verdict import ALIAS_MAP
 
 
@@ -404,6 +404,9 @@ class SimpleTextSection(Section):
 class CopyrightSection(Section):
     def __init__(self, config: Config, gradient_name: str):
         super().__init__(config)
+        self.tips_title = StyledString(config, "Tips:", 'H', 36)
+        self.tips_detail = StyledString(config, rand_tips(config), 'M', 28,
+                                        line_multiplier=1.32)
         self.module_name = StyledString(config, "Peeper Board Generator", 'H', 36,
                                         font_color=(0, 0, 0, 208 / 255))
         self.module_version = StyledString(config, VERSION_INFO, 'B', 20,
@@ -415,6 +418,9 @@ class CopyrightSection(Section):
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
         current_y = y
+        draw_text(output_img, self.tips_title, 0, x, current_y)
+        current_y = draw_text(output_img, self.tips_detail, 64,
+                              ImgConvert.calculate_string_width(self.tips_title) + 12 + x, current_y + 8)
         draw_text(output_img, self.module_name, 16, x, current_y)
         current_y = draw_text(output_img, self.module_version, 24,
                               ImgConvert.calculate_string_width(self.module_name) + 12 + x, current_y + 16)
@@ -422,8 +428,8 @@ class CopyrightSection(Section):
         return current_y
 
     def get_height(self):
-        return (ImgConvert.calculate_height([self.module_name, self.generation_info])
-                + 24)
+        return (ImgConvert.calculate_height([self.tips_title, self.module_name, self.generation_info])
+                + 88)
 
 
 def draw_text(image: Image, content: StyledString, padding_bottom: int, x: int, y: int) -> int:
