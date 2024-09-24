@@ -687,7 +687,7 @@ class MiscBoardGenerator:
                 else:
                     sections.extend([submit_detail_section, today_top_10_section])
 
-        # 下面的分栏基于 跨多栏的内容只有一个 的假设
+        # 下面的分栏基于 跨多栏的内容只有一个，且在顶部或底部 的假设
         total_columns = max([section.get_columns() for section in sections])
         total_width = (ImgConvert.MAX_WIDTH + 32) * total_columns
         sections_column_id = [0 for _ in range(len(sections))]
@@ -707,20 +707,32 @@ class MiscBoardGenerator:
 
         total_height = ImgConvert.calculate_height([title, eng_full_name]) + 108 + 12
         column_current_height = [0 for _ in range(total_columns)]
+        column_real_height = [0 for _ in range(total_columns)]
 
         for i, section in enumerate(sections):
             idx = sections_column_id[i]
 
             # 保证当前栏不会把跨越的某一栏挡住
-            if section.get_columns() >= 1:
+            if section.get_columns() > 1:
                 current_max_height = 0
                 for j in range(section.get_columns()):
                     current_max_height = max(current_max_height, column_current_height[idx + j])
                 for j in range(section.get_columns()):
                     column_current_height[idx + j] = current_max_height
+            else:
+                column_real_height[idx] += section.get_height()
 
             for j in range(section.get_columns()):
                 column_current_height[idx + j] += section.get_height() + 108
+
+        sorted_column_idx_mp = [i for i in range(total_columns)]  # 按照每列的高度降序排序
+        sorted_column_idx = {val: idx for idx, val in enumerate(
+            sorted(sorted_column_idx_mp, key=lambda x: column_real_height[x], reverse=True))}
+
+        for i, section in enumerate(sections):
+            if section.get_columns() == 1:
+                idx = sections_column_id[i]
+                sections_column_id[i] = sorted_column_idx[idx]
 
         total_height += max(column_current_height)
         total_height += copyright_section.get_height()
@@ -735,7 +747,7 @@ class MiscBoardGenerator:
             idx = sections_column_id[i]
 
             # 保证当前栏不会把跨越的某一栏挡住
-            if section.get_columns() >= 1:
+            if section.get_columns() > 1:
                 current_max_height = 0
                 for j in range(section.get_columns()):
                     current_max_height = max(current_max_height, column_current_height[idx + j])
