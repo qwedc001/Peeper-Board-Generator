@@ -143,8 +143,14 @@ def slice_ranking_data(rank: list[dict], lim: int) -> list[dict]:
     if len(rank) == 0:
         return []
 
-    max_rank = min(lim, rank[len(rank) - 1]['rank'])
-    return [ranking_data for ranking_data in rank if ranking_data['rank'] <= max_rank]
+    unrated_excluded = [ranking_data for ranking_data in rank if not ranking_data.get('unrated')]
+    max_rank = min(lim, unrated_excluded[len(unrated_excluded) - 1]['rank'])
+
+    sliced_data = [ranking_data for ranking_data in rank if ranking_data['rank'] <= max_rank]
+    while len(sliced_data) > 0 and sliced_data[-1].get('unrated'):
+        sliced_data.pop()  # 保证后面的打星不会计入
+
+    return sliced_data
 
 
 def pack_verdict_rank_data(verdict_desc: dict | None, verdict: str) -> list[dict]:
@@ -176,8 +182,27 @@ class Section:
         pass
 
 
-class RankSection(Section):
+class SectionBundle(Section):
+    def __init__(self, config: Config, sections: list[Section]):
+        super().__init__(config)
+        self.sections = sections
 
+    def get_columns(self):
+        return max([section.get_columns() for section in self.sections])
+
+    def draw(self, output_img: Image, x: int, y: int) -> int:
+        print([self, y])
+        current_y = y
+        for section in self.sections:
+            current_y = section.draw(output_img, x, current_y)
+            current_y += 108
+        return current_y - 108
+
+    def get_height(self):
+        return sum([section.get_height() for section in self.sections]) + 108 * (len(self.sections) - 1)
+
+
+class RankSection(Section):
     def __init__(self, config: Config,
                  title: str, subtitle: str, rank_data: list[dict], hint: str = None, tops: int = -1,
                  separate_columns: bool = False):
@@ -195,16 +220,17 @@ class RankSection(Section):
         return min(self.limit_column, 1 + ok_cnt // 32)
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
+        print([self, y])
         current_y = y
 
         current_y = draw_text(output_img, self.subtitle, 16, x, current_y)
-        current_y = draw_text(output_img, self.title, 16 if self.hint else 32, x, current_y)
+        current_y = draw_text(output_img, self.title, 32 if self.hint else 16, x, current_y)
         if self.tops:
-            current_y -= 86 if self.hint else 102
-            current_y = draw_text(output_img, self.tops, 16 if self.hint else 32,
+            current_y -= 102 if self.hint else 86
+            current_y = draw_text(output_img, self.tops, 24 if self.hint else 16,
                                   ImgConvert.calculate_string_width(self.title) + x + 28, current_y)
         if self.hint:
-            current_y = draw_text(output_img, self.hint, 32, x, current_y)
+            current_y = draw_text(output_img, self.hint, 16, x, current_y)
 
         ok_cnt = len([rank for rank in self.rank_data if not (
                 rank['unrated'] and not self.config.get_config()["show_unrated"])])
@@ -285,7 +311,6 @@ class RankSection(Section):
 
 
 class SubmitDetailSection(Section):
-
     def __init__(self, config: Config, total_submits: int, verdict_prop: float, users_submitted: int = -1,
                  verdict_detail: str = None, verdict_prop_title: str = "提交通过率", avg_score: float = -1):
         super().__init__(config)
@@ -314,6 +339,7 @@ class SubmitDetailSection(Section):
             self.verdict_detail = None
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
+        print([self, y])
         current_y = y
 
         current_y = draw_text(output_img, self.total_submits_title, 16, x, current_y)
@@ -355,7 +381,6 @@ class SubmitDetailSection(Section):
 
 
 class HourlyDistributionSection(Section):
-
     def __init__(self, config: Config, hourly_data: dict):
         super().__init__(config)
 
@@ -369,6 +394,7 @@ class HourlyDistributionSection(Section):
                                           font_color=(0, 0, 0, 136 / 255))
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
+        print([self, y])
         current_y = y
         current_y = draw_text(output_img, self.hourly_title, 24, x, current_y)
         current_y = draw_vertical_graph(output_img, self.hourly_data, 40, x, current_y)
@@ -382,7 +408,6 @@ class HourlyDistributionSection(Section):
 
 
 class SimpleTextSection(Section):
-
     def __init__(self, config: Config, title: str, subtitle: str, hint: str = None):
         super().__init__(config)
         self.title = StyledString(config, title, 'H', 72)
@@ -391,6 +416,7 @@ class SimpleTextSection(Section):
                                  font_color=(0, 0, 0, 136 / 255)) if hint else None
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
+        print([self, y])
         current_y = y
         current_y = draw_text(output_img, self.subtitle, 16, x, current_y)
         current_y = draw_text(output_img, self.title, 16 if self.hint else 0, x, current_y)
@@ -419,6 +445,7 @@ class CopyrightSection(Section):
                                             line_multiplier=1.32, font_color=(0, 0, 0, 136 / 255))
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
+        print([self, y])
         current_y = y
         draw_text(output_img, self.tips_title, 0, x, current_y)
         current_y = draw_text(output_img, self.tips_detail, 64,
@@ -623,8 +650,9 @@ class MiscBoardGenerator:
             if not has_ac_submission:
                 sections.append(submission_none_section)
             else:
-                sections.extend([play_of_the_oj_section, yesterday_top_5_section, submit_detail_section,
-                                 hourly_distribution_section, first_ac_section, popular_problem_section])
+                sections.extend([play_of_the_oj_section, yesterday_top_5_section,
+                                 SectionBundle(config, [submit_detail_section, hourly_distribution_section]),
+                                 first_ac_section, popular_problem_section])
 
             sections.append(ranking_none_section if len(rank) == 0 else total_rank_top_10_section)
 
@@ -668,7 +696,8 @@ class MiscBoardGenerator:
                 if not has_ac_submission:
                     sections.append(submission_none_section)
                 else:
-                    sections.extend([today_tops_section, submit_detail_section, hourly_distribution_section,
+                    sections.extend([today_tops_section,
+                                     SectionBundle(config, [submit_detail_section, hourly_distribution_section]),
                                      first_ac_section])
 
                 sections.append(ranking_none_section if len(rank) == 0 else total_rank_top_5_section)
@@ -706,7 +735,8 @@ class MiscBoardGenerator:
             if section.get_columns() > 1 or current_column >= total_columns:
                 sections_column_id[idx] = 0
                 continue
-            if current_height + section.get_height() > one_column_height:
+            if (current_height + section.get_height() > one_column_height and
+                    section.get_height() > one_column_height / 4):  # 让比较小的不单开一列
                 current_column += 1
                 current_height = 0
             sections_column_id[idx] = current_column % total_columns
@@ -731,15 +761,6 @@ class MiscBoardGenerator:
 
             for j in range(section.get_columns()):
                 column_current_height[idx + j] += section.get_height() + 108
-
-        sorted_column_idx_mp = [i for i in range(total_columns)]  # 按照每列的高度降序排序
-        sorted_column_idx = {val: idx for idx, val in enumerate(
-            sorted(sorted_column_idx_mp, key=lambda x: column_real_height[x], reverse=True))}
-
-        for i, section in enumerate(sections):
-            if section.get_columns() == 1:
-                idx = sections_column_id[i]
-                sections_column_id[i] = sorted_column_idx[idx]
 
         total_height += max(column_current_height)
         total_height += copyright_section.get_height()

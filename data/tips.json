@@ -32,6 +32,7 @@
       "面向数据编程.cpp",
       "兄弟！你怎么这么强！",
       "有一个人前来做题",
+      "哎，你说的cf，是Crossfire，Cloudflare，还是Codeforces？",
       "手持两把锟斤拷，口中疾呼烫烫烫",
       "你看这个巨佬，他已经做了2147483647道题了……嗯怎么突然消失了！",
       "你看这个巨佬，他已经做了-1道题了……？",
@@ -49,9 +50,12 @@
       "做题前一定要注意数据范围哦~",
       "时间复杂度并不等价于循环嵌套的次数。",
       "尝试自己构造测试数据来测试代码的正确性。",
-      "试试 Monaspace 字体吧！它看起来真的很舒服！",
+      "试试 Monospace 字体吧！它看起来真的很舒服！",
+      "赛时交题请三思，1发错误提交=20分钟罚时哦。",
+      "做交互题的时候别忘了flush，不然测评机会呆住。",
+      "封榜开始时，你将无法知道其他选手的过题情况，给比赛的结果带来了一定的不确定性。",
       "#define int long long",
-      "别tm #define int long long了",
+      "别tm #define int long long 了",
       "ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);",
       "cout << fixed << setprecision(2);"
     ]
@@ -60,10 +64,11 @@
     "section": "mug",
     "tips": [
       "咕咕咕咕咕咕",
-      "来唱歌！咕！咕！咕！咕！咕咕咕咕咕！",
+      "来唱歌！咕！咕！咕！咕！咕咕咕咕咕！咕咕咕！咕咕咕咕！咕！咕！咕！",
       "噔噔噔 噔噔 噔噔 噔噔噔噔噔噔",
       "小心翼翼千万别被发现。",
       "I super, explosion.",
+      "%&#@@%$&$#@%&#...Daisuke~",
       "DABCABCTOABCABDAAEABCABCTOVRRREBAEEABCABCJAABCABBAAEABCABCJAVRRREBAE",
       "O-oooooooooo AAAAE-A-A-I-A-U- JO-oooooooooooo AAE-O-A-A-U-U-A- E-eee-ee-eee AAAAE-A-E-I-E-A- JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA"
     ]
@@ -73,7 +78,8 @@
     "tips": [
       "榜单的背景颜色来自 ui-gradients 项目，可以通过左下角的信息确定具体是什么颜色组。",
       "本程序原来是基于Java的，经过一个暑假的爆改改成了Python。",
-      "榜单使用的字体是免费可商用的 OPPOSans。"
+      "榜单使用的字体是免费可商用的 OPPOSans。",
+      "榜单支持以多列的形式展示，只是排版有点怪。"
     ]
   }
 ]
