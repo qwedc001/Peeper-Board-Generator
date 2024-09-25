@@ -191,7 +191,6 @@ class SectionBundle(Section):
         return max([section.get_columns() for section in self.sections])
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
-        print([self, y])
         current_y = y
         for section in self.sections:
             current_y = section.draw(output_img, x, current_y)
@@ -220,7 +219,6 @@ class RankSection(Section):
         return min(self.limit_column, 1 + ok_cnt // 32)
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
-        print([self, y])
         current_y = y
 
         current_y = draw_text(output_img, self.subtitle, 16, x, current_y)
@@ -339,7 +337,6 @@ class SubmitDetailSection(Section):
             self.verdict_detail = None
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
-        print([self, y])
         current_y = y
 
         current_y = draw_text(output_img, self.total_submits_title, 16, x, current_y)
@@ -394,7 +391,6 @@ class HourlyDistributionSection(Section):
                                           font_color=(0, 0, 0, 136 / 255))
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
-        print([self, y])
         current_y = y
         current_y = draw_text(output_img, self.hourly_title, 24, x, current_y)
         current_y = draw_vertical_graph(output_img, self.hourly_data, 40, x, current_y)
@@ -416,7 +412,6 @@ class SimpleTextSection(Section):
                                  font_color=(0, 0, 0, 136 / 255)) if hint else None
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
-        print([self, y])
         current_y = y
         current_y = draw_text(output_img, self.subtitle, 16, x, current_y)
         current_y = draw_text(output_img, self.title, 16 if self.hint else 0, x, current_y)
@@ -445,7 +440,6 @@ class CopyrightSection(Section):
                                             line_multiplier=1.32, font_color=(0, 0, 0, 136 / 255))
 
     def draw(self, output_img: Image, x: int, y: int) -> int:
-        print([self, y])
         current_y = y
         draw_text(output_img, self.tips_title, 0, x, current_y)
         current_y = draw_text(output_img, self.tips_detail, 64,
@@ -457,8 +451,8 @@ class CopyrightSection(Section):
         return current_y
 
     def get_height(self):
-        return (ImgConvert.calculate_height([self.tips_title, self.module_name, self.generation_info])
-                + 88)
+        return (ImgConvert.calculate_height([self.tips_detail, self.module_name, self.generation_info])
+                + 96)
 
 
 def draw_text(image: Image, content: StyledString, padding_bottom: int, x: int, y: int) -> int:
