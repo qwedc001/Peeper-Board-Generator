@@ -648,7 +648,7 @@ class MiscBoardGenerator:
                                  SectionBundle(config, [submit_detail_section, hourly_distribution_section]),
                                  first_ac_section, popular_problem_section])
 
-            sections.append(ranking_none_section if len(rank) == 0 else total_rank_top_10_section)
+            sections.append(ranking_none_section if not rank or len(rank) == 0 else total_rank_top_10_section)
 
             if has_ac_submission:
                 sections.append(yesterday_full_section)
@@ -694,7 +694,7 @@ class MiscBoardGenerator:
                                      SectionBundle(config, [submit_detail_section, hourly_distribution_section]),
                                      first_ac_section])
 
-                sections.append(ranking_none_section if len(rank) == 0 else total_rank_top_5_section)
+                sections.append(ranking_none_section if not rank or len(rank) == 0 else total_rank_top_5_section)
 
             else:  # 对于分 verdict 的 now 榜单的图形逻辑
                 title = StyledString(config, f"今日当前{alias[verdict]}榜单", 'H', 96)
@@ -712,7 +712,7 @@ class MiscBoardGenerator:
                 today_top_10_section = RankSection(config, f"{alias[verdict]} 排行榜", "分类型提交榜单", today_top_10,
                                                    tops=10, separate_columns=separate_columns)
 
-                if len(rank) == 0:
+                if not rank or len(rank) == 0:
                     sections.append(ranking_none_section)
                 else:
                     sections.extend([submit_detail_section, today_top_10_section])
