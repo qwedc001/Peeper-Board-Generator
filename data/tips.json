@@ -9,6 +9,7 @@
       "你知道吗？其实tips全都是废话（确信",
       "啊！要给你看什么Tip好呢…(翻",
       "Tips: Tips: Tips: Tips: Tips: Tips: Tips:",
+      "Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips: Tips:",
       "猜猜你是第几次看到这条tips了",
       "提问！你还记得上一条tips是什么吗？"
     ]
@@ -38,7 +39,14 @@
       "你看这个巨佬，他已经做了-1道题了……？",
       "我确信我发现了一个能百分百过题的绝妙方法，可惜Tips的长度太短了，写不下",
       "你知道吗，2025 年和 2026 年的 ICPC World Final 将会在中国举行。",
-      "你知道吗，北京大学在 2024 年拿到了两次 ICPC World Final 冠军。"
+      "你知道吗，北京大学在 2024 年拿到了两次 ICPC World Final 冠军。",
+      "#define mian main",
+      "我们都喜欢平板电视，你看他常数多么大！",
+      "欸怎么t了，快读快写启动！",
+      "欸怎么t了，快用火车头！",
+      "欸你这代码的常数这么神秘，怎么用了火车头还是t！",
+      "欸这O(n)的代码怎么被编译器优化成O(1)了？",
+      "氧原子，吸氧，臭氧。"
     ]
   },
   {
@@ -54,10 +62,12 @@
       "赛时交题请三思，1发错误提交=20分钟罚时哦。",
       "做交互题的时候别忘了flush，不然测评机会呆住。",
       "封榜开始时，你将无法知道其他选手的过题情况，给比赛的结果带来了一定的不确定性。",
+      "适当使用bitset可以使你的时间复杂度除上Omega",
       "#define int long long",
       "别tm #define int long long 了",
       "ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);",
-      "cout << fixed << setprecision(2);"
+      "cout << fixed << setprecision(2);",
+      "__builtin_popcount()"
     ]
   },
   {
@@ -70,7 +80,8 @@
       "I super, explosion.",
       "%&#@@%$&$#@%&#...Daisuke~",
       "DABCABCTOABCABDAAEABCABCTOVRRREBAEEABCABCJAABCABBAAEABCABCJAVRRREBAE",
-      "O-oooooooooo AAAAE-A-A-I-A-U- JO-oooooooooooo AAE-O-A-A-U-U-A- E-eee-ee-eee AAAAE-A-E-I-E-A- JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA"
+      "O-oooooooooo AAAAE-A-A-I-A-U- JO-oooooooooooo AAE-O-A-A-U-U-A- E-eee-ee-eee AAAAE-A-E-I-E-A- JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA",
+      "oiiaioiiiiai"
     ]
   },
   {

@@ -30,7 +30,7 @@ class Color:
 
 class StyledString:
     def __init__(self, config: Config, content: str, font_type: str, font_size: int,
-                 font_color: Tuple[float, ...] = (0, 0, 0, 1), line_multiplier=1.0):  # 添加字体颜色
+                 font_color: Tuple[float, ...] = (0, 0, 0, 1), line_multiplier=1.0, max_width=-1):  # 添加字体颜色
         file_path = os.path.join(config.work_dir, "data", f'OPPOSans-{font_type}.ttf')
         self.content = content
         self.line_multiplier = line_multiplier
@@ -44,6 +44,7 @@ class StyledString:
                 self.font.paint.color = pixie.Color(font_color[0], font_color[1], font_color[2], font_color[3])
         except IOError:
             raise IOError(f"无法加载字体文件: {file_path}")
+        self.max_width = max_width
         self.height = ImgConvert.draw_string(None, self, 0, 0, draw=False)
 
     def set_font_color(self, font_color: pixie.Color):
@@ -84,7 +85,7 @@ class ImgConvert:
         return height
 
     @staticmethod
-    def draw_string(image: Image | None, styled_string: StyledString, x, y, max_width=MAX_WIDTH,
+    def draw_string(image: Image | None, styled_string: StyledString, x, y,
                     draw: bool = True) -> int:
         """
         绘制文本
@@ -93,10 +94,12 @@ class ImgConvert:
         :param styled_string    包装后的文本内容
         :param x                文本左上角的横坐标
         :param y                文本左上角的纵坐标
-        :param max_width        文本最大长度
         :param draw             是否绘制
         :return                 计算得到的高度
         """
+
+        if styled_string.max_width == -1:
+            styled_string.max_width = ImgConvert.MAX_WIDTH
 
         offset = 0
         lines = styled_string.content.split("\n")
@@ -117,7 +120,7 @@ class ImgConvert:
                 text_width, _ = text_size(word, font=styled_string.font)
                 line_x += text_width
 
-                if line_x <= max_width:
+                if line_x <= styled_string.max_width:
                     draw_text += word
                 else:  # 将该单词移到下一行
                     if len(draw_text) > 0:
@@ -130,13 +133,13 @@ class ImgConvert:
                         word = word.replace(" ", "")  # 保证除了第一行，每一行开头不是空格
                         text_width, _ = text_size(word, font=styled_string.font)
 
-                    while text_width > max_width:  # 简单的文本分割逻辑，一行塞不下就断开
-                        n = text_width // max_width
+                    while text_width > styled_string.max_width:  # 简单的文本分割逻辑，一行塞不下就断开
+                        n = text_width // styled_string.max_width
                         sub_pos = int(len(word) // n)
                         draw_text = word[:sub_pos]
                         draw_width, _ = text_size(draw_text, font=styled_string.font)
 
-                        while draw_width > max_width and sub_pos > 0:  # 微调，保证不溢出
+                        while draw_width > styled_string.max_width and sub_pos > 0:  # 微调，保证不溢出
                             sub_pos -= 1
                             draw_text = word[:sub_pos]
                             draw_width, _ = text_size(draw_text, font=styled_string.font)

@@ -248,7 +248,7 @@ class RankSection(Section):
                 current_y = begin_y
 
             current_x = begin_x
-            progress_len = 360 + 440 * rank['progress']
+            progress_len = 360 + 480 * rank['progress']
             line_y = current_y
             same_rank = False
             if rank['unrated']:
@@ -429,7 +429,9 @@ class CopyrightSection(Section):
         super().__init__(config)
         self.tips_title = StyledString(config, "Tips:", 'H', 36)
         self.tips_detail = StyledString(config, rand_tips(config), 'M', 28,
-                                        line_multiplier=1.32)
+                                        line_multiplier=1.32,  # 考虑右边界，不然画出去了
+                                        max_width=(ImgConvert.MAX_WIDTH -
+                                                   ImgConvert.calculate_string_width(self.tips_title) - 12))
         self.module_name = StyledString(config, "Peeper Board Generator", 'H', 36,
                                         font_color=(0, 0, 0, 208 / 255))
         self.module_version = StyledString(config, VERSION_INFO, 'B', 20,
