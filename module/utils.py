@@ -114,6 +114,7 @@ def save_json(config: Config, data: DailyJson, is_yesterday: bool = False):
         f.write(json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         f.close()
 
+
 def performance_test(func):
     def wrapper(*args, **kwargs):
         start = datetime.now()
@@ -124,12 +125,14 @@ def performance_test(func):
                 statistic_file = item.get_config()['statistic_file']
                 logging.debug(statistic_file)
                 if not statistic_file.closed:
-                    statistic_file.write(f"[{item.get_config()['id']}][{func.__name__}] 执行用时 {datetime.now()-start}\n")
+                    statistic_file.write(
+                        f"[{item.get_config()['id']}][{func.__name__}] 执行用时 {datetime.now() - start}\n")
                     logging.debug("已写入性能信息")
                     flag = True
                 else:
                     logging.debug("性能测试文件已关闭")
         if not flag:
-            print(f"[{func.__name__}] 执行用时 {datetime.now()-start}")
+            print(f"[{func.__name__}] 执行用时 {datetime.now() - start}")
         return result
+
     return wrapper

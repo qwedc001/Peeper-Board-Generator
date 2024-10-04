@@ -79,7 +79,7 @@ def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
         record = {'progress': (cnt - min_val + 1) / (max_val - min_val + 1),  # 拉大进度条的差距
                   'unrated': unrated,
                   'rank': StyledString(config, "*" if unrated else str(top['rank']), 'H', 64),
-                  'user': StyledString(config, str(top['user']), 'B', 36),
+                  'user': StyledString(config, ellipsize_str(top['user'], 25), 'B', 36),
                   'val': StyledString(config, str(cnt), 'H', 36)}
         ranking_list.append(record)
 
@@ -407,7 +407,7 @@ class HourlyDistributionSection(Section):
 class SimpleTextSection(Section):
     def __init__(self, config: Config, title: str, subtitle: str, hint: str = None):
         super().__init__(config)
-        self.title = StyledString(config, title, 'H', 72)
+        self.title = StyledString(config, ellipsize_str(title, 25), 'H', 72)
         self.subtitle = StyledString(config, subtitle, 'B', 36)
         self.hint = StyledString(config, hint, 'M', 28,
                                  font_color=(0, 0, 0, 136 / 255)) if hint else None
@@ -579,6 +579,13 @@ def check_parallel_play_of_the_oj(data: list) -> bool:
     return parallel
 
 
+def ellipsize_str(origin: any, limit: int) -> str:
+    data = str(origin)  # 自动转 str 并加省略号
+    if len(data) <= limit or limit <= 1:
+        return data
+    return data[:(limit - 1) // 2] + "..." + data[-((limit - 1) // 2):]
+
+
 def make_watermark(config: Config, image: Image, width: int, y: int):
     cp = StyledString(config, "©2023-2024 P.B.G. Dev Team.", 'H', 16,
                       font_color=(0, 0, 0, 72 / 255))
@@ -642,7 +649,7 @@ class MiscBoardGenerator:
             popular_problem_section = SimpleTextSection(config, data.popular_problem[0], "昨日最受欢迎的题目",
                                                         f'共有 {data.popular_problem[1]} 个人提交本题')
 
-            total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 20), verdict)
+            total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10), verdict)
             total_rank_top_10_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_10, tops=10,
                                                     separate_columns=separate_columns)
 
