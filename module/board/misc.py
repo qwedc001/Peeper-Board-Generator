@@ -68,14 +68,15 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
 def pack_ranking_list(config: Config, tops: list[dict], key: str) -> list[dict]:
     if len(tops) == 0:
         return []
-    max_val = tops[0][key][-1] if isinstance(tops[0][key], tuple) else tops[0][key]  # 以key作为排名依据
+    max_val = int(tops[0][key][-1] if isinstance(tops[0][key], tuple) else tops[0][key])  # 以key作为排名依据
+    min_val = int(tops[-1][key][-1] if isinstance(tops[-1][key], tuple) else tops[-1][key])
 
     ranking_list = []
 
     for top in tops:
         unrated = True if top.get('unrated') else False
-        cnt = top[key][-1] if isinstance(top[key], tuple) else top[key]
-        record = {'progress': int(cnt) / int(max_val),
+        cnt = int(top[key][-1] if isinstance(top[key], tuple) else top[key])
+        record = {'progress': (cnt - min_val + 1) / (max_val - min_val + 1),  # 拉大进度条的差距
                   'unrated': unrated,
                   'rank': StyledString(config, "*" if unrated else str(top['rank']), 'H', 64),
                   'user': StyledString(config, str(top['user']), 'B', 36),
@@ -288,7 +289,7 @@ class RankSection(Section):
     def get_height(self):
         height = ImgConvert.calculate_height([self.title, self.subtitle, self.hint]) + 48
         if self.hint:
-            height += 32
+            height += 24
 
         ok_cnt = len([rank for rank in self.rank_data if not (
                 rank['unrated'] and not self.config.get_config()["show_unrated"])])
@@ -399,7 +400,7 @@ class HourlyDistributionSection(Section):
 
     def get_height(self):
         return (ImgConvert.calculate_height([self.hourly_title, self.hourly_detail])
-                + 244  # 图表的高度
+                + 264  # 图表的高度
                 + 40)
 
 
@@ -533,36 +534,36 @@ def draw_vertical_graph(image: Image, data: dict, padding_bottom: int, x, curren
     outline_paint.color = pixie.Color(0, 0, 0, 32 / 255)
 
     main_tile_paint = Paint(pixie.SOLID_PAINT)
-    main_tile_paint.color = pixie.Color(0, 0, 0, 32 / 255)
+    main_tile_paint.color = pixie.Color(0, 0, 0, 26 / 255)
 
     sub_tile_paint = Paint(pixie.SOLID_PAINT)
-    sub_tile_paint.color = pixie.Color(0, 0, 0, 16 / 255)
+    sub_tile_paint.color = pixie.Color(0, 0, 0, 22 / 255)
 
     # 绘制左半边框
     draw_rect(image, outline_paint, x, current_y, 24, 4)
     draw_rect(image, outline_paint, x, current_y + 4, 4, 20)
-    draw_rect(image, outline_paint, x, current_y + 240, 24, 4)
-    draw_rect(image, outline_paint, x, current_y + 220, 4, 20)
+    draw_rect(image, outline_paint, x, current_y + 260, 24, 4)
+    draw_rect(image, outline_paint, x, current_y + 240, 4, 20)
 
     for item in data['distribution']:
-        progress_len = 24 + 176 * item['hot_prop']
-        sub_progress_len = 24 + 176 * item['hot_prop'] * item['ac_prop']
+        progress_len = 22 + 198 * item['hot_prop']
+        sub_progress_len = 22 + 198 * item['hot_prop'] * item['ac_prop']
         line_y = current_y + 24
 
-        draw_round_rect(image, main_tile_paint, current_x, line_y + 200 - progress_len, 24, progress_len, 24)
-        draw_round_rect(image, sub_tile_paint, current_x, line_y + 200 - sub_progress_len, 24, sub_progress_len, 24)
+        draw_round_rect(image, main_tile_paint, current_x, line_y + 220 - progress_len, 22, progress_len, 22)
+        draw_round_rect(image, sub_tile_paint, current_x, line_y + 220 - sub_progress_len, 22, sub_progress_len, 22)
 
-        current_x += 24 + 16
+        current_x += 22 + 14
 
-    current_x -= 24 + 16
+    current_x -= 22 + 14
 
     # 绘制右半边框
     draw_rect(image, outline_paint, current_x + 24, current_y, 24, 4)
     draw_rect(image, outline_paint, current_x + 44, current_y + 4, 4, 20)
-    draw_rect(image, outline_paint, current_x + 24, current_y + 240, 24, 4)
-    draw_rect(image, outline_paint, current_x + 44, current_y + 220, 4, 20)
+    draw_rect(image, outline_paint, current_x + 24, current_y + 260, 24, 4)
+    draw_rect(image, outline_paint, current_x + 44, current_y + 240, 4, 20)
 
-    return current_y + padding_bottom + 232
+    return current_y + padding_bottom + 252
 
 
 def check_parallel_play_of_the_oj(data: list) -> bool:
@@ -576,6 +577,13 @@ def check_parallel_play_of_the_oj(data: list) -> bool:
         break
 
     return parallel
+
+
+def make_watermark(config: Config, image: Image, width: int, y: int):
+    cp = StyledString(config, "©2023-2024 P.B.G. Dev Team.", 'H', 16,
+                      font_color=(0, 0, 0, 72 / 255))
+    cp_width, cp_height = ImgConvert.calculate_string_width(cp), ImgConvert.calculate_height([cp])
+    draw_text(image, cp, 0, width - 128 - cp_width, y - cp_height - 8)
 
 
 class MiscBoardGenerator:
@@ -634,7 +642,7 @@ class MiscBoardGenerator:
             popular_problem_section = SimpleTextSection(config, data.popular_problem[0], "昨日最受欢迎的题目",
                                                         f'共有 {data.popular_problem[1]} 个人提交本题')
 
-            total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10), verdict)
+            total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 20), verdict)
             total_rank_top_10_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_10, tops=10,
                                                     separate_columns=separate_columns)
 
@@ -740,7 +748,6 @@ class MiscBoardGenerator:
 
         total_height = ImgConvert.calculate_height([title, eng_full_name]) + 108 + 12
         column_current_height = [0 for _ in range(total_columns)]
-        column_real_height = [0 for _ in range(total_columns)]
 
         for i, section in enumerate(sections):
             idx = sections_column_id[i]
@@ -752,8 +759,6 @@ class MiscBoardGenerator:
                     current_max_height = max(current_max_height, column_current_height[idx + j])
                 for j in range(section.get_columns()):
                     column_current_height[idx + j] = current_max_height
-            else:
-                column_real_height[idx] += section.get_height()
 
             for j in range(section.get_columns()):
                 column_current_height[idx + j] += section.get_height() + 108
@@ -783,6 +788,8 @@ class MiscBoardGenerator:
             for j in range(section.get_columns()):
                 column_current_height[idx + j] = current_y
 
-        copyright_section.draw(output_img, 128, max(column_current_height))
+        current_y = copyright_section.draw(output_img, 128, max(column_current_height))
+
+        make_watermark(config, output_img, total_width + 256, current_y)
 
         return output_img
