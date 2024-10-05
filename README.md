@@ -48,7 +48,7 @@ pip install -r requirements.txt
 
 生成器支持多榜单导出，请参照 `configs_example.json` 编写配置文件，将其保存为 `configs.json`。
 
-目前 `configs_example.json` 内包含 Hydro榜单 和 Codeforces榜单 的配置文件示例，请删去未填写完整的榜单配置。
+目前 `configs_example.json` 内包含 Hydro榜单 和 Codeforces榜单 的配置文件示例，请删去未填写完整的榜单配置，或者使用 `--id` 指定想要生成的榜单。
 
 3. 运行程序
 ```bash
