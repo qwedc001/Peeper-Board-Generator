@@ -31,6 +31,8 @@ def fetch_rankings(config: Config) -> list[RankingData]:
         for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr')[1:]:
             user_name = "".join(people.xpath("./td[@class='col--user']/span/a[contains(@class, "
                                              "'user-profile-name')]/text()")).strip()
+            badge = "".join(people.xpath("./td[@class='col--user']/span/span[contains(@class, "
+                                         "'user-profile-badge')]/text()")).strip()
             accepted = "".join(people.xpath("./td[@class='col--ac']/text()")).strip()
             rank = "".join(people.xpath("./td[@class='col--rank']/text()")).strip()
             uid = people.xpath("./td[@class='col--user']/span/a[contains(@class, 'user-profile-name')]/@href")[0].split(

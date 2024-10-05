@@ -2,6 +2,7 @@ import difflib
 import json
 import logging
 import os
+import random
 from datetime import datetime, timedelta
 from typing import Tuple
 import requests
@@ -39,10 +40,10 @@ def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
     finally:
         data = load_json(config, False)
     rankings = data.rankings
-    res = difflib.get_close_matches(name, [ranking.user_name for ranking in rankings], cutoff=0.4, n=1)[0]
-    if res:
+    res = difflib.get_close_matches(name, [ranking.user_name for ranking in rankings], cutoff=0.4, n=1)
+    if len(res) > 0:
         for ranking in rankings:
-            if ranking.user_name == res:
+            if ranking.user_name == res[0]:
                 return handler.fetch_user(ranking.uid)
     else:
         return "未找到用户"
@@ -75,6 +76,21 @@ def get_today_timestamp() -> Tuple[int, int]:
     return int(today_start.timestamp()), int(today_end.timestamp())
 
 
+def rand_tips(config: Config):
+    # 构建列表
+    tips_all = []
+    tip_files = [os.path.join(config.work_dir, "data", "tips.json"), os.path.join(config.work_dir, "data", "tips.json")]
+    for file in tip_files:
+        if os.path.exists(file):
+            with open(file, "r", encoding="utf-8") as f:
+                tips = json.load(f)
+                for section in tips:
+                    for tip in section['tips']:
+                        tips_all.append(tip)
+                f.close()
+    return random.choice(tips_all)
+
+
 def get_date_string(is_yesterday: bool, split: str = '-') -> str:
     today_timestamp = datetime.now().timestamp()
     if is_yesterday:
@@ -97,3 +113,26 @@ def save_json(config: Config, data: DailyJson, is_yesterday: bool = False):
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         f.close()
+
+
+def performance_test(func):
+    def wrapper(*args, **kwargs):
+        start = datetime.now()
+        result = func(*args, **kwargs)
+        flag = False
+        for item in args:
+            if isinstance(item, Config):
+                statistic_file = item.get_config()['statistic_file']
+                logging.debug(statistic_file)
+                if not statistic_file.closed:
+                    statistic_file.write(
+                        f"[{item.get_config()['id']}][{func.__name__}] 执行用时 {datetime.now() - start}\n")
+                    logging.debug("已写入性能信息")
+                    flag = True
+                else:
+                    logging.debug("性能测试文件已关闭")
+        if not flag:
+            print(f"[{func.__name__}] 执行用时 {datetime.now() - start}")
+        return result
+
+    return wrapper
