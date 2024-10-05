@@ -52,7 +52,8 @@ pip install -r requirements.txt
 ```bash
 python main.py --help
 
-usage: main.py [-h] (--version | --full | --now | --query_uid QUERY_UID | --query_name QUERY_NAME) [--output OUTPUT] [--verdict VERDICT] [--id ID]
+usage: main.py [-h] (--version | --full | --now | --query_uid QUERY_UID | --query_name QUERY_NAME) [--output OUTPUT] [--verdict VERDICT] [--id ID] [--separate_cols]
+               [--performance_statistics]
 
 Peeper-Board-Generator OJ榜单图片生成器
 
@@ -68,11 +69,16 @@ options:
   --output OUTPUT       指定生成图片的路径 (包含文件名)
   --verdict VERDICT     指定榜单对应verdict (使用简写)
   --id ID               生成指定 id 的榜单(留空则生成全部榜单)
+  --separate_cols       是否启用分栏特性
+  --performance_statistics
+                        性能测试
 ```
 
 ## 样例图片
 
-Tip: 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_name` 字段更改。
+Tip: 
+1. 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_name` 字段更改；
+2. 底部 Tips 分栏随版本更新，可在 [此 issue](https://github.com/qwedc001/Peeper-Board-Generator/issues/41) 下投稿。
 
 ### 昨日榜单 (`--full`)
 
@@ -85,6 +91,10 @@ Tip: 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_nam
 ### 从今日0点到当前时间的 Wrong Answer 榜单 (`--now --verdict WA`)
 
 <img src="example_verdict_wa.png" style="zoom:50%;" alt="今日特定 verdict 榜单" />
+
+### 数据较多时可开启分栏 (`... --separate_cols`)
+
+<img src="example_full_multi.png" style="zoom:50%;" alt="开启分栏的昨日榜单" />
 
 ## 致谢
 
