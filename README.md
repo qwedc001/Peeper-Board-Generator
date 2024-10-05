@@ -4,18 +4,7 @@
 </div><br>
 
 <div align="center">
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits">
-        <img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/qwedc001/Peeper-Board-Generator?style=flat-square">
-    </a>
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/releases/latest">
-        <img alt="GitHub Release" src="https://img.shields.io/github/v/release/qwedc001/Peeper-Board-Generator?style=flat-square&label=Peeper-Board-Generator">
-    </a>
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/graphs/contributors">
-        <img alt="GitHub contributors" src="https://img.shields.io/github/contributors/qwedc001/Peeper-Board-Generator?style=flat-square">
-    </a>
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits">
-        <img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/y/qwedc001/Peeper-Board-Generator?style=flat-square">
-    </a>
+    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits"><img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/qwedc001/Peeper-Board-Generator?style=flat-square"></a> <a href="https://github.com/qwedc001/Peeper-Board-Generator/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/qwedc001/Peeper-Board-Generator?style=flat-square&label=Peeper-Board-Generator"></a> <a href="https://github.com/qwedc001/Peeper-Board-Generator/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/qwedc001/Peeper-Board-Generator?style=flat-square"></a> <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/y/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
 </div>
 
 
@@ -100,6 +89,6 @@ Tip:
 
 ## 致谢
 
-**Dev Team**: FJNU-[Floating-Ocean](https://github.com/Floating-Ocean)，QLU-[qwedc001](https://github.com/qwedc001)
+**Dev Team**: FJNU-[Floating-Ocean](https://github.com/Floating-Ocean)，QLU-[qwedc001](https://github.com/qwedc001)，Other-[浅梦](https://github.com/1804040636)
 
 **贡献者**: QLU-[Euphria](https://github.com/Euphria)
