@@ -587,7 +587,7 @@ def ellipsize_str(origin: any, limit: int) -> str:
 
 
 def make_watermark(config: Config, image: Image, width: int, y: int):
-    cp = StyledString(config, "©2023-2024 P.B.G. Dev Team.", 'H', 16,
+    cp = StyledString(config, "©2023-2025 P.B.G. Dev Team.", 'H', 16,
                       font_color=(0, 0, 0, 72 / 255))
     cp_width, cp_height = ImgConvert.calculate_string_width(cp), ImgConvert.calculate_height([cp])
     draw_text(image, cp, 0, width - 128 - cp_width, y - cp_height - 8)

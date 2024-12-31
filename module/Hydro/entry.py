@@ -104,16 +104,15 @@ class HydroHandler(BasicHandler):
             self.config.set_config("session", session)
             logging.info("Session 获取成功")
         user = fetch_user(self.config, uid)
-        result_text = f'用户 {user.name} 的信息如下：\n' \
-                      f'用户邮箱：{user.mail}\n' \
-                      f'用户QQ：{user.qq}\n' \
-                      f'用户QQ昵称：{user.qq_name}\n' \
-                      f'用户状态：{user.status}\n' \
-                      f'用户进度：{user.progress}\n' \
-                      f'用户描述：{user.description}\n'
+        basic_fields = [['邮箱', user.mail.replace('.', '. ')],
+                        ['QQ号', user.qq],
+                        ['状态', user.status.replace(': ', ' ').replace(',', '，')],
+                        ['进度', user.progress],
+                        ['描述', user.description]]
+        result_text = f'用户 {user.name} 的信息如下：\n'
+        result_text += ''.join([f'{name}：{val}\n' for [name, val] in basic_fields if val is not None and len(val) > 0])
         submission_info = [submission for submission in load_json(self.config, False).submissions if
                            submission.user.uid == uid]
-        result_text += f'用户今日提交信息：\n'
         total_submissions = 0
         avg_score = 0
         ac_rate = 0
@@ -123,9 +122,12 @@ class HydroHandler(BasicHandler):
             if submission.verdict == "Accepted":
                 ac_rate += 1
         if total_submissions != 0:
-            result_text += f'总提交次数：{total_submissions}\n' \
-                       f'平均分数：{avg_score / total_submissions}\n' \
-                       f'AC率：{ac_rate / total_submissions * 100}%\n'
+            formatted_avg_score = '{:.2f}'.format(avg_score / total_submissions)
+            formatted_ac_rate = '{:.2f}'.format(ac_rate / total_submissions * 100)
+            result_text += (f'\n今日提交信息：\n'
+                            f'提交次数：{total_submissions}\n'
+                            f'平均分数：{formatted_avg_score}\n'
+                            f'AC率：{formatted_ac_rate}%\n')
         else:
-            result_text += f'用户今日暂无提交。\n'
+            result_text += f'\n今日暂未收到该用户的提交。\n'
         return result_text
