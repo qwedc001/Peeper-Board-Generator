@@ -18,7 +18,7 @@ class TestSearch(unittest.TestCase):
 
     def test_uid(self):
         handler = HydroHandler(config)
-        res = search_user_by_uid(config, "2", handler)
+        res = search_user_by_uid("2", handler)
         print(res)
         self.assertIsNotNone(res)
 
@@ -26,6 +26,7 @@ class TestSearch(unittest.TestCase):
         res = rand_tips(config)
         print(res)
         self.assertIsNotNone(res)
+
 
 if __name__ == '__main__':
     unittest.main()

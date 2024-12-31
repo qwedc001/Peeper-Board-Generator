@@ -56,7 +56,7 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = Fals
         logging.info(f"生成图片成功，路径为{args.output}")
     elif args.query_uid:
         logging.info("正在查询指定用户信息")
-        result = search_user_by_uid(cur_config, args.query_uid, handler)
+        result = search_user_by_uid(args.query_uid, handler)
         with open(args.output, "w", encoding='utf-8') as f:
             f.write(result)
     elif args.query_name:

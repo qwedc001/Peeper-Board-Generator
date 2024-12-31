@@ -49,19 +49,8 @@ def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
         return "未找到用户"
 
 
-def search_user_by_uid(config: Config, uid: str, handler: BasicHandler):
-    try:
-        load_json(config, False)
-    except FileNotFoundError:
-        logging.info("未找到用户排名文件，正在进行更新")
-        handler.save_daily("now")
-    finally:
-        data = load_json(config, False)
-    rankings = data.rankings
-    for ranking in rankings:
-        if ranking.uid == uid:
-            return handler.fetch_user(ranking.uid)
-    return "未找到用户"
+def search_user_by_uid(uid: str, handler: BasicHandler):
+    return handler.fetch_user(uid)  # 留给 handler 判断 uid 是否存在
 
 
 def get_yesterday_timestamp() -> Tuple[int, int]:

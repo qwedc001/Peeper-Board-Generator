@@ -89,21 +89,19 @@ class HydroHandler(BasicHandler):
             for rank in ranking:
                 if submission.user.uid == rank.uid:
                     rank.accepted = str(int(rank.accepted) + 1)
-        # 根据新的accepted 数量重新排序
+        # 根据新的 accepted 数量重新排序
         ranking.sort(key=lambda x: x.accepted, reverse=True)
         for i in range(len(ranking)):
             ranking[i].rank = i
         return ranking
 
-    def fetch_user(self, uid: str):
+    def fetch_user(self, uid: str) -> str:
         logging.info(f"正在获取用户 {uid} 的信息")
-        logging.info("尝试登录获取新 Session")
-        credentials = self.config.get_config()["credentials"]
-        if credentials is not None:
-            session = self.login(credentials)
-            self.config.set_config("session", session)
-            logging.info("Session 获取成功")
+
         user = fetch_user(self.config, uid)
+        if user is None:
+            return f"UID {uid} 不存在"
+
         basic_fields = [['邮箱', user.mail.replace('.', '. ')],
                         ['QQ号', user.qq],
                         ['状态', user.status.replace(': ', ' ').replace(',', '，')],
@@ -111,6 +109,7 @@ class HydroHandler(BasicHandler):
                         ['描述', user.description]]
         result_text = f'用户 {user.name} 的信息如下：\n'
         result_text += ''.join([f'{name}：{val}\n' for [name, val] in basic_fields if val is not None and len(val) > 0])
+
         submission_info = [submission for submission in load_json(self.config, False).submissions if
                            submission.user.uid == uid]
         total_submissions = 0
