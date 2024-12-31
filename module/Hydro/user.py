@@ -25,12 +25,7 @@ def infer_qq(html, mail) -> str:
 def fetch_user(config: Config, uid: str) -> UserData | None:
     logging.info("开始获取用户记录")
     url = config.get_config()["url"] + f'user/{uid}'
-    user_headers = headers
-    if config.get_config()["session"] is not None:
-        headers['Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
-                             f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
-
-    response_text = requests.get(url, headers=user_headers)
+    response_text = requests.get(url, headers=headers)
     if response_text.status_code == 404:
         return None
 
