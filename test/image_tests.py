@@ -42,19 +42,19 @@ class GenerateTest(unittest.TestCase):
         self.assertIsNotNone(output_img)
 
     def test_font(self):
-        output_img = pixie.Image(200, 200)
+        output_img = pixie.Image(400, 200)
         output_img.fill(pixie.Color(1, 1, 1, 1))
         font = pixie.read_font(os.path.join(config.work_dir, config.get_config()["data"], f'OPPOSans-B.ttf'))
         font.size = 20
         font.paint.color = pixie.Color(0, 0, 0, 0.5)
 
         text = ("Typesetting is the arrangement and composition of text in graphic design and publishing in both "
-                "digital and traditional medias.")
+                "digital and traditional medias. π 錩 旸 堉 峣 垚 鋆 旻 淏 珺 玥 炘.")
 
         output_img.fill_text(
             font,
             text,
-            bounds=pixie.Vector2(180, 180),
+            bounds=pixie.Vector2(360, 180),
             transform=pixie.translate(10, 10)
         )
 
