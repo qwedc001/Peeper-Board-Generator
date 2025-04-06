@@ -4,10 +4,11 @@
 </div><br>
 
 <div align="center">
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits"><img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/qwedc001/Peeper-Board-Generator?style=flat-square&label=Peeper-Board-Generator"></a>
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
-    <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/y/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
+  <a href="https://github.com/qwedc001/Peeper-Board-Generator/blob/master/requirements.txt"><img alt="Supported Python Version" src="https://img.shields.io/badge/Python-3.10+-teal?style=flat-square"></a>
+  <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits"><img alt="GitHub Last Commit" src="https://img.shields.io/github/last-commit/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
+  <a href="https://github.com/qwedc001/Peeper-Board-Generator/releases/latest"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/qwedc001/Peeper-Board-Generator?style=flat-square&label=Peeper-Board-Generator"></a>
+  <a href="https://github.com/qwedc001/Peeper-Board-Generator/graphs/contributors"><img alt="GitHub contributors" src="https://img.shields.io/github/contributors/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
+  <a href="https://github.com/qwedc001/Peeper-Board-Generator/commits"><img alt="GitHub commit activity" src="https://img.shields.io/github/commit-activity/y/qwedc001/Peeper-Board-Generator?style=flat-square"></a>
 </div>
 
 
@@ -40,7 +41,8 @@ pip install -r requirements.txt
 
 生成器支持多榜单导出，请参照 `configs_example.json` 编写配置文件，将其保存为 `configs.json`。
 
-目前 `configs_example.json` 内包含 Hydro榜单 和 Codeforces榜单 的配置文件示例，请删去未填写完整的榜单配置，或者使用 `--id` 指定想要生成的榜单。
+> [!WARNING]
+> 目前 `configs_example.json` 内包含 Hydro 榜单 和 Codeforces 榜单 的配置文件示例，请删去未填写完整的榜单配置，或者使用 `--id` 指定想要生成的榜单。
 
 3. 运行程序
 ```bash
@@ -70,25 +72,30 @@ options:
 
 ## 样例图片
 
-Tip: 
-1. 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_name` 字段更改；
-2. 底部 Tips 分栏随版本更新，可在 [此 issue](https://github.com/qwedc001/Peeper-Board-Generator/issues/41) 下投稿。
+> [!TIP]
+> - 图片中 "YOUR Online Judge" 字样可在 `configs.json` 中的 `board_name` 字段更改；
+> - 底部 Tips 分栏随版本更新，可在 [此 issue](https://github.com/qwedc001/Peeper-Board-Generator/issues/41) 下投稿。
 
-### 昨日榜单 (`--full`)
+<details open>
+<summary><h3>昨日榜单 (<code>--full</code>)</h3></summary>
+<img src="example_full.png" alt="昨日榜单" />
+</details>
 
-<img src="example_full.png" style="zoom:50%;" alt="昨日榜单" />
+<details>
+<summary><h3>从今日0点到当前时间的榜单 (<code>--now</code>)</h3></summary>
+<img src="example_now.png" alt="今日榜单" />
+</details>
 
-### 从今日0点到当前时间的榜单 (`--now`)
+<details>
+<summary><h3>从今日0点到当前时间的 Wrong Answer 榜单 (<code>--now --verdict WA</code>)</h3></summary>
+<img src="example_verdict_wa.png" alt="今日特定 verdict 榜单" />
+</details>
 
-<img src="example_now.png" style="zoom:50%;" alt="今日榜单" />
+<details>
+<summary><h3>数据较多时可开启分栏 (<code>... --separate_cols</code>)</h3></summary>
+<img src="example_full_multi.png" alt="开启分栏的昨日榜单" />
+</details>
 
-### 从今日0点到当前时间的 Wrong Answer 榜单 (`--now --verdict WA`)
-
-<img src="example_verdict_wa.png" style="zoom:50%;" alt="今日特定 verdict 榜单" />
-
-### 数据较多时可开启分栏 (`... --separate_cols`)
-
-<img src="example_full_multi.png" style="zoom:50%;" alt="开启分栏的昨日榜单" />
 
 ## 致谢
 
