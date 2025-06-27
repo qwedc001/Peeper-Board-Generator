@@ -3,8 +3,8 @@ import os
 
 
 class Configs:
-    def __init__(self, work_dir: str, configs_path: str = 'configs.json'):
-        self.work_dir = work_dir
+    def __init__(self, configs_path: str):
+        self.work_dir = os.path.dirname(configs_path)
         json_path = os.path.join(self.work_dir, configs_path)
         config_file = open(json_path, 'r', encoding='utf-8')
         self.json_configs = json.loads(config_file.read())
