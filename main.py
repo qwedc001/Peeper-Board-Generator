@@ -12,8 +12,6 @@ from module.utils import search_user_by_uid, fuzzy_search_user
 from module.verdict import ALIAS_MAP
 import sys
 
-configs = Configs(os.path.dirname(__file__)).get_configs()
-
 sub_handlers = {
     'Hydro': HydroHandler,
     "Codeforces": "TODO"  # TODO: 1.3版本支持
@@ -77,6 +75,7 @@ if __name__ == "__main__":
 
     logger.addHandler(console_handler)
     logger.addHandler(file_handler)
+
     parser = DefaultHelpParser(description='Peeper-Board-Generator OJ榜单图片生成器')
     required_para = parser.add_mutually_exclusive_group(required=True)
     required_para.add_argument('--version', action="store_true", help='版本号信息')
@@ -89,9 +88,15 @@ if __name__ == "__main__":
     parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')
     parser.add_argument('--separate_cols', action='store_true', help='是否启用分栏特性')
     parser.add_argument('--performance_statistics', action='store_true', help='性能测试')
+    parser.add_argument('--config', type=str, help='指定配置文件路径', default=os.path.join(os.path.dirname(__file__), "config.json"))
+
     statistics_file = open(os.path.join(work_dir, "performance.log"), 'w', encoding='utf-8')
     try:
         args = parser.parse_args()
+
+        # 从指定路径加载配置
+        configs = Configs(args.config).get_configs()
+
         if not args.performance_statistics:
             statistics_file.close()
         if args.version:
