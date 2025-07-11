@@ -140,12 +140,15 @@ def pack_rank_data(rank: list[RankingData]) -> list[dict]:
 
 
 # 处理一下有排名并列时直接切片导致的问题
-def slice_ranking_data(rank: list[dict], lim: int) -> list[dict]:
+def slice_ranking_data(rank: list[dict], lim: int, show_unrated: bool = True) -> list[dict]:
     if len(rank) == 0:
         return []
 
     unrated_excluded = [ranking_data for ranking_data in rank if not ranking_data.get('unrated')]
     max_rank = min(lim, unrated_excluded[len(unrated_excluded) - 1]['rank'])
+    if not show_unrated:  # 预处理，避免后续无效绘图对象的预绘制
+        max_rank = lim
+        rank = unrated_excluded
 
     sliced_data = [ranking_data for ranking_data in rank if ranking_data['rank'] <= max_rank]
     while len(sliced_data) > 0 and sliced_data[-1].get('unrated'):
@@ -649,7 +652,8 @@ class MiscBoardGenerator:
             popular_problem_section = SimpleTextSection(config, data.popular_problem[0], "昨日最受欢迎的题目",
                                                         f'共有 {data.popular_problem[1]} 个人提交本题')
 
-            total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10), verdict)
+            total_rank_top_10 = pack_ranking_list(config, slice_ranking_data(rank_data, 10,
+                                                                             config.get_config()['show_unrated']), verdict)
             total_rank_top_10_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_10, tops=10,
                                                     separate_columns=separate_columns)
 
@@ -699,7 +703,8 @@ class MiscBoardGenerator:
                                  f'提交了 {data.first_ac.problem_name} 并通过.')
                 first_ac_section = SimpleTextSection(config, data.first_ac.user.name, "今日最速通过", first_ac_text)
 
-                total_rank_top_5 = pack_ranking_list(config, slice_ranking_data(rank_data, 5), verdict)
+                total_rank_top_5 = pack_ranking_list(config, slice_ranking_data(rank_data, 5,
+                                                                                config.get_config()['show_unrated']), verdict)
                 total_rank_top_5_section = RankSection(config, "题数排名", "训练榜单", total_rank_top_5, tops=5,
                                                        hint="为存在\"重复提交往日已AC的题目\"条件下的过题数理论值",
                                                        separate_columns=separate_columns)
