@@ -38,18 +38,18 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = Fals
     if args.full:
         logging.info("正在生成昨日榜单")
         handler.save_daily("full")
-        output_img = MiscBoardGenerator.generate_image(cur_config, "full",
-                                                       os.path.join(work_dir, "data", f'logo.png'),
-                                                       separate_columns=separate_cols)
+        output_img = MiscBoardGenerator(cur_config, "full",
+                                        os.path.join(work_dir, "data", f'logo.png'),
+                                        separate_columns=separate_cols).render()
         output_img.write_file(args.output)
         logging.info(f"生成图片成功，路径为{args.output}")
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
         handler.save_daily("now")
-        output_img = MiscBoardGenerator.generate_image(cur_config, "now",
-                                                       os.path.join(work_dir, "data", f'logo.png'),
-                                                       verdict=args.verdict,
-                                                       separate_columns=separate_cols)
+        output_img = MiscBoardGenerator(cur_config, "now",
+                                        os.path.join(work_dir, "data", f'logo.png'),
+                                        verdict=args.verdict,
+                                        separate_columns=separate_cols).render()
         output_img.write_file(args.output)
         logging.info(f"生成图片成功，路径为{args.output}")
     elif args.query_uid:
