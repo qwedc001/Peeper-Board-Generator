@@ -2,9 +2,9 @@ import os
 import unittest
 
 import pixie
+from easy_pixie import StyledString
 
 from module.Hydro.entry import HydroHandler
-from module.ImgConvert import StyledString
 from module.board.misc import MiscBoardGenerator
 from module.config import Configs
 
@@ -15,7 +15,7 @@ config = Configs(os.path.join(
 
 class GenerateTest(unittest.TestCase):
     def test_load(self):
-        styled_string = StyledString(config, "Hello, world!", "B", 24)
+        styled_string = StyledString("Hello, world!", "B", 24)
         print(styled_string.content)
         print(styled_string.height)
         print(styled_string.font)
