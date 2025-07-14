@@ -7,3 +7,4 @@ requests==2.32.3
 six==1.16.0
 urllib3==2.2.2
 pixie-python==4.3.0
+easy-pixie==0.0.8
