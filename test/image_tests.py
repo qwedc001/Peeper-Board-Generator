@@ -2,17 +2,20 @@ import os
 import unittest
 
 import pixie
+from easy_pixie import StyledString
 
-from module.ImgConvert import StyledString
+from module.Hydro.entry import HydroHandler
 from module.board.misc import MiscBoardGenerator
 from module.config import Configs
 
-config = Configs(os.path.dirname(__file__)).get_configs()[0]
+config = Configs(os.path.join(
+    os.path.dirname(__file__), '..', 'config.json'
+)).get_configs()[0]
 
 
 class GenerateTest(unittest.TestCase):
     def test_load(self):
-        styled_string = StyledString(config, "Hello, world!", "B", 24)
+        styled_string = StyledString("Hello, world!", "B", 24)
         print(styled_string.content)
         print(styled_string.height)
         print(styled_string.font)
@@ -20,24 +23,33 @@ class GenerateTest(unittest.TestCase):
         self.assertIsNotNone(styled_string.font)
 
     def test_gen_full(self):
-        output_img = MiscBoardGenerator.generate_image(config, "full",
-                                                       os.path.join(config.work_dir, config.get_config()["data"],
-                                                                    f'logo.png'), separate_columns=True)
+        HydroHandler(config).save_daily("full")
+        output_img = MiscBoardGenerator(config, "full",
+                                        str(os.path.join(config.work_dir,
+                                                         config.get_config()["data"],
+                                                         f'logo.png')),
+                                        separate_columns=True).render()
         output_img.write_file("full.png")
         self.assertIsNotNone(output_img)
 
     def test_gen_now(self):
-        output_img = MiscBoardGenerator.generate_image(config, "now",
-                                                       os.path.join(config.work_dir, config.get_config()["data"],
-                                                                    f'logo.png'), separate_columns=True)
+        # HydroHandler(config).save_daily("now")
+        output_img = MiscBoardGenerator(config, "now",
+                                        str(os.path.join(config.work_dir,
+                                                         config.get_config()["data"],
+                                                         f'logo.png')),
+                                        separate_columns=True).render()
         output_img.write_file("now.png")
         self.assertIsNotNone(output_img)
 
     def test_gen_verdict(self):
-        output_img = MiscBoardGenerator.generate_image(config, "now",
-                                                       os.path.join(config.work_dir, config.get_config()["data"],
-                                                                    f'logo.png'), verdict="Wrong Answer",
-                                                       separate_columns=True)
+        # HydroHandler(config).save_daily("now")
+        output_img = MiscBoardGenerator(config, "now",
+                                        str(os.path.join(config.work_dir,
+                                                         config.get_config()["data"],
+                                                         f'logo.png')),
+                                        verdict="Wrong Answer",
+                                        separate_columns=True).render()
         output_img.write_file("verdict_wa.png")
         self.assertIsNotNone(output_img)
 
