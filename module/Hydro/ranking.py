@@ -16,8 +16,8 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     if config.get_config()["session"] is not None:
         headers['Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
                              f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
-    exclude_uid: list = config.get_config()["excludeUid"]
-    exclude_date = config.get_config()["excludeRegDate"]
+    exclude_uid: list = config.get_config()["exclude_uid"]
+    exclude_date = config.get_config()["exclude_reg_date"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()
     logging.info(f"排除规则：uid 在列表{exclude_uid}，注册时间早于{exclude_date}(换算为时间戳为{exclude_time})的用户")
     while True:

@@ -5,8 +5,8 @@
       "uname": "[Your-Hydro-Admin-UserName]",
       "password": "[Your-Password]"
     },
-    "excludeUid": [],
-    "excludeRegDate": "YYYY-MM-DD",
+    "exclude_uid": [],
+    "exclude_reg_date": "YYYY-MM-DD",
     "show_unrated": true,
     "data": "data",
     "url": "[Your-OJ-Base-URL]",
