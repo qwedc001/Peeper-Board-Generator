@@ -60,6 +60,8 @@ class HydroHandler(BasicHandler):
                 logging.info("昨日json数据不存在")
                 self.get_yesterday()
         logging.info("重载今日数据")
+        reload_stats(self.config, self.url, "problemStat")
+        reload_stats(self.config, self.url, "rp")
         today_submissions = fetch_submissions(self.config, False)
         ranking = self.calculate_ranking(today_submissions)
         daily = DailyJson(today_submissions, ranking)
