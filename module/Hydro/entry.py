@@ -15,18 +15,24 @@ from module.Hydro.submission import fetch_submissions
 from module.Hydro.ranking import fetch_rankings
 from module.utils import save_json, get_date_string, load_json
 
-
 class HydroHandler(BasicHandler):
+
+    def reload_all(self):
+        if not self.reloaded_stats:
+            logging.info("正在重载 Hydro 的统计数据")
+            reload_stats(self.config, self.url, "problemStat")
+            reload_stats(self.config, self.url, "rp")
+            self.reloaded_stats = True
 
     def __init__(self, config: Config):
         super().__init__("HydroHandler")
         self.config = config
         self.url = self.config.get_config()['url']
+        self.reloaded_stats = False
 
     def get_yesterday(self):
         logging.info("开始爬取昨日数据")
-        reload_stats(self.config, self.url, "problemStat")
-        reload_stats(self.config, self.url, "rp")
+        self.reload_all()
         ranking = fetch_rankings(self.config)
         daily = DailyJson(fetch_submissions(self.config, True), ranking)
         save_json(self.config, daily, True)
@@ -60,8 +66,7 @@ class HydroHandler(BasicHandler):
                 logging.info("昨日json数据不存在")
                 self.get_yesterday()
         logging.info("重载今日数据")
-        reload_stats(self.config, self.url, "problemStat")
-        reload_stats(self.config, self.url, "rp")
+        self.reload_all()
         today_submissions = fetch_submissions(self.config, False)
         ranking = self.calculate_ranking(today_submissions)
         daily = DailyJson(today_submissions, ranking)
