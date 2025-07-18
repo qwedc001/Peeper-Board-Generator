@@ -129,6 +129,8 @@ def _pack_verdict_rank_data(verdict_desc: dict | None, verdict: str, lim: int = 
 
 
 def _check_parallel_play_of_the_oj(data: list) -> bool:
+    if len(data) == 0:
+        return False
     top1_cnt = data[0]['Accepted'][1]
     parallel = False
     for i, item in enumerate(data):
@@ -365,8 +367,8 @@ class _SubmitDetailSection(RenderableSection):
             if full in verdict_data
         ])
 
-    def __init__(self, config: Config, total_submits: int, verdict_prop: float, 
-                 users_submitted: int = -1, verdict_data: dict = None, 
+    def __init__(self, config: Config, total_submits: int, verdict_prop: float,
+                 users_submitted: int = -1, verdict_data: dict = None,
                  verdict_prop_title: str = "提交通过率", avg_score: float = -1):
         super().__init__(config)
         has_verdict_data = users_submitted != -1 and verdict_data is not None
@@ -413,7 +415,7 @@ class _SubmitDetailSection(RenderableSection):
             )
         else:
             self.str_verdict_detail = None
-    
+
     def render(self, img: pixie.Image, x: int, y: int) -> int:
         current_x, current_y = x, y
 
@@ -439,7 +441,7 @@ class _SubmitDetailSection(RenderableSection):
 
         if self.str_verdict_detail:
             current_y = draw_text(img, self.str_verdict_detail, x, current_y)
-        
+
         return current_y
 
     def get_height(self):
@@ -654,7 +656,7 @@ class MiscBoardGenerator(Renderer):
         section_ranking_none = _SimpleTextSection(self.config, "当前排行榜为空", "暂无排行")
         is_parallel = _check_parallel_play_of_the_oj(self._board.total_board)
         parallel_time = (datetime.fromtimestamp(self._board.total_board[0]["Accepted"][0])
-                         .strftime("%H:%M:%S"))
+                         .strftime("%H:%M:%S")) if len(self._board.total_board) > 0 else None
         parallel_text = f'于 {parallel_time} 率先通过，成为卷王中的卷王'
         section_play_of_the_oj = _SimpleTextSection(
             self.config, "昨日卷王", self._board.play_of_the_oj,
@@ -765,7 +767,7 @@ class MiscBoardGenerator(Renderer):
             ])
 
         section_content.append(section_ranking_none if len(rank_data) == 0 else
-                                    section_total_rank_top_5)
+                               section_total_rank_top_5)
 
         self.section_content = MultiColumnRenderableSection(
             self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
@@ -775,7 +777,7 @@ class MiscBoardGenerator(Renderer):
         rank_data = _pack_verdict_rank_data(
             rank_by_verdict([s for s in self._today.submissions if s.verdict == self._verdict])
             .get(self._verdict)  # {username: submissionCnt}
-        , self._verdict, lim=10)
+            , self._verdict, lim=10)
 
         section_ranking_none = _SimpleTextSection(
             self.config, "暂无排行", "当前排行榜为空"
