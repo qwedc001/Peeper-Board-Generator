@@ -37,7 +37,7 @@ def get_most_popular_problem(submission_list: list[SubmissionData]) -> tuple[str
     for submission in submission_list:
         if submission.problem_name not in problem_dict:
             problem_dict[submission.problem_name] = 0
-            submission_user_dict[submission.problem_name] = [submission.user.name]
+            submission_user_dict[submission.problem_name] = []
         if submission.user.name not in submission_user_dict[submission.problem_name]:
             problem_dict[submission.problem_name] += 1
             submission_user_dict[submission.problem_name].append(submission.user.name)
