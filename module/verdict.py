@@ -8,4 +8,5 @@ ALIAS_MAP = {
     "CE": "Compile Error",
     "SE": "System Error",
     "FE": "Format Error",
+    "HKD": "Hacked",
 }
