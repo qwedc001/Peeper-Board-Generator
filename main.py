@@ -103,23 +103,25 @@ if __name__ == "__main__":
             print(f"Peeper-Board-Generator {VERSION_INFO}")
             with open(args.output, "w", encoding='utf-8') as f:
                 f.write(f"Peeper-Board-Generator {VERSION_INFO}")
-            sys.exit(0)
-        if not args.verdict:
-            args.verdict = ALIAS_MAP["AC"]
         else:
-            args.verdict = ALIAS_MAP[args.verdict]
-        if not args.id:
-            # 生成全部榜单
-            for config in configs:
-                config.set_config('statistic_file', statistics_file)
-                generate(config, multi=True, separate_cols=args.separate_cols)
-        else:
-            # 生成指定 id 的榜单
-            for config in configs:
-                if config.get_config()['id'] == args.id:
+            if not args.verdict:
+                args.verdict = ALIAS_MAP["AC"]
+            else:
+                args.verdict = ALIAS_MAP[args.verdict]
+            if not args.id:
+                # 生成全部榜单
+                if args.output:
+                    logging.warning("未指定榜单 id，output 参数无效")
+                for config in configs:
                     config.set_config('statistic_file', statistics_file)
-                    generate(config, separate_cols=args.separate_cols)
-                    break
+                    generate(config, multi=True, separate_cols=args.separate_cols)
+            else:
+                # 生成指定 id 的榜单
+                for config in configs:
+                    if config.get_config()['id'] == args.id:
+                        config.set_config('statistic_file', statistics_file)
+                        generate(config, separate_cols=args.separate_cols)
+                        break
         with open(os.path.join(work_dir, "last_traceback.log"), "w", encoding='utf-8') as f:
             f.write("ok")
     except Exception as e:

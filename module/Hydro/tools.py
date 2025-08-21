@@ -33,6 +33,8 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
             raise Exception("请求刷新时超时")
         time.sleep(1)
         response_get_status = requests.get(oj_url + f'record/{record_id}', headers=rp_headers)
+        if response_get_status.status_code != 200:
+            raise Exception(f'获取刷新结果失败，code {response_get_status.status_code}, rid {record_id}')
         status = response_get_status.json()["rdoc"]["status"]
         logging.debug(f'当前 {req_type} 状态为：{status}')
     logging.info(f'重新加载 {req_type} 数据完成')
