@@ -110,6 +110,8 @@ if __name__ == "__main__":
                 args.verdict = ALIAS_MAP[args.verdict]
             if not args.id:
                 # 生成全部榜单
+                if args.output:
+                    logging.warning("未指定榜单 id，output 参数无效")
                 for config in configs:
                     config.set_config('statistic_file', statistics_file)
                     generate(config, multi=True, separate_cols=args.separate_cols)
