@@ -712,7 +712,7 @@ class MiscBoardGenerator(Renderer):
             section_content.append(section_yesterday_full)
 
         self.section_content = MultiColumnRenderableSection(
-            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
 
     def _collect_now_sections(self):
@@ -770,7 +770,7 @@ class MiscBoardGenerator(Renderer):
                                section_total_rank_top_5)
 
         self.section_content = MultiColumnRenderableSection(
-            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
 
     def _collect_verdict_sections(self):
@@ -802,14 +802,14 @@ class MiscBoardGenerator(Renderer):
             section_content.extend([section_submit_detail, section_today_top_10])
 
         self.section_content = MultiColumnRenderableSection(
-            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
 
     def render(self) -> pixie.Image:
         render_sections = [self.section_title, self.section_content, self.section_copyright]
         max_column = max(section.get_columns() for section in render_sections)
 
-        width, height = (_CONTENT_WIDTH * max_column + _SECTION_PADDING * (max_column - 1),
+        width, height = (_CONTENT_WIDTH * max_column + _COLUMN_PADDING * (max_column - 1),
                          sum(section.get_height() for section in render_sections) +
                          _SECTION_PADDING * (len(render_sections) - 1) +
                          _TOP_PADDING + _BOTTOM_PADDING)

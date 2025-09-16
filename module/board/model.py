@@ -93,14 +93,15 @@ class RenderableSectionBundle(RenderableSection):
                 self._section_padding * (len(self.section_bundle) - 1))
 
 
-class MultiColumnRenderableSection(RenderableSection):  # 不是取的个啥名啊...哦好像也没啥问题呃呃呃
+class MultiColumnRenderableSection(RenderableSection):
     """图片渲染多栏分块基类"""
 
     def __init__(self, config: Config, sections: list[RenderableSection],
-                 content_width: int, section_padding: int):
+                 content_width: int, section_padding: int, column_padding: int):
         super().__init__(config)
         self._content_width = content_width
         self._section_padding = section_padding
+        self._column_padding = column_padding
         self.section_bundle = sections
 
         self._sections_col_id = [0 for _ in range(len(self.section_bundle))]
@@ -119,7 +120,7 @@ class MultiColumnRenderableSection(RenderableSection):  # 不是取的个啥名�
                     section.get_height() > one_column_height / 4):  # 让比较小的不单开一列
                 current_col += 1
                 current_height = 0
-            current_height += section.get_height() + 108
+            current_height += section.get_height() + self._section_padding
             self._sections_col_id[idx] = current_col % self.get_columns()
 
     def get_columns(self):
@@ -141,7 +142,7 @@ class MultiColumnRenderableSection(RenderableSection):  # 不是取的个啥名�
             current_y = column_current_y[idx] + self._section_padding
             current_y = section.render(
                 img,
-                x + self._content_width * idx + self._section_padding * max(0, idx - 1),
+                x + (self._content_width + self._column_padding) * idx,
                 current_y
             )
             for j in range(section.get_columns()):
