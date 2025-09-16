@@ -21,6 +21,7 @@ from module.verdict import ALIAS_MAP
 _CONTENT_WIDTH = 1248
 _RANK_TILE_BASE_WIDTH = 360
 _RANK_TILE_STRETCH_WIDTH = 480
+_RANK_TILE_HEIGHT = 52
 _HISTOGRAM_TILE_BASE_HEIGHT = 22
 _HISTOGRAM_TILE_STRETCH_HEIGHT = 198
 _TOP_PADDING = 168
@@ -281,6 +282,24 @@ class _RankSection(RenderableSection):
 
         return render_material
 
+    def _cache_tiles(self, tile_loc: Loc, tile_colors: GradientColor):
+        """缓存相同样式的tile，不在全局缓存的原因是不同板块的tile长度很难一致"""
+        tile_style = (int(tile_loc.width),
+                      tuple(tile_colors.color_list), tuple(tile_colors.pos_list))
+        self._tiles_cache.setdefault(tile_style, [])
+        self._tiles_cache[tile_style].append((tile_loc.x, tile_loc.y))
+
+    def _render_tiles(self, img: pixie.Image):
+        for tile_style, tiles in self._tiles_cache.items():
+            tile_width, color_list, pos_list = tile_style
+            temp_img = pixie.Image(tile_width, _RANK_TILE_HEIGHT)
+            draw_gradient_rect(temp_img, Loc(0, 0, tile_width, _RANK_TILE_HEIGHT),
+                               GradientColor(list(color_list), list(pos_list), ''),
+                               GradientDirection.HORIZONTAL, _RANK_TILE_HEIGHT // 2)
+            for tile in tiles:
+                tile_x, tile_y = tile
+                draw_img(img, temp_img, Loc(tile_x, tile_y, tile_width, _RANK_TILE_HEIGHT))
+
     def __init__(self, config: Config, header: str, title: str,
                  rank_data: list[dict], rank_key: str = "Accepted",
                  hint: str = None, top_count: int = -1,
@@ -300,6 +319,7 @@ class _RankSection(RenderableSection):
             f"Top {top_count}th", "H", 48, padding_bottom=(24 if hint else 16)
         ) if top_count != -1 else None
         self.section_render_materials = self._decode_rank_data(rank_data, rank_key)
+        self._tiles_cache = {}
 
     def get_columns(self):
         return min(self._max_col_count, 1 + len(self.section_render_materials) // 32)
@@ -323,8 +343,8 @@ class _RankSection(RenderableSection):
         start_x, max_y, start_y = current_x, current_y, current_y
         for idx, item in enumerate(self.section_render_materials):
             current_x = start_x
-            draw_gradient_rect(img, Loc(current_x, current_y + 38, item['tile_width'], 52),
-                               item['tile_gradient_color'], GradientDirection.HORIZONTAL, 26)
+            self._cache_tiles(Loc(current_x, current_y + 38, item['tile_width'], 52),
+                              item['tile_gradient_color'])
             current_x += 32
 
             draw_text(img, item['str_rank'], current_x, current_y + 8)
@@ -342,6 +362,8 @@ class _RankSection(RenderableSection):
                 current_y = start_y
 
         current_y = max_y - 32  # 最后一项有多余底边距
+
+        self._render_tiles(img)
         return current_y
 
     def get_height(self):
@@ -712,7 +734,7 @@ class MiscBoardGenerator(Renderer):
             section_content.append(section_yesterday_full)
 
         self.section_content = MultiColumnRenderableSection(
-            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
 
     def _collect_now_sections(self):
@@ -770,7 +792,7 @@ class MiscBoardGenerator(Renderer):
                                section_total_rank_top_5)
 
         self.section_content = MultiColumnRenderableSection(
-            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
 
     def _collect_verdict_sections(self):
@@ -802,14 +824,14 @@ class MiscBoardGenerator(Renderer):
             section_content.extend([section_submit_detail, section_today_top_10])
 
         self.section_content = MultiColumnRenderableSection(
-            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
 
     def render(self) -> pixie.Image:
         render_sections = [self.section_title, self.section_content, self.section_copyright]
         max_column = max(section.get_columns() for section in render_sections)
 
-        width, height = (_CONTENT_WIDTH * max_column + _SECTION_PADDING * (max_column - 1),
+        width, height = (_CONTENT_WIDTH * max_column + _COLUMN_PADDING * (max_column - 1),
                          sum(section.get_height() for section in render_sections) +
                          _SECTION_PADDING * (len(render_sections) - 1) +
                          _TOP_PADDING + _BOTTOM_PADDING)
