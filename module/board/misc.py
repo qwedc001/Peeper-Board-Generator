@@ -219,14 +219,14 @@ class _SimpleTextSection(RenderableSection):
 class _RankSection(RenderableSection):
 
     @classmethod
-    def _get_tile_gradient_color(cls, unrated: bool, same_rank: bool) -> tuple[tuple, tuple]:
-        color_list = (
+    def _get_tile_gradient_color(cls, unrated: bool, same_rank: bool) -> GradientColor:
+        color_list = [
             (0, 0, 0, 12 if unrated else (10 if same_rank else 18)),
             (0, 0, 0, 15 if unrated else (18 if same_rank else 28)),
             (0, 0, 0, 18 if unrated else 32)
-        )
-        pos_list = (0.0, 0.5, 1.0)
-        return color_list, pos_list
+        ]
+        pos_list = [0.0, 0.5, 1.0]
+        return GradientColor(color_list, pos_list, '')
 
     def _decode_rank_data(self, rank_data: list[dict], rank_key: str) -> list[dict]:
         if len(rank_data) == 0:
@@ -282,23 +282,23 @@ class _RankSection(RenderableSection):
 
         return render_material
 
-    def _cache_tiles(self, tile_loc: Loc, tile_colors: tuple[list, list]):
-        """缓存相同样式的tile"""
-        tile_style = (int(tile_loc.width), tile_colors)
+    def _cache_tiles(self, tile_loc: Loc, tile_colors: GradientColor):
+        """缓存相同样式的tile，不在全局缓存的原因是不同板块的tile长度很难一致"""
+        tile_style = (int(tile_loc.width),
+                      tuple(tile_colors.color_list), tuple(tile_colors.pos_list))
         self._tiles_cache.setdefault(tile_style, [])
         self._tiles_cache[tile_style].append((tile_loc.x, tile_loc.y))
 
     def _render_tiles(self, img: pixie.Image):
         for tile_style, tiles in self._tiles_cache.items():
-            tile_width, tile_gradient_color = tile_style
-            color_list, pos_list = tile_gradient_color
-            temp_img = pixie.Image(tile_width + 64, _RANK_TILE_HEIGHT)
+            tile_width, color_list, pos_list = tile_style
+            temp_img = pixie.Image(tile_width, _RANK_TILE_HEIGHT)
             draw_gradient_rect(temp_img, Loc(0, 0, tile_width, _RANK_TILE_HEIGHT),
                                GradientColor(list(color_list), list(pos_list), ''),
                                GradientDirection.HORIZONTAL, _RANK_TILE_HEIGHT // 2)
             for tile in tiles:
                 tile_x, tile_y = tile
-                draw_img(img, temp_img, Loc(tile_x, tile_y, tile_width + 64, _RANK_TILE_HEIGHT))
+                draw_img(img, temp_img, Loc(tile_x, tile_y, tile_width, _RANK_TILE_HEIGHT))
 
     def __init__(self, config: Config, header: str, title: str,
                  rank_data: list[dict], rank_key: str = "Accepted",
