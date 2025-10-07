@@ -39,7 +39,9 @@
       "sudo 电脑自己过题",
       "#include \"openai/chatgpt.h\"",
       "[Error] ld returned 1 exit status",
+      "你这什么古董编译器，还在用 C++98。",
       "面向数据编程.cpp",
+      "面向样例编程.cpp",
       "兄弟！你怎么这么强！",
       "有一个人前来做题",
       "哎，你说的 cf，是 Crossfire，Cloudflare，还是 Codeforces？",
@@ -48,10 +50,12 @@
       "你看这个巨佬，他已经做了 9223372036854775807 道题了...嗯怎么突然消失了！",
       "你看这个巨佬，他已经做了 -1 道题了...？",
       "我确信我发现了一个能百分百过题的绝妙方法，可惜 Tips 的长度太短了，写不下。",
-      "你知道吗，2025 年和 2026 年的 ICPC World Final 将会在中国举行。",
+      "你知道吗，2025-2026 赛季的 ICPC World Final 将会在中国举行。",
       "你知道吗，北京大学在 2024 年两次拿到了 ICPC World Final 冠军。",
       "你知道吗，Tourist 是 Codeforces 上第一位 Rating 4000 的算竟选手。",
+      "你知道吗，Jiangly 是 Codeforces 上第二位 Rating 4000 的算竟选手。",
       "你知道吗，Codeforces 支持 OAuth 了。",
+      "你知道吗，自 2025-2026 赛季起，Hydro 作为比赛平台出现在了区域赛中。",
       "#define mian main",
       "我们都喜欢平板电视，你看他常数多么大！",
       "欸怎么T了，快读快写启动！",
@@ -61,6 +65,7 @@
       "氧原子，吸氧，臭氧。",
       "代码千万条，规范第一条。码风不规范，队友两行泪。",
       "回复 TD 退订。",
+      "回复 TD 回订。",
       "别 tm #define int long long 了。",
       "热身赛玩 4399 的同学，正在联系教练退赛。",
       "陈越：出局！",
@@ -69,7 +74,12 @@
       "这种比赛到底是谁在打...哦我在打，那没事了。",
       "我相信你。",
       "下次的成绩一定会更好！",
-      "这题能有多难？/ 哥哥挂了一发。/ 那没事了。"
+      "这题能有多难？/ 哥哥挂了一发。/ 那没事了。",
+      "诚信比赛，抵制作弊。",
+      "我以后再也不会笑了.jpg",
+      "我以后都会一直笑了.jpg",
+      "你有这个时间是不是可以多做两道题.jpg",
+      "判题程序不让你贪你贪不贪。判题程序不让你贪你贪不贪，你死都得贪。"
     ]
   },
   {
@@ -89,13 +99,19 @@
       "在理想状态下，unordered_map 的时间复杂度为O(1)，但是其存在的漏洞导致做法很容易被叉。",
       "有时候，适当使用随机化可以更优雅地通过大码量题。",
       "肉眼无法观察到规律时，试试用程序打表吧。",
+      "有时候遇到数据结构题时，对数据范围进行分治也是一种巧妙的思路哦。",
       "#define int long long",
       "ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);",
       "cout << fixed << setprecision(2);",
       "__builtin_popcount();",
       "using treap = __gnu_pbds::tree<Type, __gnu_pbds::null_type, Comp, __gnu_pbds::rb_tree_tag, __gnu_pbds::tree_order_statistics_node_update>;",
       "mt19937_64 rng(std::chrono::steady_clock::now().time_since_epoch().count());",
-      "while(next_permutation(a.begin(), a.end());"
+      "while(next_permutation(a.begin(), a.end());",
+      "-std=c++11",
+      "#define endl '\\n'",
+      "sys.set_int_max_str_digits(10000)",
+      "#include <bits/stdc++.h>",
+      "#include <bits/extc++.h>"
     ]
   },
   {
@@ -116,7 +132,9 @@
       "Tell Me Your Secret",
       "AAAAAAAAAAAA↑",
       "你在哪？亚特兰蒂斯。在海下面，在海下面。你在哪？有一个梦。怪兽正在我身体里狂野奔跑，我褪色了。",
-      "而现在你看见了不是吗当然！当然！当然！当然！当然！当然！！"
+      "而现在你看见了不是吗当然！当然！当然！当然！当然！当然！！",
+      "别玩拍拍机了快来写题。",
+      "要比就比心态。"
     ]
   },
   {
