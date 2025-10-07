@@ -33,7 +33,7 @@ class GenerateTest(unittest.TestCase):
         self.assertIsNotNone(output_img)
 
     def test_gen_now(self):
-        # HydroHandler(config).save_daily("now")
+        HydroHandler(config).save_daily("now")
         output_img = MiscBoardGenerator(config, "now",
                                         str(os.path.join(config.work_dir,
                                                          config.get_config()["data"],
@@ -43,7 +43,7 @@ class GenerateTest(unittest.TestCase):
         self.assertIsNotNone(output_img)
 
     def test_gen_verdict(self):
-        # HydroHandler(config).save_daily("now")
+        HydroHandler(config).save_daily("now")
         output_img = MiscBoardGenerator(config, "now",
                                         str(os.path.join(config.work_dir,
                                                          config.get_config()["data"],

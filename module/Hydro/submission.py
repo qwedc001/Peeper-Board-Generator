@@ -51,6 +51,9 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
                 break
             uid = str(submission['uid'])
             name = user_json[uid]['uname']
+            # 保持与排行榜用户名显示一样的逻辑
+            if 'displayName' in user_json[uid]:
+                name = f"{user_json[uid]['displayName']} ({name})"
             user = UserData(name, uid)
             score = submission['score']
             verdict = STATUS_VERDICT[submission['status']]
