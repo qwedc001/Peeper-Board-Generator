@@ -4,17 +4,13 @@ import logging
 import os
 import random
 from datetime import datetime, timedelta
-from typing import Tuple
+from typing import Tuple, Any
 import requests
 
 from module.config import Config
 from module.handler import BasicHandler
 from module.structures import DailyJson
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
-                  "Safari/537.36"
-}
 json_headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
                   "Safari/537.36",
@@ -22,13 +18,51 @@ json_headers = {
 }
 
 
-def get_qq_name(qq: str):
-    url = 'https://api.usuuu.com/qq/' + qq
-    res = requests.get(url, headers)
-    if res.json()['code'] == 200:
-        return res.json()['data']['name']
-    else:
-        raise Exception("获取QQ昵称失败")
+def fetch_url(url: str, inject_headers: dict = None, method: str = 'post',
+              accept_codes: list[int] | None = None, **kwargs) -> requests.Response:
+    if accept_codes is None:
+        accept_codes = [200]
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                          "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+        }
+        if inject_headers is not None:
+            for k, v in inject_headers.items():
+                headers[k] = v
+        method = method.lower()
+        if method == 'post':
+            response = requests.post(url, headers=headers, **kwargs)
+        elif method == 'get':
+            response = requests.get(url, headers=headers, **kwargs)
+        else:
+            raise ValueError("Parameter method must be either 'post' or 'get'.")
+    except Exception as e:
+        raise ConnectionError(f"Failed to connect {url}: {e}") from e
+    code = response.status_code
+    if code not in accept_codes:
+        raise ConnectionError(f"Failed to connect {url}, code {code}.")
+    return response
+
+
+def fetch_session(session: requests.Session, url: str, method: str = 'post',
+                  accept_codes: list[int] | None = None, **kwargs) -> requests.Response:
+    if accept_codes is None:
+        accept_codes = [200]
+    try:
+        method = method.lower()
+        if method == 'post':
+            response = session.post(url, **kwargs)
+        elif method == 'get':
+            response = session.get(url, **kwargs)
+        else:
+            raise ValueError("Parameter method must be either 'post' or 'get'.")
+    except Exception as e:
+        raise ConnectionError(f"Failed to connect {url}: {e}") from e
+    code = response.status_code
+    if code not in accept_codes:
+        raise ConnectionError(f"Failed to connect {url}, code {code}.")
+    return response
 
 
 def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
