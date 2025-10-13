@@ -1,8 +1,7 @@
 import base64
 import logging
-import requests
 from module.config import Config
-from module.utils import headers
+from module.utils import fetch_url
 from module.structures import UserData
 from lxml import etree
 
@@ -25,7 +24,7 @@ def infer_qq(html, mail) -> str:
 def fetch_user(config: Config, uid: str) -> UserData | None:
     logging.info("开始获取用户记录")
     url = config.get_config()["url"] + f'user/{uid}'
-    response_text = requests.get(url, headers=headers)
+    response_text = fetch_url(url, method="get", accept_codes=[200, 404])
     if response_text.status_code == 404:
         return None
 
@@ -35,7 +34,6 @@ def fetch_user(config: Config, uid: str) -> UserData | None:
     mail_base64 = "".join(html.xpath('//a[@data-tooltip="复制电子邮件"]/@data-copy'))
     user.mail = base64.b64decode(mail_base64).decode() if mail_base64 else ""
     user.qq = infer_qq(html, user.mail)
-    # user.qq_name = get_qq_name(user.qq) if user.qq else ""
     status_and_progress = "".join(html.xpath('//div[@class="media__body profile-header__main"]/p/text() | //div['
                                              '@class="media__body profile-header__main"]/p/*/text()')).split("\n")
     user.status = "".join(s.strip() for s in status_and_progress[:-1])

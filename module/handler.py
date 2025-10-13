@@ -1,4 +1,4 @@
-from requests import Session
+import requests
 
 
 class BasicHandler:
@@ -12,7 +12,7 @@ class BasicHandler:
 
     # 登录到特定网站的接口, 如果登录成功返回一个 Session 对象
     # 非必须，有些网站获取数据使用的是 API
-    def login(self, credentials) -> Session:
+    def login(self, credentials) -> requests.Session:
         pass
 
     def fetch_user(self, uid):

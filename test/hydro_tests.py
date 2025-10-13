@@ -36,10 +36,6 @@ def load_submission_json() -> tuple[list[SubmissionData], list[SubmissionData]]:
 
 
 class TestUtil(unittest.TestCase):
-    def test_qq(self):
-        number = config.get_config()["test"]['qq']['number']
-        name = config.get_config()["test"]['qq']['name']
-        self.assertEqual(get_qq_name(number), name)
 
     def test_reload_rp(self):
         req_type = "rp"

@@ -1,11 +1,9 @@
 import logging
 import time
 
-import requests
-
 from module.config import Config
 from module.Hydro.verdict import VERDICT_MAP
-from module.utils import json_headers
+from module.utils import json_headers, fetch_url
 
 
 def reload_stats(config: Config, oj_url: str, req_type: str):
@@ -13,16 +11,18 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
     url = oj_url + 'manage/script'
     rp_headers = json_headers
     if config.get_config()["session"] is not None:
-        rp_headers[
-            'Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
-                         f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
+        rp_headers['Cookie'] = (
+            f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+            f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+        )
     else:
-        rp_headers[
-            'Cookie'] = (f'sid={config.get_config()["cookie"]["sid"]};'
-                         f'sid.sig={config.get_config()["cookie"]["sid_sig"]};')
+        rp_headers['Cookie'] = (
+            f'sid={config.get_config()["cookie"]["sid"]};'
+            f'sid.sig={config.get_config()["cookie"]["sid_sig"]};'
+        )
     rp_headers['Content-Type'] = 'application/json'
     data = f'{{"args":"","id":"{req_type}"}}'
-    response_create_task = requests.post(url, headers=rp_headers, data=data)
+    response_create_task = fetch_url(url, rp_headers, method='post', data=data)
     record_id = response_create_task.json()["rid"]
     logging.debug(f'截取到 record id：{record_id}，类型：{req_type}')
     start_time = time.time()
@@ -32,7 +32,7 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
             logging.error(f'请求刷新 {req_type} 时超时(60s)')
             raise Exception("请求刷新时超时")
         time.sleep(1)
-        response_get_status = requests.get(oj_url + f'record/{record_id}', headers=rp_headers)
+        response_get_status = fetch_url(oj_url + f'record/{record_id}', rp_headers, method='get')
         if response_get_status.status_code != 200:
             raise Exception(f'获取刷新结果失败，code {response_get_status.status_code}, rid {record_id}')
         status = response_get_status.json()["rdoc"]["status"]
