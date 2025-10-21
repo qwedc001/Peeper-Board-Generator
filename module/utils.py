@@ -17,7 +17,7 @@ default_headers = {
                   "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 }
 
-# 显式只接受 json 返回，对 Hydro 有效
+# 显式只接受 json 返回, 对 Hydro 有效
 json_headers = {
     'Accept': 'application/json',
 }
