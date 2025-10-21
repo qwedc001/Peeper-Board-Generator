@@ -89,10 +89,14 @@ if __name__ == "__main__":
     parser.add_argument('--separate_cols', action='store_true', help='是否启用分栏特性')
     parser.add_argument('--performance_statistics', action='store_true', help='性能测试')
     parser.add_argument('--config', type=str, help='指定配置文件路径', default=os.path.join(os.path.dirname(__file__), "config.json"))
+    parser.add_argument('--verbose', action='store_true', help='显示更详细的日志')
 
     statistics_file = open(os.path.join(work_dir, "performance.log"), 'w', encoding='utf-8')
     try:
         args = parser.parse_args()
+
+        if args.verbose:
+            logger.setLevel(logging.DEBUG)
 
         # 从指定路径加载配置
         configs = Configs(args.config).get_configs()
