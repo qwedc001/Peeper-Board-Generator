@@ -11,31 +11,35 @@ from module.config import Config
 from module.handler import BasicHandler
 from module.structures import DailyJson
 
+default_headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+}
+
 # 显式只接受 json 返回，对 Hydro 有效
 json_headers = {
     'Accept': 'application/json',
 }
 
 
-def fetch_url(url: str, method: str = 'post', headers: dict = None,
-              accept_codes: list[int] | None = None, **kwargs) -> requests.Response:
+def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
+              accept_codes: list[int] | None = None,
+              timeout: float | tuple[float, float] = (5, 15), **kwargs) -> requests.Response:
     if accept_codes is None:
         accept_codes = [200]
+    method = method.lower()
+    if method not in ('post', 'get'):
+        raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
     try:
-        current_headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
-                          "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
-        }
+        current_headers = default_headers.copy()
         if headers is not None:
             for k, v in headers.items():
                 current_headers[k] = v
         method = method.lower()
         if method == 'post':
-            response = requests.post(url, headers=current_headers, **kwargs)
-        elif method == 'get':
-            response = requests.get(url, headers=current_headers, **kwargs)
+            response = requests.post(url, headers=current_headers, timeout=timeout, **kwargs)
         else:
-            raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
+            response = requests.get(url, headers=current_headers, timeout=timeout, **kwargs)
     except Exception as e:
         raise ConnectionError(f"无法连接到 {url}: {e}") from e
     code = response.status_code
@@ -45,17 +49,23 @@ def fetch_url(url: str, method: str = 'post', headers: dict = None,
 
 
 def fetch_session(session: requests.Session, url: str, method: str = 'post',
-                  accept_codes: list[int] | None = None, **kwargs) -> requests.Response:
+                  headers: dict | None = None, accept_codes: list[int] | None = None,
+                  timeout: float | tuple[float, float] = (5, 15), **kwargs) -> requests.Response:
     if accept_codes is None:
         accept_codes = [200]
+    method = method.lower()
+    if method not in ('post', 'get'):
+        raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
     try:
+        current_headers = default_headers.copy()
+        if headers is not None:
+            for k, v in headers.items():
+                current_headers[k] = v
         method = method.lower()
         if method == 'post':
-            response = session.post(url, **kwargs)
-        elif method == 'get':
-            response = session.get(url, **kwargs)
+            response = session.post(url, headers=current_headers, timeout=timeout, **kwargs)
         else:
-            raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
+            response = session.get(url, headers=current_headers, timeout=timeout, **kwargs)
     except Exception as e:
         raise ConnectionError(f"无法连接到 {url}: {e}") from e
     code = response.status_code
