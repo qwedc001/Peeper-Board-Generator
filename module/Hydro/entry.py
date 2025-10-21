@@ -73,9 +73,9 @@ class HydroHandler(BasicHandler):
         save_json(self.config, daily, False)
 
     def login(self, credentials: dict) -> requests.Session:
-        with requests.Session() as session:
-            fetch_url(f"{self.url}login", method='post', data=credentials, session=session)
-            return session
+        session = requests.Session()
+        fetch_url(f"{self.url}login", method='post', data=credentials, session=session)
+        return session
 
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
         logging.info("正在根据昨日排名和今日提交计算当前排名")
