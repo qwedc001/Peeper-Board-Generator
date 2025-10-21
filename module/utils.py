@@ -11,9 +11,8 @@ from module.config import Config
 from module.handler import BasicHandler
 from module.structures import DailyJson
 
+# 显式只接受 json 返回，对 Hydro 有效
 json_headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
-                  "Safari/537.36",
     'Accept': 'application/json',
 }
 
@@ -36,12 +35,12 @@ def fetch_url(url: str, method: str = 'post', headers: dict = None,
         elif method == 'get':
             response = requests.get(url, headers=current_headers, **kwargs)
         else:
-            raise ValueError("Parameter method must be either 'post' or 'get'.")
+            raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
     except Exception as e:
-        raise ConnectionError(f"Failed to connect {url}: {e}") from e
+        raise ConnectionError(f"无法连接到 {url}: {e}") from e
     code = response.status_code
     if code not in accept_codes:
-        raise ConnectionError(f"Failed to connect {url}, code {code}.")
+        raise ConnectionError(f"无法连接到 {url}, 代码 {code}")
     return response
 
 
@@ -56,12 +55,12 @@ def fetch_session(session: requests.Session, url: str, method: str = 'post',
         elif method == 'get':
             response = session.get(url, **kwargs)
         else:
-            raise ValueError("Parameter method must be either 'post' or 'get'.")
+            raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
     except Exception as e:
-        raise ConnectionError(f"Failed to connect {url}: {e}") from e
+        raise ConnectionError(f"无法连接到 {url}: {e}") from e
     code = response.status_code
     if code not in accept_codes:
-        raise ConnectionError(f"Failed to connect {url}, code {code}.")
+        raise ConnectionError(f"无法连接到 {url}, 代码 {code}")
     return response
 
 
