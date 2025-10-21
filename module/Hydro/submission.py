@@ -19,7 +19,7 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
         time_start, time_end = get_today_timestamp()
     out_of_date = False
     page = 1
-    submission_headers = json_headers
+    submission_headers = json_headers.copy()
     if config.get_config()["session"] is not None:
         submission_headers['Cookie'] = (
             f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'

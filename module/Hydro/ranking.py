@@ -13,7 +13,7 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     logging.info("开始获取排行榜记录")
     result = []
     page = 1
-    ranking_headers = json_headers
+    ranking_headers = json_headers.copy()
     if config.get_config()["session"] is not None:
         ranking_headers['Cookie'] = (
             f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
