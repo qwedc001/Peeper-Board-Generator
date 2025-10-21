@@ -4,7 +4,8 @@ import logging
 import os
 import random
 from datetime import datetime, timedelta
-from typing import Tuple, Any
+from typing import Tuple
+
 import requests
 
 from module.config import Config
@@ -24,7 +25,8 @@ json_headers = {
 
 def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
               accept_codes: list[int] | None = None,
-              timeout: float | tuple[float, float] = (5, 15), **kwargs) -> requests.Response:
+              timeout: float | tuple[float, float] = (5, 15),
+              session: requests.Session | None = None, **kwargs) -> requests.Response:
     if accept_codes is None:
         accept_codes = [200]
     method = method.lower()
@@ -33,40 +35,14 @@ def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
     try:
         current_headers = default_headers.copy()
         if headers is not None:
-            for k, v in headers.items():
-                current_headers[k] = v
+            current_headers.update(headers)
         method = method.lower()
+        env = session if session is not None else requests
         if method == 'post':
-            response = requests.post(url, headers=current_headers, timeout=timeout, **kwargs)
+            response = env.post(url, headers=current_headers, timeout=timeout, **kwargs)
         else:
-            response = requests.get(url, headers=current_headers, timeout=timeout, **kwargs)
-    except Exception as e:
-        raise ConnectionError(f"无法连接到 {url}: {e}") from e
-    code = response.status_code
-    if code not in accept_codes:
-        raise ConnectionError(f"无法连接到 {url}, 代码 {code}")
-    return response
-
-
-def fetch_session(session: requests.Session, url: str, method: str = 'post',
-                  headers: dict | None = None, accept_codes: list[int] | None = None,
-                  timeout: float | tuple[float, float] = (5, 15), **kwargs) -> requests.Response:
-    if accept_codes is None:
-        accept_codes = [200]
-    method = method.lower()
-    if method not in ('post', 'get'):
-        raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
-    try:
-        current_headers = default_headers.copy()
-        if headers is not None:
-            for k, v in headers.items():
-                current_headers[k] = v
-        method = method.lower()
-        if method == 'post':
-            response = session.post(url, headers=current_headers, timeout=timeout, **kwargs)
-        else:
-            response = session.get(url, headers=current_headers, timeout=timeout, **kwargs)
-    except Exception as e:
+            response = env.get(url, headers=current_headers, timeout=timeout, **kwargs)
+    except requests.exceptions.RequestException as e:
         raise ConnectionError(f"无法连接到 {url}: {e}") from e
     code = response.status_code
     if code not in accept_codes:

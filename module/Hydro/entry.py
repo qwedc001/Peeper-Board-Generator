@@ -12,7 +12,7 @@ from module.handler import BasicHandler
 from module.structures import DailyJson, RankingData, SubmissionData
 from module.Hydro.submission import fetch_submissions
 from module.Hydro.ranking import fetch_rankings
-from module.utils import save_json, get_date_string, load_json, fetch_session
+from module.utils import save_json, get_date_string, load_json, fetch_url
 
 
 class HydroHandler(BasicHandler):
@@ -74,7 +74,7 @@ class HydroHandler(BasicHandler):
 
     def login(self, credentials: dict) -> requests.Session:
         with requests.Session() as session:
-            fetch_session(session, f"{self.url}login", method='post', data=credentials)
+            fetch_url(f"{self.url}login", method='post', data=credentials, session=session)
             return session
 
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
