@@ -10,16 +10,12 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
     logging.info(f"正在重新加载 {req_type} 数据")
     url = oj_url + 'manage/script'
     rp_headers = json_headers.copy()
-    if config.get_config()["session"] is not None:
-        rp_headers['Cookie'] = (
-            f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
-            f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
-        )
-    else:
-        rp_headers['Cookie'] = (
-            f'sid={config.get_config()["cookie"]["sid"]};'
-            f'sid.sig={config.get_config()["cookie"]["sid_sig"]};'
-        )
+    if config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    rp_headers['Cookie'] = (
+        f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+        f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+    )
     rp_headers['Content-Type'] = 'application/json'
     data = f'{{"args":"","id":"{req_type}"}}'
     response_create_task = fetch_url(url, method='post', headers=rp_headers, data=data)

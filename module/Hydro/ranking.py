@@ -14,11 +14,12 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     result = []
     page = 1
     ranking_headers = json_headers.copy()
-    if config.get_config()["session"] is not None:
-        ranking_headers['Cookie'] = (
-            f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
-            f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
-        )
+    if config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    ranking_headers['Cookie'] = (
+        f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+        f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+    )
     exclude_uid: list = config.get_config()["exclude_uid"]
     exclude_date = config.get_config()["exclude_reg_date"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()

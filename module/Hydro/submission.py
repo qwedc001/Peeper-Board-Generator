@@ -20,16 +20,12 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
     out_of_date = False
     page = 1
     submission_headers = json_headers.copy()
-    if config.get_config()["session"] is not None:
-        submission_headers['Cookie'] = (
-            f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
-            f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
-        )
-    else:
-        submission_headers['Cookie'] = (
-            f'sid={config.get_config()["session"]["sid"]};'
-            f'sid.sig={config.get_config()["session"]["sid_sig"]};'
-        )
+    if config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    submission_headers['Cookie'] = (
+        f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+        f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+    )
     while not out_of_date:
         url = config.get_config()["url"] + f'record?all=1&page={page}'
         response_json = fetch_url(url, method='get', headers=submission_headers).json()
