@@ -36,6 +36,8 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
         record_json = response_json['rdocs']
         user_json = response_json['udict']
         problem_json = response_json['pdict']
+        if not record_json:  # fix: 修复没有前一天数据时导致的死循环
+            break
         for submission in record_json:
             if submission['lang'] == '-' or ('contest' in submission
                                              and submission['contest'] == '000000000000000000000000'):
