@@ -32,7 +32,7 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
         )
     while not out_of_date:
         url = config.get_config()["url"] + f'record?all=1&page={page}'
-        response_json = fetch_url(url, submission_headers, method='get').json()
+        response_json = fetch_url(url, method='get', headers=submission_headers).json()
         record_json = response_json['rdocs']
         user_json = response_json['udict']
         problem_json = response_json['pdict']

@@ -24,7 +24,7 @@ def infer_qq(html, mail) -> str:
 def fetch_user(config: Config, uid: str) -> UserData | None:
     logging.info("开始获取用户记录")
     url = config.get_config()["url"] + f'user/{uid}'
-    response_text = fetch_url(url, method="get", accept_codes=[200, 404])
+    response_text = fetch_url(url, method='get', accept_codes=[200, 404])
     if response_text.status_code == 404:
         return None
 

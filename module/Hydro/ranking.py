@@ -27,7 +27,7 @@ def fetch_rankings(config: Config) -> list[RankingData]:
         logging.debug(f'正在爬取第 {page} 页的排行榜记录')
         url = config.get_config()["url"] + f'ranking?page={page}'
         response_html = etree.HTML(fetch_url(url, method='get').text)
-        response_json = fetch_url(url, ranking_headers, method='get').json()['udocs']
+        response_json = fetch_url(url, method='get', headers=ranking_headers).json()['udocs']
         reg_date_json = {str(user['_id']): user['regat'] for user in response_json}
         if len(response_html.xpath('//div[@class="nothing-icon"]')) > 0:
             break

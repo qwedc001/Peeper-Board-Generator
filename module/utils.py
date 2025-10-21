@@ -18,23 +18,23 @@ json_headers = {
 }
 
 
-def fetch_url(url: str, inject_headers: dict = None, method: str = 'post',
+def fetch_url(url: str, method: str = 'post', headers: dict = None,
               accept_codes: list[int] | None = None, **kwargs) -> requests.Response:
     if accept_codes is None:
         accept_codes = [200]
     try:
-        headers = {
+        current_headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                           "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
         }
-        if inject_headers is not None:
-            for k, v in inject_headers.items():
-                headers[k] = v
+        if headers is not None:
+            for k, v in headers.items():
+                current_headers[k] = v
         method = method.lower()
         if method == 'post':
-            response = requests.post(url, headers=headers, **kwargs)
+            response = requests.post(url, headers=current_headers, **kwargs)
         elif method == 'get':
-            response = requests.get(url, headers=headers, **kwargs)
+            response = requests.get(url, headers=current_headers, **kwargs)
         else:
             raise ValueError("Parameter method must be either 'post' or 'get'.")
     except Exception as e:
