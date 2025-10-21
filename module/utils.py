@@ -36,7 +36,6 @@ def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
         current_headers = default_headers.copy()
         if headers is not None:
             current_headers.update(headers)
-        method = method.lower()
         env = session if session is not None else requests
         if method == 'post':
             response = env.post(url, headers=current_headers, timeout=timeout, **kwargs)
