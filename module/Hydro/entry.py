@@ -4,7 +4,6 @@ import logging
 import os
 
 import requests
-from requests import Session
 
 from module.Hydro.user import fetch_user
 from module.config import Config
@@ -13,7 +12,8 @@ from module.handler import BasicHandler
 from module.structures import DailyJson, RankingData, SubmissionData
 from module.Hydro.submission import fetch_submissions
 from module.Hydro.ranking import fetch_rankings
-from module.utils import save_json, get_date_string, load_json
+from module.utils import save_json, get_date_string, load_json, fetch_url
+
 
 class HydroHandler(BasicHandler):
 
@@ -48,13 +48,13 @@ class HydroHandler(BasicHandler):
         if mode == "full":  # 检查昨日榜单的json文件日期是否为今日，如果是则跳过执行
             json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
             if not os.path.exists(os.path.join(self.config.work_dir, "data", json_file)):
-                logging.info(f"昨日json数据{json_file}不存在")
+                logging.info(f"昨日 json 数据 {json_file} 不存在")
                 self.get_yesterday()
             file_timestamp = os.stat(
                 os.path.join(self.config.work_dir, "data", json_file)).st_mtime
 
             logging.info(
-                f"{json_file}文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
+                f"{json_file} 文件最后修改时间为 {datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d %H:%M:%S')}")
             if datetime.datetime.fromtimestamp(file_timestamp).strftime('%Y-%m-%d') == get_date_string(False):
                 logging.info("昨日 json 数据已固定，跳过爬取")
             else:
@@ -63,7 +63,7 @@ class HydroHandler(BasicHandler):
             json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
             file_path = os.path.join(self.config.work_dir, "data", json_file)
             if not os.path.exists(file_path):
-                logging.info("昨日json数据不存在")
+                logging.info("昨日 json 数据不存在")
                 self.get_yesterday()
         logging.info("重载今日数据")
         # 为降低时间复杂度，重载今日数据不需要刷新 rp 和 problemStat，后续会根据昨日排名和今日提交计算出
@@ -72,10 +72,10 @@ class HydroHandler(BasicHandler):
         daily = DailyJson(today_submissions, ranking)
         save_json(self.config, daily, False)
 
-    def login(self, credentials: dict) -> Session:
-        with requests.Session() as session:
-            session.post(f"{self.url}login", data=credentials)
-            return session
+    def login(self, credentials: dict) -> requests.Session:
+        session = requests.Session()
+        fetch_url(f"{self.url}login", method='post', data=credentials, session=session)
+        return session
 
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
         logging.info("正在根据昨日排名和今日提交计算当前排名")
@@ -136,4 +136,4 @@ class HydroHandler(BasicHandler):
                             f'AC率：{formatted_ac_rate}%\n')
         else:
             result_text += f'\n今日暂未收到该用户的提交。\n'
-        return result_text
+        return result_text.rstrip('\n')

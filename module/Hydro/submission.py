@@ -1,11 +1,12 @@
 import logging
-import requests
-from module.config import Config
+
+from dateutil.parser import isoparse
+
 from module.Hydro.verdict import STATUS_VERDICT
-from module.utils import json_headers
+from module.config import Config
 from module.structures import SubmissionData, UserData
 from module.utils import get_today_timestamp, get_yesterday_timestamp
-from dateutil.parser import isoparse
+from module.utils import json_headers, fetch_url
 
 
 def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData]:
@@ -18,19 +19,21 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
         time_start, time_end = get_today_timestamp()
     out_of_date = False
     page = 1
-    headers = json_headers
-    if config.get_config()["session"] is not None:
-        headers['Cookie'] = (f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
-                             f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};')
-    else:
-        headers['Cookie'] = (f'sid={config.get_config()["session"]["sid"]};'
-                             f'sid.sig={config.get_config()["session"]["sid_sig"]};')
+    submission_headers = json_headers.copy()
+    if config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    submission_headers['Cookie'] = (
+        f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+        f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+    )
     while not out_of_date:
         url = config.get_config()["url"] + f'record?all=1&page={page}'
-        response_json = requests.get(url, headers=headers).json()
+        response_json = fetch_url(url, method='get', headers=submission_headers).json()
         record_json = response_json['rdocs']
         user_json = response_json['udict']
         problem_json = response_json['pdict']
+        if not record_json:  # fix: 修复没有前一天数据时导致的死循环
+            break
         for submission in record_json:
             if submission['lang'] == '-' or ('contest' in submission
                                              and submission['contest'] == '000000000000000000000000'):

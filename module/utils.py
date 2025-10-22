@@ -5,30 +5,48 @@ import os
 import random
 from datetime import datetime, timedelta
 from typing import Tuple
+
 import requests
 
 from module.config import Config
 from module.handler import BasicHandler
 from module.structures import DailyJson
 
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
-                  "Safari/537.36"
+default_headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
 }
+
+# 显式只接受 json 返回, 对 Hydro 有效
 json_headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 "
-                  "Safari/537.36",
     'Accept': 'application/json',
 }
 
 
-def get_qq_name(qq: str):
-    url = 'https://api.usuuu.com/qq/' + qq
-    res = requests.get(url, headers)
-    if res.json()['code'] == 200:
-        return res.json()['data']['name']
-    else:
-        raise Exception("获取QQ昵称失败")
+def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
+              accept_codes: list[int] | None = None,
+              timeout: float | tuple[float, float] = (5, 15),
+              session: requests.Session | None = None, **kwargs) -> requests.Response:
+    if accept_codes is None:
+        accept_codes = [200]
+    method = method.lower()
+    if method not in ('post', 'get'):
+        raise ValueError("不支持除 'post' 和 'get' 以外的其他连接方法")
+    try:
+        current_headers = default_headers.copy()
+        if headers is not None:
+            current_headers.update(headers)
+        env = session if session is not None else requests
+        if method == 'post':
+            response = env.post(url, headers=current_headers, timeout=timeout, **kwargs)
+        else:
+            response = env.get(url, headers=current_headers, timeout=timeout, **kwargs)
+    except requests.exceptions.RequestException as e:
+        raise ConnectionError(f"无法连接到 {url}: {e}") from e
+    code = response.status_code
+    if code not in accept_codes:
+        raise ConnectionError(f"无法连接到 {url}, 代码 {code}")
+    return response
 
 
 def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
