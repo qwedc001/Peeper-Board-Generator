@@ -32,7 +32,7 @@ def fetch_rankings(config: Config) -> list[RankingData]:
         reg_date_json = {str(user['_id']): user['regat'] for user in response_json}
         if len(response_html.xpath('//div[@class="nothing-icon"]')) > 0:
             break
-        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr')[1:]:
+        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr'):
             user_name = "".join(people.xpath("./td[@class='col--user']/span/a[contains(@class, "
                                              "'user-profile-name')]/text()")).strip()
             badge = "".join(people.xpath("./td[@class='col--user']/span/span[contains(@class, "
