@@ -23,32 +23,31 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     exclude_uid: list = config.get_config()["exclude_uid"]
     exclude_date = config.get_config()["exclude_reg_date"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()
-    logging.info(f"排除规则：uid 在列表{exclude_uid}，注册时间早于{exclude_date}(换算为时间戳为{exclude_time})的用户")
+    logging.info(f"排除规则：uid 在列表 {exclude_uid} 中，或注册时间早于 {exclude_date}（换算为时间戳为 {exclude_time}）的用户")
     while True:
         logging.debug(f'正在爬取第 {page} 页的排行榜记录')
         url = config.get_config()["url"] + f'ranking?page={page}'
         response_html = etree.HTML(fetch_url(url, method='get').text)
         response_json = fetch_url(url, method='get', headers=ranking_headers).json()['udocs']
-        reg_date_json = {str(user['_id']): user['regat'] for user in response_json}
+        user_json = {str(user['_id']): user for user in response_json}
         if len(response_html.xpath('//div[@class="nothing-icon"]')) > 0:
             break
-        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr')[1:]:
-            user_name = "".join(people.xpath("./td[@class='col--user']/span/a[contains(@class, "
-                                             "'user-profile-name')]/text()")).strip()
-            badge = "".join(people.xpath("./td[@class='col--user']/span/span[contains(@class, "
-                                         "'user-profile-badge')]/text()")).strip()
+        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr'):
             accepted = "".join(people.xpath("./td[@class='col--ac']/text()")).strip()
             rank = "".join(people.xpath("./td[@class='col--rank']/text()")).strip()
             uid = people.xpath("./td[@class='col--user']/span/a[contains(@class, 'user-profile-name')]/@href")[0].split(
                 "/user/")[1]
+            user_name = user_json[uid]['uname']
+            if 'displayName' in user_json[uid]:
+                user_name = f"{user_json[uid]['displayName']} ({user_name})"
             unrated = False
             if int(uid) in exclude_uid:
                 unrated = True
                 logging.debug(f"用户 {user_name} 已被 uid 规则排除。")
-            reg_time = isoparse(reg_date_json[uid]).timestamp()
+            reg_time = isoparse(user_json[uid]['regat']).timestamp()
             if exclude_time > reg_time:
                 unrated = True
-                logging.debug(f"用户 {user_name} 注册时间早于 {exclude_date} ，已被排除。")
+                logging.debug(f"用户 {user_name} 注册时间早于 {exclude_date}，已被排除。")
             result.append(RankingData(user_name, accepted, uid, rank, unrated))
         page += 1
     return result
