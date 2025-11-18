@@ -8,7 +8,7 @@ config.json
 
 test/*
 !test/
-!test/**.py
+!test/*.py
 
 /data/*
 !data/
