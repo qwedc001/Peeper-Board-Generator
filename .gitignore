@@ -1,12 +1,20 @@
+__pycache__/
+**/__pycache__/
+
+.idea/
+.venv/
+
 config.json
-configs.json
-/.idea
 
 test/*
-!/test/hydro_tests.py
-!/test/image_tests.py
+!test/
+!test/*.py
 
 /data/*
+!data/
+!data/logo.png
+!data/tips.json
 
 info.log
 last_traceback.log
+performance.log
