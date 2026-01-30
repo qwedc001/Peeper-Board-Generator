@@ -1,6 +1,6 @@
 [project]
 name = "peeper-board-generator"
-version = "1.2.3"
+version = "1.2.4"
 description = "An OJ Board Generator."
 requires-python = ">=3.10"
 dependencies = [

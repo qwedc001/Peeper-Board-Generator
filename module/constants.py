@@ -1,1 +1,1 @@
-VERSION_INFO = "v1.2.3"
+VERSION_INFO = "v1.2.4"

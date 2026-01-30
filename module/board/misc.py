@@ -153,7 +153,7 @@ def _ellipsize_str(origin: any, limit: int) -> str:
 
 def _make_watermark(img: pixie.Image, width: int, height: int):
     cp = StyledString(
-        "©2023-2025 P.B.G. Dev Team.", 'H', 16, font_color=(0, 0, 0, 72)
+        "©2023-2026 P.B.G. Dev Team.", 'H', 16, font_color=(0, 0, 0, 72)
     )
     cp_width, cp_height = calculate_width(cp), calculate_height(cp)
     draw_text(img, cp,
