@@ -13,13 +13,14 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     logging.info("开始获取排行榜记录")
     result = []
     page = 1
-    ranking_headers = json_headers.copy()
-    if config.get_config()["session"] is None:
+    ranking_json_headers = json_headers.copy()
+    if "session" not in config.get_config() or config.get_config()["session"] is None:
         raise Exception("登录信息无效，请重试")
-    ranking_headers['Cookie'] = (
+    ranking_json_headers['Cookie'] = (
         f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
         f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
     )
+    ranking_raw_headers = {'Cookie': ranking_json_headers['Cookie']}
     exclude_uid: list = config.get_config()["exclude_uid"]
     exclude_date = config.get_config()["exclude_reg_date"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()
@@ -27,12 +28,18 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     while True:
         logging.debug(f'正在爬取第 {page} 页的排行榜记录')
         url = config.get_config()["url"] + f'ranking?page={page}'
-        response_html = etree.HTML(fetch_url(url, method='get').text)
-        response_json = fetch_url(url, method='get', headers=ranking_headers).json()['udocs']
+        response_html = etree.HTML(fetch_url(url, method='get', headers=ranking_raw_headers).text)
+        response_json = fetch_url(url, method='get', headers=ranking_json_headers).json()['udocs']
         user_json = {str(user['_id']): user for user in response_json}
         if len(response_html.xpath('//div[@class="nothing-icon"]')) > 0:
             break
-        for people in response_html.xpath('//table[@class="data-table"]/tbody//child::tr'):
+        ranking_people = response_html.xpath('//table[@class="data-table"]/tbody//child::tr')
+        # 检查第一个是不是自己：即第二名为实际的第一名
+        if len(ranking_people) >= 2:
+            second_rank = "".join(ranking_people[1].xpath("./td[@class='col--rank']/text()")).strip()
+            if int(second_rank) == 1:
+                ranking_people = ranking_people[1:]  # 排除自己
+        for people in ranking_people:
             accepted = "".join(people.xpath("./td[@class='col--ac']/text()")).strip()
             rank = "".join(people.xpath("./td[@class='col--rank']/text()")).strip()
             uid = people.xpath("./td[@class='col--user']/span/a[contains(@class, 'user-profile-name')]/@href")[0].split(
