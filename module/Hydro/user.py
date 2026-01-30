@@ -23,8 +23,17 @@ def infer_qq(html, mail) -> str:
 
 def fetch_user(config: Config, uid: str) -> UserData | None:
     logging.info("开始获取用户记录")
+    # 避免普通用户被某些插件干 403
+    if "session" not in config.get_config() or config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    user_headers = {
+        'Cookie': (
+            f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+            f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+        )
+    }
     url = config.get_config()["url"] + f'user/{uid}'
-    response_text = fetch_url(url, method='get', accept_codes=[200, 404])
+    response_text = fetch_url(url, method='get', headers=user_headers, accept_codes=[200, 404])
     if response_text.status_code == 404:
         return None
 

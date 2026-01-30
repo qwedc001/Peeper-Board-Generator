@@ -20,7 +20,7 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
     out_of_date = False
     page = 1
     submission_headers = json_headers.copy()
-    if config.get_config()["session"] is None:
+    if "session" not in config.get_config() or config.get_config()["session"] is None:
         raise Exception("登录信息无效，请重试")
     submission_headers['Cookie'] = (
         f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'

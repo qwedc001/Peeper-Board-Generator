@@ -26,7 +26,8 @@ json_headers = {
 def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
               accept_codes: list[int] | None = None,
               timeout: float | tuple[float, float] = (5, 15),
-              session: requests.Session | None = None, **kwargs) -> requests.Response:
+              session: requests.Session | None = None,
+              allow_redirect: bool = False, **kwargs) -> requests.Response:
     if accept_codes is None:
         accept_codes = [200]
     method = method.lower()
@@ -46,6 +47,9 @@ def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
     code = response.status_code
     if code not in accept_codes:
         raise ConnectionError(f"无法连接到 {url}, 代码 {code}")
+    if not allow_redirect and response.history:
+        # 检查是否因为权限等问题被重定向到登录页之类的，因为 response.status_code 为最终 URL 的状态码
+        logging.warning(f"访问 {url} 时被重定向 {len(response.history)} 次，最终 URL 为 {response.url}")
     return response
 
 

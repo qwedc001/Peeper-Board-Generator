@@ -17,6 +17,12 @@ from module.utils import save_json, get_date_string, load_json, fetch_url
 
 class HydroHandler(BasicHandler):
 
+    def __init__(self, config: Config):
+        super().__init__("HydroHandler")
+        self.config = config
+        self.url = self.config.get_config()['url']
+        self.reloaded_stats = False
+
     def reload_all(self):
         if not self.reloaded_stats:
             logging.info("正在重载 Hydro 的统计数据")
@@ -24,11 +30,13 @@ class HydroHandler(BasicHandler):
             reload_stats(self.config, self.url, "rp")
             self.reloaded_stats = True
 
-    def __init__(self, config: Config):
-        super().__init__("HydroHandler")
-        self.config = config
-        self.url = self.config.get_config()['url']
-        self.reloaded_stats = False
+    def begin_session(self):
+        logging.info("尝试登录获取新 Session")
+        credentials = self.config.get_config()["credentials"]
+        if credentials is not None:
+            session = self.login(credentials)
+            self.config.set_config("session", session)
+            logging.info("Session 获取成功")
 
     def get_yesterday(self):
         logging.info("开始爬取昨日数据")
@@ -39,12 +47,7 @@ class HydroHandler(BasicHandler):
 
     def save_daily(self, mode: str):
         logging.info("开始保存 json 数据")
-        logging.info("尝试登录获取新 Session")
-        credentials = self.config.get_config()["credentials"]
-        if credentials is not None:
-            session = self.login(credentials)
-            self.config.set_config("session", session)
-            logging.info("Session 获取成功")
+        self.begin_session()
         if mode == "full":  # 检查昨日榜单的json文件日期是否为今日，如果是则跳过执行
             json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
             if not os.path.exists(os.path.join(self.config.work_dir, "data", json_file)):
@@ -74,7 +77,8 @@ class HydroHandler(BasicHandler):
 
     def login(self, credentials: dict) -> requests.Session:
         session = requests.Session()
-        fetch_url(f"{self.url}login", method='post', data=credentials, session=session)
+        fetch_url(f"{self.url}login", method='post', data=credentials,
+                  session=session, allow_redirect=True)
         return session
 
     def calculate_ranking(self, submissions: list[SubmissionData]) -> list[RankingData]:
@@ -104,6 +108,7 @@ class HydroHandler(BasicHandler):
 
     def fetch_user(self, uid: str) -> str:
         logging.info(f"正在获取用户 {uid} 的信息")
+        self.begin_session()
 
         user = fetch_user(self.config, uid)
         if user is None:
