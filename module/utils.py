@@ -68,12 +68,11 @@ def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
     
     # 如果在排行榜中未找到，在今日提交中搜索
     submissions = data.submissions
-    submission_users = {submission.user.uid: submission.user.name for submission in submissions}
-    res = difflib.get_close_matches(name, list(submission_users.values()), cutoff=0.4, n=1)
+    # 创建用户名到 uid 的映射，用于高效查找
+    submission_users_name_to_uid = {submission.user.name: submission.user.uid for submission in submissions}
+    res = difflib.get_close_matches(name, list(submission_users_name_to_uid.keys()), cutoff=0.4, n=1)
     if len(res) > 0:
-        for uid, user_name in submission_users.items():
-            if user_name == res[0]:
-                return handler.fetch_user(uid)
+        return handler.fetch_user(submission_users_name_to_uid[res[0]])
     
     return "未找到用户"
 
