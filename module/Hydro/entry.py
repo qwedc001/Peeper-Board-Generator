@@ -86,6 +86,14 @@ class HydroHandler(BasicHandler):
         with open(file_path, "r", encoding="utf-8") as f:
             content = json.load(f)
         ranking = DailyJson.from_json(content).rankings
+        
+        # 获取当前配置中的排除规则
+        exclude_uid: list = self.config.get_config()["exclude_uid"]
+        
+        # 更新所有用户的 unrated 状态以反映当前配置
+        for rank in ranking:
+            rank.unrated = int(rank.uid) in exclude_uid
+        
         problem_ac_list: list[tuple[str, str]] = []  # uid, pid
         for submission in submissions:
             if submission.at < file_timestamp or submission.verdict != "Accepted":

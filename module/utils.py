@@ -57,14 +57,25 @@ def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
         handler.save_daily("now")
     finally:
         data = load_json(config, False)
+    
+    # 首先在排行榜中搜索
     rankings = data.rankings
     res = difflib.get_close_matches(name, [ranking.user_name for ranking in rankings], cutoff=0.4, n=1)
     if len(res) > 0:
         for ranking in rankings:
             if ranking.user_name == res[0]:
                 return handler.fetch_user(ranking.uid)
-    else:
-        return "未找到用户"
+    
+    # 如果在排行榜中未找到，在今日提交中搜索
+    submissions = data.submissions
+    submission_users = {submission.user.uid: submission.user.name for submission in submissions}
+    res = difflib.get_close_matches(name, list(submission_users.values()), cutoff=0.4, n=1)
+    if len(res) > 0:
+        for uid, user_name in submission_users.items():
+            if user_name == res[0]:
+                return handler.fetch_user(uid)
+    
+    return "未找到用户"
 
 
 def search_user_by_uid(uid: str, handler: BasicHandler):
