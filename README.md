@@ -35,7 +35,7 @@
 ## 使用方法
 1. 安装依赖
 ```bash
-pip install -r requirements.txt
+uv sync --frozen
 ```
 2. 编写配置文件
 
@@ -68,6 +68,8 @@ options:
   --separate_cols       是否启用分栏特性
   --performance_statistics
                         性能测试
+  --config CONFIG       指定配置文件路径
+  --verbose             显示更详细的日志
 ```
 
 ## 样例图片

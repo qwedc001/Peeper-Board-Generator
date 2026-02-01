@@ -247,7 +247,7 @@ wheels = [
 
 [[package]]
 name = "peeper-board-generator"
-version = "1.2.3"
+version = "1.2.4"
 source = { virtual = "." }
 dependencies = [
     { name = "easy-pixie" },
