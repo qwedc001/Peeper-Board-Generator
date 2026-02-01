@@ -25,6 +25,7 @@ def fetch_rankings(config: Config) -> list[RankingData]:
     exclude_date = config.get_config()["exclude_reg_date"]
     exclude_time = datetime.strptime(exclude_date, "%Y-%m-%d").timestamp()
     logging.info(f"排除规则：uid 在列表 {exclude_uid} 中，或注册时间早于 {exclude_date}（换算为时间戳为 {exclude_time}）的用户")
+    current_rank = 0
     while True:
         logging.debug(f'正在爬取第 {page} 页的排行榜记录')
         url = config.get_config()["url"] + f'ranking?page={page}'
@@ -34,10 +35,10 @@ def fetch_rankings(config: Config) -> list[RankingData]:
         if len(response_html.xpath('//div[@class="nothing-icon"]')) > 0:
             break
         ranking_people = response_html.xpath('//table[@class="data-table"]/tbody//child::tr')
-        # 检查第一个是不是自己：即第二名为实际的第一名
+        # 检查第一个是不是自己：即第二名为本页实际的第一名
         if len(ranking_people) >= 2:
             second_rank = "".join(ranking_people[1].xpath("./td[@class='col--rank']/text()")).strip()
-            if int(second_rank) == 1:
+            if int(second_rank) == current_rank + 1:
                 ranking_people = ranking_people[1:]  # 排除自己
         for people in ranking_people:
             accepted = "".join(people.xpath("./td[@class='col--ac']/text()")).strip()
@@ -56,5 +57,6 @@ def fetch_rankings(config: Config) -> list[RankingData]:
                 unrated = True
                 logging.debug(f"用户 {user_name} 注册时间早于 {exclude_date}，已被排除。")
             result.append(RankingData(user_name, accepted, uid, rank, unrated))
+            current_rank = max(current_rank, int(rank))
         page += 1
     return result
