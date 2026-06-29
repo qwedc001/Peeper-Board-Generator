@@ -79,10 +79,10 @@ def generate_board_data(submissions: list[SubmissionData], verdict: str) -> Misc
 
 def _slice_rank_data(rank: list[dict], lim: int, show_unrated: bool = True) -> list[dict]:
     """针对有排名并列时的切片"""
-    if len(rank) == 0:
+    unrated_excluded = [rank_data for rank_data in rank if not rank_data.get('unrated')]
+    if len(unrated_excluded) == 0:
         return []
 
-    unrated_excluded = [rank_data for rank_data in rank if not rank_data.get('unrated')]
     max_rank = min(lim, unrated_excluded[len(unrated_excluded) - 1]['rank'])
     if not show_unrated:  # 预处理，避免后续无效绘图对象的预绘制
         max_rank = lim
