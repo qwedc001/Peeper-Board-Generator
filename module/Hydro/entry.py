@@ -96,7 +96,7 @@ class HydroHandler(BasicHandler):
         
         # 更新所有用户的 unrated 状态以反映当前配置
         for rank in ranking:
-            rank.unrated = int(rank.uid) in exclude_uid
+            rank.unrated |= int(rank.uid) in exclude_uid
         
         problem_ac_list: list[tuple[str, str]] = []  # uid, pid
         for submission in submissions:
