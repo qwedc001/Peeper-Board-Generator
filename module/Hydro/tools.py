@@ -6,6 +6,21 @@ from module.Hydro.verdict import VERDICT_MAP
 from module.utils import json_headers, fetch_url
 
 
+def pass_sudo(config: Config, oj_url: str):
+    logging.info("正在尝试通过 sudo 验证")
+    url = oj_url + 'user/sudo'
+    sudo_headers = json_headers.copy()
+    if "session" not in config.get_config() or config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    sudo_headers['Cookie'] = (
+        f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+        f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+    )
+    sudo_headers['Content-Type'] = 'application/x-www-form-urlencoded'
+    data = f'password={config.get_config()["credentials"]["password"]}'
+    fetch_url(url, method='post', headers=sudo_headers, data=data)
+
+
 def reload_stats(config: Config, oj_url: str, req_type: str):
     logging.info(f"正在重新加载 {req_type} 数据")
     url = oj_url + 'manage/script'
@@ -18,8 +33,14 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
     )
     rp_headers['Content-Type'] = 'application/json'
     data = f'{{"args":"","id":"{req_type}"}}'
-    response_create_task = fetch_url(url, method='post', headers=rp_headers, data=data)
-    record_id = response_create_task.json()["rid"]
+
+    response_create_task = fetch_url(url, method='post', headers=rp_headers, data=data).json()
+    if 'rid' not in response_create_task and 'user/sudo' in response_create_task["url"]:
+        # 需要通过 sudo 校验
+        pass_sudo(config, oj_url)
+        response_create_task = fetch_url(url, method='post', headers=rp_headers, data=data).json()
+
+    record_id = response_create_task["rid"]
     logging.debug(f'截取到 record id：{record_id}，类型：{req_type}')
     start_time = time.time()
     status = "Started"
