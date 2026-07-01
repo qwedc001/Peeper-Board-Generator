@@ -17,7 +17,7 @@ def pass_sudo(config: Config, oj_url: str):
         f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
     )
     sudo_headers['Content-Type'] = 'application/x-www-form-urlencoded'
-    data = f'password={config.get_config()["credentials"]["password"]}'
+    data = {'password': config.get_config()["credentials"]["password"]}
     fetch_url(url, method='post', headers=sudo_headers, data=data)
 
 
