@@ -51,14 +51,12 @@ class TestSubmissionModule(unittest.TestCase):
         result = fetch_submissions(config, True)
         with open("submission_result_yesterday.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
     def test_fetch_submissions_today(self):
         result = fetch_submissions(config, False)
         with open("submission_result_today.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
     def test_get_first_ac(self):
@@ -66,7 +64,6 @@ class TestSubmissionModule(unittest.TestCase):
         result = {"yesterday": get_first_ac(yesterday_submissions), "today": get_first_ac(today_submissions)}
         with open("first_ac.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
     def test_hourly_ac(self):
@@ -75,7 +72,6 @@ class TestSubmissionModule(unittest.TestCase):
                   "today": get_hourly_submissions(today_submissions)}
         with open("hourly_ac.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
     def test_popular_problem(self):
@@ -84,7 +80,6 @@ class TestSubmissionModule(unittest.TestCase):
                   "today": get_most_popular_problem(today_submissions)}
         with open("popular_problem.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
     def test_classify_by_verdict(self):
@@ -93,7 +88,6 @@ class TestSubmissionModule(unittest.TestCase):
                   "today": classify_by_verdict(today_submissions)}
         with open("classify_by_verdict.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
     def test_rank_by_verdict(self):
@@ -102,7 +96,6 @@ class TestSubmissionModule(unittest.TestCase):
                   "today": rank_by_verdict(today_submissions)}
         with open("rank_by_verdict.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         self.assertTrue(len(result) > 0)
 
 
@@ -112,7 +105,6 @@ class TestUserModule(unittest.TestCase):
         result = fetch_user(config, uid)
         with open("user.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-            f.close()
         # 在测试 json 中填入一个有 qq 号的用户来检验 infer_qq 模块是否正常
         self.assertTrue(result.qq != "")
 

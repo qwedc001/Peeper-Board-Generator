@@ -108,7 +108,6 @@ def rand_tips(config: Config):
                 for section in tips:
                     for tip in section['tips']:
                         tips_all.append(tip)
-                f.close()
     return random.choice(tips_all)
 
 
@@ -124,7 +123,6 @@ def load_json(config: Config, is_yesterday: bool) -> DailyJson:
     file_path = os.path.join(config.work_dir, "data", json_file)
     with open(file_path, "r", encoding="utf-8") as f:
         content = json.load(f)
-        f.close()
     return DailyJson.from_json(content)
 
 
@@ -133,7 +131,6 @@ def save_json(config: Config, data: DailyJson, is_yesterday: bool = False):
     file_path = os.path.join(config.work_dir, "data", json_file)
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-        f.close()
 
 
 def performance_test(func):
