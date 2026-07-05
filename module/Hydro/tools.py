@@ -1,4 +1,8 @@
+import datetime
+import json
 import logging
+import os
+import re
 import time
 
 from module.config import Config
@@ -21,8 +25,54 @@ def pass_sudo(config: Config, oj_url: str):
     fetch_url(url, method='post', headers=sudo_headers, data=data)
 
 
-def reload_stats(config: Config, oj_url: str, req_type: str):
+def truncate_oj_url(oj_url: str):
+    """去掉 oj_url 里的域后缀"""
+    pattern = r'/d/[^/]*/?'
+    matches = list(re.finditer(pattern, oj_url))
+    if matches:
+        last = matches[-1]
+        return oj_url[:last.start()] + oj_url[last.end():]
+    return oj_url
+
+
+def check_reload_cache(config: Config, oj_url: str, req_type: str) -> bool:
+    """检查当天是否已经成功重载"""
+    real_oj_url = truncate_oj_url(oj_url)
+    file_path = os.path.join(config.work_dir, "data", 'reload_cache.json')
+    content = {}
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = json.load(f)
+    if real_oj_url in content and req_type in content[real_oj_url]:
+        last_reload_time = content[real_oj_url][req_type]
+        current_time = datetime.datetime.now().timestamp()
+        last_date = datetime.datetime.fromtimestamp(last_reload_time).date()
+        current_date = datetime.datetime.fromtimestamp(current_time).date()
+        if current_date <= last_date:
+            return True
+    return False
+
+
+def save_reload_cache(config: Config, oj_url: str, req_type: str):
+    real_oj_url = truncate_oj_url(oj_url)
+    file_path = os.path.join(config.work_dir, "data", 'reload_cache.json')
+    content = {}
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            content = json.load(f)
+    if real_oj_url not in content:
+        content[real_oj_url] = {}
+    content[real_oj_url][req_type] = datetime.datetime.now().timestamp()
+    with open(file_path, "w", encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False, indent=4)
+
+
+def reload_stats(config: Config, oj_url: str, req_type: str) -> bool:
+    if check_reload_cache(config, oj_url, req_type):
+        logging.info(f"当天已重载 {req_type} 数据，跳过重载")
+        return True
     logging.info(f"正在重新加载 {req_type} 数据")
+
     url = oj_url + 'manage/script'
     rp_headers = json_headers.copy()
     if "session" not in config.get_config() or config.get_config()["session"] is None:
@@ -53,4 +103,7 @@ def reload_stats(config: Config, oj_url: str, req_type: str):
         status = response_get_status.json()["rdoc"]["status"]
         logging.debug(f'当前 {req_type} 状态为：{status}')
     logging.info(f'重新加载 {req_type} 数据完成')
+
+    save_reload_cache(config, oj_url, req_type)
+    logging.debug(f'已缓存重载 {req_type} 数据的时间')
     return True
