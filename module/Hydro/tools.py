@@ -27,12 +27,11 @@ def pass_sudo(config: Config, oj_url: str):
 
 def truncate_oj_url(oj_url: str):
     """去掉 oj_url 里的域后缀"""
-    pattern = r'/d/[^/]*/?'
-    matches = list(re.finditer(pattern, oj_url))
-    if matches:
-        last = matches[-1]
-        return oj_url[:last.start()] + oj_url[last.end():]
-    return oj_url
+    pattern = r'/d/[^/]*/*$'
+    if re.search(pattern, oj_url):
+        return re.sub(pattern, '', oj_url)
+    else:
+        return re.sub(r'/*$', '', oj_url)
 
 
 def check_reload_cache(config: Config, oj_url: str, req_type: str) -> bool:
