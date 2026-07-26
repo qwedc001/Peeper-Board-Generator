@@ -46,7 +46,7 @@ def fetch_rankings(config: Config) -> list[RankingData]:
             uid = people.xpath("./td[@class='col--user']/span/a[contains(@class, 'user-profile-name')]/@href")[0].split(
                 "/user/")[1]
             user_name = user_json[uid]['uname']
-            if 'displayName' in user_json[uid]:
+            if 'displayName' in user_json[uid] and user_json[uid]['displayName']:
                 user_name = f"{user_json[uid]['displayName']} ({user_name})"
             unrated = False
             if int(uid) in exclude_uid:
