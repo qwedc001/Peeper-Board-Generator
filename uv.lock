@@ -102,14 +102,14 @@ wheels = [
 
 [[package]]
 name = "easy-pixie"
-version = "0.0.9"
+version = "0.0.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pixie-python" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/76/55/635f97f9d2d413c374a459fb24a47ccecc0c6ff1524760eb919930303cd8/easy_pixie-0.0.9.tar.gz", hash = "sha256:07c3696e8504cb1d96b327fdaeb42e67fed5106445e850bdaca3b94d2b97a999", size = 35074749, upload-time = "2026-01-12T17:26:46.188Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/48/2f/3b5800d2d0240f210eba5b6f079c6a8e93194f946a58cf08c4cb816c76aa/easy_pixie-0.0.10.tar.gz", hash = "sha256:a415293408749e7f628f4d6937808903dee8f84ea581041be3b07a59a51d89ff", size = 35075091, upload-time = "2026-08-15T09:23:17.022Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/22/4c/f9819e7bb01c5d82779b1a95d94ca124188739e04bae322de7c9ad2556a0/easy_pixie-0.0.9-py3-none-any.whl", hash = "sha256:63c52515515a631713379a203f27c2226f779cf0224bcd00140977c5530ed945", size = 35178356, upload-time = "2026-01-12T17:26:43.321Z" },
+    { url = "https://files.pythonhosted.org/packages/5b/b9/96271dc80d70feb8d54c0c2bf23afbb3e4f62bb9182963c87156a0f879fb/easy_pixie-0.0.10-py3-none-any.whl", hash = "sha256:70a17f913fa85c8c51565263230e7c3b3fa514e2f5db75d1a34c0500f0bff6f6", size = 35178701, upload-time = "2026-08-15T09:23:13.201Z" },
 ]
 
 [[package]]
@@ -253,7 +253,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "easy-pixie", specifier = ">=0.0.9" },
+    { name = "easy-pixie", specifier = ">=0.0.10" },
     { name = "lxml", specifier = ">=6.1.1" },
     { name = "pixie-python", specifier = ">=4.3.0" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
