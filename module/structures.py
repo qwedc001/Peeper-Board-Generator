@@ -1,13 +1,20 @@
 class UserData:
-    def __init__(self, name: str, uid: str):
+    def __init__(self, name: str, uid: str, register_at: int):
         self.name = name
         self.uid = uid
+        self.register_at = register_at
         self.status = ""
         self.progress = ""
         self.mail = ""
         self.qq = ""
         self.qq_name = ""
         self.description = ""
+
+    @classmethod
+    def from_json(cls, json_data: dict):
+        # 兼容历史数据：旧 json 中 user 没有 register_at，按 0 处理
+        return UserData(json_data['name'], json_data['uid'],
+                        json_data.get('register_at', 0))
 
 
 class SubmissionData:
@@ -22,7 +29,7 @@ class SubmissionData:
 
     @classmethod
     def from_json(cls, json_data: dict):
-        return SubmissionData(UserData(json_data['user']['name'], json_data['user']['uid']),
+        return SubmissionData(UserData.from_json(json_data['user']),
                               json_data['score'], json_data['verdict'],
                               json_data['problem_id'] if 'problem_id' in json_data else "",  # 做个判空兼容一下
                               json_data['problem_name'], json_data['at'])

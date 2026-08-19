@@ -9,6 +9,17 @@ from module.structures import RankingData
 from module.utils import json_headers, fetch_url
 
 
+def is_unrated_user(uid: str, register_at: int, exclude_uid: list[int],
+                    exclude_reg_date_timestamp: float) -> bool:
+    """根据 uid 排除规则和注册时间排除规则判断用户是否计入榜单。
+
+    register_at 为 0 时表示注册时间未知（例如历史数据），只应用 uid 规则。
+    """
+    if int(uid) in exclude_uid:
+        return True
+    return register_at > 0 and exclude_reg_date_timestamp > register_at
+
+
 def fetch_rankings(config: Config) -> list[RankingData]:
     logging.info("开始获取排行榜记录")
     result = []
@@ -48,13 +59,11 @@ def fetch_rankings(config: Config) -> list[RankingData]:
             user_name = user_json[uid]['uname']
             if 'displayName' in user_json[uid] and user_json[uid]['displayName']:
                 user_name = f"{user_json[uid]['displayName']} ({user_name})"
-            unrated = False
+            reg_time = int(isoparse(user_json[uid]['regat']).timestamp())
+            unrated = is_unrated_user(uid, reg_time, exclude_uid, exclude_time)
             if int(uid) in exclude_uid:
-                unrated = True
                 logging.debug(f"用户 {user_name} 已被 uid 规则排除。")
-            reg_time = isoparse(user_json[uid]['regat']).timestamp()
-            if exclude_time > reg_time:
-                unrated = True
+            elif unrated:
                 logging.debug(f"用户 {user_name} 注册时间早于 {exclude_date}，已被排除。")
             result.append(RankingData(user_name, accepted, uid, rank, unrated))
             current_rank = max(current_rank, int(rank))
