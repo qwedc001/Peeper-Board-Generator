@@ -11,7 +11,7 @@ from module.Hydro.tools import reload_stats
 from module.handler import BasicHandler
 from module.structures import DailyJson, RankingData, SubmissionData
 from module.Hydro.submission import fetch_submissions
-from module.Hydro.ranking import fetch_rankings
+from module.Hydro.ranking import fetch_rankings, is_unrated_user
 from module.utils import save_json, get_date_string, load_json, fetch_url
 
 
@@ -93,11 +93,14 @@ class HydroHandler(BasicHandler):
         
         # 获取当前配置中的排除规则
         exclude_uid: list = self.config.get_config()["exclude_uid"]
+        exclude_time = datetime.datetime.strptime(
+            self.config.get_config()["exclude_reg_date"], "%Y-%m-%d").timestamp()
         
         # 更新所有用户的 unrated 状态以反映当前配置
         for rank in ranking:
             rank.unrated |= int(rank.uid) in exclude_uid
         
+        ranking_by_uid = {rank.uid: rank for rank in ranking}
         problem_ac_list: list[tuple[str, str]] = []  # uid, pid
         for submission in submissions:
             if submission.at < file_timestamp or submission.verdict != "Accepted":
@@ -105,9 +108,19 @@ class HydroHandler(BasicHandler):
             if (submission.user.uid, submission.problem_id) in problem_ac_list:
                 continue  # 排除同一道题重复ac
             problem_ac_list.append((submission.user.uid, submission.problem_id))
-            for rank in ranking:
-                if submission.user.uid == rank.uid:
-                    rank.accepted = str(int(rank.accepted) + 1)
+            rank = ranking_by_uid.get(submission.user.uid)
+            if rank is None:
+                # 新用户不会被昨日的 ranking 收录，需要根据今日提交补建记录
+                unrated = is_unrated_user(submission.user.uid,
+                                          submission.user.register_at,
+                                          exclude_uid, exclude_time)
+                rank = RankingData(submission.user.name, "0", submission.user.uid,
+                                   str(len(ranking)), unrated)
+                ranking.append(rank)
+                ranking_by_uid[submission.user.uid] = rank
+                logging.info(f"检测到新用户 {submission.user.name} "
+                             f"(UID {submission.user.uid})，已补入今日榜单。")
+            rank.accepted = str(int(rank.accepted) + 1)
         # 根据新的 accepted 数量重新排序
         ranking.sort(key=lambda x: x.accepted, reverse=True)
         for i in range(len(ranking)):

@@ -57,7 +57,10 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
             # 保持与排行榜用户名显示一样的逻辑
             if 'displayName' in user_json[uid] and user_json[uid]['displayName']:
                 name = f"{user_json[uid]['displayName']} ({name})"
-            user = UserData(name, uid)
+            register_at = 0
+            if 'regat' in user_json[uid]:
+                register_at = int(isoparse(user_json[uid]['regat']).timestamp())
+            user = UserData(name, uid, register_at)
             score = submission['score']
             verdict = STATUS_VERDICT[submission['status']]
             problem_id = str(submission['pid'])

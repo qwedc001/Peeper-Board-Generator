@@ -22,13 +22,15 @@ def load_submission_json() -> tuple[list[SubmissionData], list[SubmissionData]]:
     today_json.close()
     submissions = []
     for submission in yesterday_submissions:
-        submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid']),
+        submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid'],
+                                                   submission['user'].get('register_at', 0)),
                                           submission['score'], submission['verdict'], submission['problem_id'],
                                           submission['problem_name'], submission['at']))
     yesterday_submissions = submissions
     submissions = []
     for submission in today_submissions:
-        submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid']),
+        submissions.append(SubmissionData(UserData(submission['user']['name'], submission['user']['uid'],
+                                                   submission['user'].get('register_at', 0)),
                                           submission['score'], submission['verdict'], submission['problem_id'],
                                           submission['problem_name'], submission['at']))
     today_submissions = submissions
