@@ -15,7 +15,8 @@ from module.constants import VERSION_INFO
 from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
     get_most_popular_problem, count_users_submitted
-from module.utils import rand_tips, load_json, get_date_string, get_daily_json_path, get_cache_fresh_time
+from module.utils import rand_tips, load_json, get_date_string, get_daily_json_path, get_cache_fresh_time, \
+    format_date_string
 from module.verdict import ALIAS_MAP
 
 _CONTENT_WIDTH = 1248
@@ -628,23 +629,28 @@ class _CopyrightSection(RenderableSection):
 class MiscBoardGenerator(Renderer):
 
     def __init__(self, config: Config, board_type: str, img_path: str, verdict: str = "Accepted",
-                 separate_columns: bool = False):
+                 separate_columns: bool = False, date_string: str = None):
         super().__init__(config)
-        self._today = load_json(config, False)
+        # date_string 为榜单对应的日期（--full 可指定），留空时 full 为昨日、now 为今日
+        self._date_string = format_date_string(date_string or get_date_string(board_type == "full"))
         self._separate_columns = separate_columns
         self._gradient_color = pick_gradient_color()
-        self._cache_fresh_time: datetime | None = None  # 昨日缓存文件新鲜时的修改时间
-        eng_full_name = (f'{get_date_string(board_type == "full", ".")}  '
+        self._cache_fresh_time: datetime | None = None  # 缓存文件新鲜时的修改时间
+        eng_full_name = (f'{self._date_string.replace("-", ".")}  '
                          f'{config.get_config()["board_name"]} Rank List')
 
         if board_type == "full":  # 对于 full 榜单的图形逻辑
             try:
-                self._yesterday = load_json(config, True)
+                self._yesterday = load_json(config, True, self._date_string)
+                # 缓存不新鲜时回退使用的「当前」ranking 存放在次日文件中（昨日排名 + 当日提交）
+                self._today = load_json(config, False, format_date_string(self._date_string, 1))
             except FileNotFoundError:
-                logging.error("未检测到昨日榜单文件，请改用--now参数生成今日榜单")
+                logging.error(f"未检测到 {self._date_string} 的榜单缓存（需该日与次日两份缓存），"
+                              f"请检查日期或改用--now参数生成今日榜单")
                 sys.exit(1)
-            # 缓存文件修改时间在 24 时前后 2 小时内时，认为其中的 ranking 即「昨日」榜单
-            self._cache_fresh_time = get_cache_fresh_time(get_daily_json_path(config, True))
+            # 缓存文件修改时间在 24 时前后 4 小时内时，认为其中的 ranking 即该日榜单
+            self._cache_fresh_time = get_cache_fresh_time(
+                get_daily_json_path(config, True, self._date_string))
             self._board = generate_board_data(self._yesterday.submissions, verdict)
             self.section_title = _TitleSection(
                 config, self._gradient_color.color_list[0], img_path,
@@ -652,6 +658,7 @@ class MiscBoardGenerator(Renderer):
             )
             self._collect_full_sections()
         else:  # if board_type == "now"  对于 now 榜单的图形逻辑
+            self._today = load_json(config, False, self._date_string)
             alias = {val: key for key, val in ALIAS_MAP.items()}
             self._verdict = verdict
             self._verdict_alias = alias[verdict]
