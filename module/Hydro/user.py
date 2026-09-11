@@ -39,7 +39,8 @@ def fetch_user(config: Config, uid: str) -> UserData | None:
 
     html = etree.HTML(response_text.text)
     user_name = "".join(s.strip() for s in html.xpath('//div[@class="media__body profile-header__main"]/h1/text()'))
-    user = UserData(user_name, uid)
+    # 用户详情页不用于计算榜单 unrated，注册时间暂以 0 占位
+    user = UserData(user_name, uid, 0)
     mail_base64 = "".join(html.xpath('//a[@data-tooltip="复制电子邮件"]/@data-copy'))
     user.mail = base64.b64decode(mail_base64).decode() if mail_base64 else ""
     user.qq = infer_qq(html, user.mail)

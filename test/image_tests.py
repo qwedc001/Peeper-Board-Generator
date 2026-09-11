@@ -1,6 +1,7 @@
 import os
 import unittest
 
+import easy_pixie
 import pixie
 from easy_pixie import StyledString
 
@@ -56,7 +57,9 @@ class GenerateTest(unittest.TestCase):
     def test_font(self):
         output_img = pixie.Image(400, 200)
         output_img.fill(pixie.Color(1, 1, 1, 1))
-        font = pixie.read_font(os.path.join(config.work_dir, config.get_config()["data"], f'OPPOSans-B.ttf'))
+        # 字体已随 easy_pixie 一起分发，不再放在项目的 data/ 目录下
+        font = pixie.read_font(os.path.join(
+            os.path.dirname(easy_pixie.__file__), 'data', 'font', 'OPPOSans-B.ttf'))
         font.size = 20
         font.paint.color = pixie.Color(0, 0, 0, 0.5)
 

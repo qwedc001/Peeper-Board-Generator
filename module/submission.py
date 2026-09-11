@@ -8,7 +8,7 @@ def get_first_ac(submission_list: list[SubmissionData]) -> SubmissionData:
     for submission in submission_list[::-1]:
         if submission.verdict == 'Accepted':
             return submission
-    return SubmissionData(UserData("好像今天没有人AC", "-1"), 0, "Wait WHAT",
+    return SubmissionData(UserData("好像今天没有人AC", "-1", 0), 0, "Wait WHAT",
                           "114514", "Never gonna give you up", 1919810)
 
 

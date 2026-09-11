@@ -1,13 +1,20 @@
 class UserData:
-    def __init__(self, name: str, uid: str):
+    def __init__(self, name: str, uid: str, register_at: int):
         self.name = name
         self.uid = uid
+        self.register_at = register_at
         self.status = ""
         self.progress = ""
         self.mail = ""
         self.qq = ""
         self.qq_name = ""
         self.description = ""
+
+    @classmethod
+    def from_json(cls, json_data: dict):
+        # 兼容历史数据：旧 json 中 user 没有 register_at，按 0 处理
+        return UserData(json_data['name'], json_data['uid'],
+                        json_data.get('register_at', 0))
 
 
 class SubmissionData:
@@ -22,7 +29,7 @@ class SubmissionData:
 
     @classmethod
     def from_json(cls, json_data: dict):
-        return SubmissionData(UserData(json_data['user']['name'], json_data['user']['uid']),
+        return SubmissionData(UserData.from_json(json_data['user']),
                               json_data['score'], json_data['verdict'],
                               json_data['problem_id'] if 'problem_id' in json_data else "",  # 做个判空兼容一下
                               json_data['problem_name'], json_data['at'])
@@ -30,17 +37,31 @@ class SubmissionData:
 
 class RankingData:
 
-    def __init__(self, user_name: str, accepted: str, uid: str, rank: str, unrated: bool):
-        self.user_name = user_name
+    def __init__(self, user: UserData, accepted: str, rank: str, unrated: bool):
+        self.user = user
         self.accepted = accepted
-        self.uid = uid
         self.rank = rank
         self.unrated = unrated
 
+    # 兼容旧的访问方式，uid / user_name 现在统一存放在 user 中
+    @property
+    def uid(self) -> str:
+        return self.user.uid
+
+    @property
+    def user_name(self) -> str:
+        return self.user.name
+
     @classmethod
     def from_json(cls, json_data: dict):
-        return RankingData(json_data['user_name'], json_data['accepted'],
-                           json_data['uid'], json_data['rank'], json_data['unrated'])
+        if 'user' in json_data:
+            user = UserData.from_json(json_data['user'])
+        else:
+            # 兼容历史数据：旧 json 直接平铺 user_name / uid，且没有 register_at
+            user = UserData(json_data['user_name'], json_data['uid'],
+                            json_data.get('register_at', 0))
+        return RankingData(user, json_data['accepted'],
+                           json_data['rank'], json_data['unrated'])
 
 
 class DailyJson:
