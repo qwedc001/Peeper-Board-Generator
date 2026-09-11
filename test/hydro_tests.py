@@ -10,8 +10,14 @@ from module.submission import *
 from module.utils import *
 from module.config import Configs
 
-config = Configs(os.path.join(os.path.dirname(__file__), "..")).get_config("Hydro")[0]
+config = Configs(os.path.join(os.path.dirname(__file__), "..", "config.json")).get_configs()[0]
 oj_url = config.get_config()["url"]
+
+
+def ensure_session() -> None:
+    """Hydro 的提交/榜单接口都要求登录，这里按需建立 session 并放回 config。"""
+    if config.get_config().get("session") is None:
+        HydroHandler(config).begin_session()
 
 
 def load_submission_json() -> tuple[list[SubmissionData], list[SubmissionData]]:
@@ -50,26 +56,29 @@ class TestUtil(unittest.TestCase):
 
 
 class TestSubmissionModule(unittest.TestCase):
-    def test_fetch_submissions_yesterday(self):
+
+    def test_0_fetch_submissions_yesterday(self):
+        ensure_session()
         result = fetch_submissions(config, True)
         with open("submission_result_yesterday.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(len(result) > 0)
 
-    def test_fetch_submissions_today(self):
+    def test_1_fetch_submissions_today(self):
+        ensure_session()
         result = fetch_submissions(config, False)
         with open("submission_result_today.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(len(result) > 0)
 
-    def test_get_first_ac(self):
+    def test_2_get_first_ac(self):
         yesterday_submissions, today_submissions = load_submission_json()
         result = {"yesterday": get_first_ac(yesterday_submissions), "today": get_first_ac(today_submissions)}
         with open("first_ac.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(len(result) > 0)
 
-    def test_hourly_ac(self):
+    def test_2_hourly_ac(self):
         yesterday_submissions, today_submissions = load_submission_json()
         result = {"yesterday": get_hourly_submissions(yesterday_submissions),
                   "today": get_hourly_submissions(today_submissions)}
@@ -77,7 +86,7 @@ class TestSubmissionModule(unittest.TestCase):
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(len(result) > 0)
 
-    def test_popular_problem(self):
+    def test_2_popular_problem(self):
         yesterday_submissions, today_submissions = load_submission_json()
         result = {"yesterday": get_most_popular_problem(yesterday_submissions),
                   "today": get_most_popular_problem(today_submissions)}
@@ -85,7 +94,7 @@ class TestSubmissionModule(unittest.TestCase):
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(len(result) > 0)
 
-    def test_classify_by_verdict(self):
+    def test_2_classify_by_verdict(self):
         yesterday_submissions, today_submissions = load_submission_json()
         result = {"yesterday": classify_by_verdict(yesterday_submissions),
                   "today": classify_by_verdict(today_submissions)}
@@ -93,7 +102,7 @@ class TestSubmissionModule(unittest.TestCase):
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(len(result) > 0)
 
-    def test_rank_by_verdict(self):
+    def test_2_rank_by_verdict(self):
         yesterday_submissions, today_submissions = load_submission_json()
         result = {"yesterday": rank_by_verdict(yesterday_submissions),
                   "today": rank_by_verdict(today_submissions)}
@@ -104,22 +113,28 @@ class TestSubmissionModule(unittest.TestCase):
 
 class TestUserModule(unittest.TestCase):
     def test_fetch_user(self):
-        uid = config.get_config()["test"]['user']['uid']
+        # 在 config.json 中填入一个有 qq 号的用户来检验 infer_qq 模块是否正常
+        uid = config.get_config().get("test", {}).get("user", {}).get("uid")
+        if not uid:
+            self.skipTest("config.json 中未配置 test.user.uid，无法指定用于 infer_qq 检查的用户")
+        ensure_session()
         result = fetch_user(config, uid)
         with open("user.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
-        # 在测试 json 中填入一个有 qq 号的用户来检验 infer_qq 模块是否正常
         self.assertTrue(result.qq != "")
 
 
 class TestStructure(unittest.TestCase):
 
     def test_daily_json_save(self):
+        ensure_session()
         submission_data = fetch_submissions(config, False)
         ranking_data = fetch_rankings(config)
         daily_json = DailyJson(submission_data, ranking_data)
         save_json(config, daily_json)
-        file_path = os.path.join(config.work_dir, config.get_config()["data"], f'daily-{get_date_string(False)}.json')
+        # save_json/load_json 使用的文件名规则为 {id}-{date}.json
+        file_path = os.path.join(config.work_dir, config.get_config()["data"],
+                                 f'{config.get_config()["id"]}-{get_date_string(False)}.json')
         self.assertTrue(os.path.exists(file_path))
 
     def test_daily_json_load(self):
@@ -129,8 +144,8 @@ class TestStructure(unittest.TestCase):
 
 class TestLogin(unittest.TestCase):
     def test_login(self):
-        handler = HydroHandler(config, oj_url)
-        credentials = config.get_config()["credentials"]["Hydro"]
+        handler = HydroHandler(config)
+        credentials = config.get_config()["credentials"]
         session = handler.login(credentials)
         self.assertTrue(session is not None)
 
