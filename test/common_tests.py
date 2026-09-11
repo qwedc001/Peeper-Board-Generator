@@ -1,10 +1,12 @@
 import json
 import os
+import shutil
 import unittest
+from datetime import datetime
 
 from module.Hydro.entry import HydroHandler
 from module.config import Configs
-from module.utils import fuzzy_search_user, search_user_by_uid, rand_tips
+from module.utils import fuzzy_search_user, search_user_by_uid, rand_tips, get_cache_fresh_time
 
 config = Configs(os.path.join(os.path.dirname(__file__), "..", "config.json")).get_configs()[0]
 oj_url = config.get_config()["url"]
@@ -63,6 +65,48 @@ class TestCLI(unittest.TestCase):
             for cfg in configs:
                 self.assertIn('handler', cfg.get_config(), f"Handler not found in {file}")
                 self.assertIn('url', cfg.get_config(), f"URL not found in {file}")
+
+
+class TestCacheFreshTime(unittest.TestCase):
+    """昨日榜单缓存文件的新鲜度判定：修改时间需在 24 时前后 2 小时内"""
+
+    def setUp(self):
+        # 与其余用例保持一致，scratch 文件放在不入库的 data/ 下
+        data_dir = os.path.join(os.path.dirname(__file__), "..", "data")
+        self.temp_dir = os.path.join(data_dir, "cache-fresh-test")
+        os.makedirs(self.temp_dir, exist_ok=True)
+        self.file_path = os.path.join(self.temp_dir, "board.json")
+        with open(self.file_path, "w", encoding="utf-8") as f:
+            f.write("{}")
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
+
+    def _set_mtime(self, moment: datetime):
+        os.utime(self.file_path, (moment.timestamp(), moment.timestamp()))
+
+    def test_fresh_cache(self):
+        for hour, minute in [(0, 30), (1, 59), (23, 30), (22, 0)]:
+            with self.subTest(hour=hour, minute=minute):
+                moment = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
+                self._set_mtime(moment)
+                self.assertIsNotNone(get_cache_fresh_time(self.file_path))
+
+    def test_stale_cache(self):
+        for hour, minute in [(2, 1), (9, 50), (11, 31), (21, 59)]:
+            with self.subTest(hour=hour, minute=minute):
+                moment = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
+                self._set_mtime(moment)
+                self.assertIsNone(get_cache_fresh_time(self.file_path))
+
+    def test_fresh_time_is_mtime(self):
+        moment = datetime.now().replace(hour=0, minute=30, second=0, microsecond=0)
+        self._set_mtime(moment)
+        self.assertEqual(get_cache_fresh_time(self.file_path).replace(microsecond=0), moment)
+
+    def test_missing_file(self):
+        self.assertIsNone(get_cache_fresh_time(os.path.join(self.temp_dir, "not-exist.json")))
+
 
 if __name__ == '__main__':
     unittest.main()

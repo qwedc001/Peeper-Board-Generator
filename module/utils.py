@@ -118,18 +118,34 @@ def get_date_string(is_yesterday: bool, split: str = '-') -> str:
     return datetime.fromtimestamp(today_timestamp).strftime(f"%Y{split}%m{split}%d")
 
 
-def load_json(config: Config, is_yesterday: bool) -> DailyJson:
+def get_daily_json_path(config: Config, is_yesterday: bool) -> str:
     json_file = f'{config.get_config()["id"]}-{get_date_string(is_yesterday)}.json'
-    file_path = os.path.join(config.work_dir, "data", json_file)
-    with open(file_path, "r", encoding="utf-8") as f:
+    return os.path.join(config.work_dir, "data", json_file)
+
+
+def get_cache_fresh_time(file_path: str, tolerance_hours: float = 2) -> datetime | None:
+    """检查榜单缓存文件的修改时间是否在 24 时（0 点）前后 tolerance_hours 之内。
+
+    缓存文件中的 ranking 是抓取那一刻的实时快照，只有恰好在 24 时前后写入的文件，
+    其 ranking 才足够贴近「昨日结束」的榜单，可用于绘制昨日榜单。
+    新鲜则返回文件的修改时间，否则返回 None。
+    """
+    if not os.path.exists(file_path):
+        return None
+    modified = datetime.fromtimestamp(os.stat(file_path).st_mtime)
+    midnight = modified.replace(hour=0, minute=0, second=0, microsecond=0)
+    distance = min(modified - midnight, midnight + timedelta(days=1) - modified)
+    return modified if distance <= timedelta(hours=tolerance_hours) else None
+
+
+def load_json(config: Config, is_yesterday: bool) -> DailyJson:
+    with open(get_daily_json_path(config, is_yesterday), "r", encoding="utf-8") as f:
         content = json.load(f)
     return DailyJson.from_json(content)
 
 
 def save_json(config: Config, data: DailyJson, is_yesterday: bool = False):
-    json_file = f'{config.get_config()["id"]}-{get_date_string(is_yesterday)}.json'
-    file_path = os.path.join(config.work_dir, "data", json_file)
-    with open(file_path, "w", encoding="utf-8") as f:
+    with open(get_daily_json_path(config, is_yesterday), "w", encoding="utf-8") as f:
         f.write(json.dumps(data, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
 
 

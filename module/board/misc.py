@@ -15,7 +15,7 @@ from module.constants import VERSION_INFO
 from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
     get_most_popular_problem, count_users_submitted
-from module.utils import rand_tips, load_json, get_date_string
+from module.utils import rand_tips, load_json, get_date_string, get_daily_json_path, get_cache_fresh_time
 from module.verdict import ALIAS_MAP
 
 _CONTENT_WIDTH = 1248
@@ -577,7 +577,7 @@ class _HourlyDistributionSection(RenderableSection):
 
 class _CopyrightSection(RenderableSection):
 
-    def __init__(self, config: Config, gradient_color_name: str):
+    def __init__(self, config: Config, gradient_color_name: str, data_time: datetime = None):
         super().__init__(config)
         self.str_tips_title = StyledString(
             "Tips:", 'H', 36, padding_bottom=64, font_color=(0, 0, 0, 208)
@@ -595,7 +595,10 @@ class _CopyrightSection(RenderableSection):
             VERSION_INFO, 'B', 20, font_color=(0, 0, 0, 208), padding_bottom=24
         )
         self.str_generator_info = StyledString(
-            f'Generated at {datetime.now().strftime("%Y/%m/%d %H:%M:%S")}.\n'
+            # data_time 为绘制所用缓存文件的修改时间，仅在昨日榜单采用新鲜缓存时传入，
+            # 此时这一行描述的是数据截至时间而非生成时间
+            f'{"Data cutoff" if data_time else "Generated at"} '
+            f'{(data_time or datetime.now()).strftime("%Y/%m/%d %H:%M:%S")}.\n'
             f'From {config.get_config()["board_name"]}.\n'
             f'{gradient_color_name}.', 'B', 20, line_multiplier=1.32, font_color=(0, 0, 0, 136)
         )
@@ -630,10 +633,9 @@ class MiscBoardGenerator(Renderer):
         self._today = load_json(config, False)
         self._separate_columns = separate_columns
         self._gradient_color = pick_gradient_color()
+        self._cache_fresh_time: datetime | None = None  # 昨日缓存文件新鲜时的修改时间
         eng_full_name = (f'{get_date_string(board_type == "full", ".")}  '
                          f'{config.get_config()["board_name"]} Rank List')
-
-        self.section_copyright = _CopyrightSection(config, self._gradient_color.name)
 
         if board_type == "full":  # 对于 full 榜单的图形逻辑
             try:
@@ -641,6 +643,8 @@ class MiscBoardGenerator(Renderer):
             except FileNotFoundError:
                 logging.error("未检测到昨日榜单文件，请改用--now参数生成今日榜单")
                 sys.exit(1)
+            # 缓存文件修改时间在 24 时前后 2 小时内时，认为其中的 ranking 即「昨日」榜单
+            self._cache_fresh_time = get_cache_fresh_time(get_daily_json_path(config, True))
             self._board = generate_board_data(self._yesterday.submissions, verdict)
             self.section_title = _TitleSection(
                 config, self._gradient_color.color_list[0], img_path,
@@ -666,10 +670,19 @@ class MiscBoardGenerator(Renderer):
                 self._board = generate_board_data(self._today.submissions, self._verdict)
                 self._collect_verdict_sections()
 
+        self.section_copyright = _CopyrightSection(config, self._gradient_color.name,
+                                                   self._cache_fresh_time)
+
 
     def _collect_full_sections(self):
-        rank_data = _pack_rank_data(self._today.rankings, 10,
-                                    self.config.get_config()['show_unrated'])
+        if self._cache_fresh_time is not None:  # 缓存文件新鲜，其中的 ranking 即昨日榜单
+            rank_data = _pack_rank_data(self._yesterday.rankings, 10,
+                                        self.config.get_config()['show_unrated'])
+            rank_hint = None
+        else:  # 缓存文件不新鲜，退回当前 ranking 并标注
+            rank_data = _pack_rank_data(self._today.rankings, 10,
+                                        self.config.get_config()['show_unrated'])
+            rank_hint = '昨日榜单数据过时，当前数据为实时获取'
         has_ac_submission = len(
             [s for s in self._yesterday.submissions if s.verdict == "Accepted"]
         ) > 0
@@ -709,7 +722,7 @@ class MiscBoardGenerator(Renderer):
         )
         section_total_rank_top_10 = _RankSection(
             self.config, "训练榜单", "题数排名", rank_data,
-            top_count=10, separate_columns=self._separate_columns
+            hint=rank_hint, top_count=10, separate_columns=self._separate_columns
         )
         section_yesterday_full = _RankSection(
             self.config, "完整榜单", "昨日 OJ 总榜", self._board.total_board,
