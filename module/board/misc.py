@@ -633,6 +633,8 @@ class MiscBoardGenerator(Renderer):
         super().__init__(config)
         # date_string 为榜单对应的日期（--full 可指定），留空时 full 为昨日、now 为今日
         self._date_string = format_date_string(date_string or get_date_string(board_type == "full"))
+        # 榜单日期不是昨日时（查询往期榜单），文案用「往期 / 当日」而非「昨日」
+        self._is_past = board_type == "full" and self._date_string != get_date_string(True)
         self._separate_columns = separate_columns
         self._gradient_color = pick_gradient_color()
         self._cache_fresh_time: datetime | None = None  # 缓存文件新鲜时的修改时间
@@ -654,7 +656,7 @@ class MiscBoardGenerator(Renderer):
             self._board = generate_board_data(self._yesterday.submissions, verdict)
             self.section_title = _TitleSection(
                 config, self._gradient_color.color_list[0], img_path,
-                "昨日卷王天梯榜", eng_full_name
+                f"{'往期' if self._is_past else '昨日'}卷王天梯榜", eng_full_name
             )
             self._collect_full_sections()
         else:  # if board_type == "now"  对于 now 榜单的图形逻辑
@@ -682,31 +684,32 @@ class MiscBoardGenerator(Renderer):
 
 
     def _collect_full_sections(self):
-        if self._cache_fresh_time is not None:  # 缓存文件新鲜，其中的 ranking 即昨日榜单
+        day_label = "当日" if self._is_past else "昨日"  # 往期榜单以「当日」指代榜单对应日期
+        if self._cache_fresh_time is not None:  # 缓存文件新鲜，其中的 ranking 即该日榜单
             rank_data = _pack_rank_data(self._yesterday.rankings, 10,
                                         self.config.get_config()['show_unrated'])
             rank_hint = None
         else:  # 缓存文件不新鲜，退回当前 ranking 并标注
             rank_data = _pack_rank_data(self._today.rankings, 10,
                                         self.config.get_config()['show_unrated'])
-            rank_hint = '昨日榜单数据过时，当前数据为实时获取'
+            rank_hint = f'{day_label}榜单数据过时，当前数据为实时获取'
         has_ac_submission = len(
             [s for s in self._yesterday.submissions if s.verdict == "Accepted"]
         ) > 0
 
-        section_submission_none = _SimpleTextSection(self.config, "昨日无AC提交", "记录为空")
-        section_ranking_none = _SimpleTextSection(self.config, "当前排行榜为空", "暂无排行")
+        section_submission_none = _SimpleTextSection(self.config, f"{day_label}无AC提交", "记录为空")
+        section_ranking_none = _SimpleTextSection(self.config, f"{day_label}排行榜为空", "暂无排行")
         is_parallel = _check_parallel_play_of_the_oj(self._board.total_board)
         parallel_time = (datetime.fromtimestamp(self._board.total_board[0]["Accepted"][0])
                          .strftime("%H:%M:%S")) if len(self._board.total_board) > 0 else None
         parallel_text = f'于 {parallel_time} 率先通过，成为卷王中的卷王'
         section_play_of_the_oj = _SimpleTextSection(
-            self.config, "昨日卷王", self._board.play_of_the_oj,
+            self.config, f"{day_label}卷王", self._board.play_of_the_oj,
             parallel_text if is_parallel else None
         )
 
         section_yesterday_top_5 = _RankSection(
-            self.config, "过题数榜单", "昨日过题数", self._board.top_five,
+            self.config, "过题数榜单", f"{day_label}过题数", self._board.top_five,
             top_count=5, separate_columns=self._separate_columns
         )
         section_submit_detail = _SubmitDetailSection(
@@ -721,10 +724,10 @@ class MiscBoardGenerator(Renderer):
         first_ac_time = datetime.fromtimestamp(self._board.first_ac.at).strftime("%H:%M:%S")
         first_ac_text = f'在 {first_ac_time} 提交了 {self._board.first_ac.problem_name} 并通过.'
         section_first_ac = _SimpleTextSection(
-            self.config, "昨日最速通过", self._board.first_ac.user.name, first_ac_text
+            self.config, f"{day_label}最速通过", self._board.first_ac.user.name, first_ac_text
         )
         section_popular_problem = _SimpleTextSection(
-            self.config, "昨日最受欢迎的题目",self._board.popular_problem[0],
+            self.config, f"{day_label}最受欢迎的题目",self._board.popular_problem[0],
             f'共有 {self._board.popular_problem[1]} 个人提交本题'
         )
         section_total_rank_top_10 = _RankSection(
@@ -732,7 +735,7 @@ class MiscBoardGenerator(Renderer):
             hint=rank_hint, top_count=10, separate_columns=self._separate_columns
         )
         section_yesterday_full = _RankSection(
-            self.config, "完整榜单", "昨日 OJ 总榜", self._board.total_board,
+            self.config, "完整榜单", f"{day_label} OJ 总榜", self._board.total_board,
             separate_columns=self._separate_columns
         )
 

@@ -68,7 +68,7 @@ class TestCLI(unittest.TestCase):
 
 
 class TestCacheFreshTime(unittest.TestCase):
-    """昨日榜单缓存文件的新鲜度判定：修改时间需在 24 时前后 2 小时内"""
+    """榜单缓存文件的新鲜度判定：修改时间需在 24 时前后 4 小时内"""
 
     def setUp(self):
         # 与其余用例保持一致，scratch 文件放在不入库的 data/ 下
@@ -86,14 +86,14 @@ class TestCacheFreshTime(unittest.TestCase):
         os.utime(self.file_path, (moment.timestamp(), moment.timestamp()))
 
     def test_fresh_cache(self):
-        for hour, minute in [(0, 30), (1, 59), (23, 30), (22, 0)]:
+        for hour, minute in [(0, 30), (1, 59), (3, 59), (20, 1)]:
             with self.subTest(hour=hour, minute=minute):
                 moment = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
                 self._set_mtime(moment)
                 self.assertIsNotNone(get_cache_fresh_time(self.file_path))
 
     def test_stale_cache(self):
-        for hour, minute in [(2, 1), (9, 50), (11, 31), (21, 59)]:
+        for hour, minute in [(4, 1), (9, 50), (11, 31), (19, 59)]:
             with self.subTest(hour=hour, minute=minute):
                 moment = datetime.now().replace(hour=hour, minute=minute, second=0, microsecond=0)
                 self._set_mtime(moment)
