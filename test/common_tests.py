@@ -1,9 +1,11 @@
+import argparse
 import json
 import os
 import shutil
 import unittest
 from datetime import datetime
 
+from main import parse_full_date
 from module.Hydro.entry import HydroHandler
 from module.config import Configs
 from module.utils import fuzzy_search_user, search_user_by_uid, rand_tips, get_cache_fresh_time
@@ -106,6 +108,21 @@ class TestCacheFreshTime(unittest.TestCase):
 
     def test_missing_file(self):
         self.assertIsNone(get_cache_fresh_time(os.path.join(self.temp_dir, "not-exist.json")))
+
+
+class TestParseFullDate(unittest.TestCase):
+    """--full 的日期参数在解析阶段校验并规范化"""
+
+    def test_normalize_date(self):
+        self.assertEqual(parse_full_date("2026-9-1"), "2026-09-01")
+
+    def test_bare_full_keeps_const(self):
+        self.assertEqual(parse_full_date(""), "")
+
+    def test_invalid_date(self):
+        for value in ("2026-7-5x", "2026-13-01", "昨天"):
+            with self.subTest(value=value):
+                self.assertRaises(argparse.ArgumentTypeError, parse_full_date, value)
 
 
 if __name__ == '__main__':

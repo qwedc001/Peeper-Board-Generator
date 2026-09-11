@@ -16,7 +16,7 @@ from module.structures import SubmissionData, RankingData
 from module.submission import rank_by_verdict, get_first_ac, classify_by_verdict, get_hourly_submissions, \
     get_most_popular_problem, count_users_submitted
 from module.utils import rand_tips, load_json, get_date_string, get_daily_json_path, get_cache_fresh_time, \
-    format_date_string
+    get_cache_modified_time, format_date_string
 from module.verdict import ALIAS_MAP
 
 _CONTENT_WIDTH = 1248
@@ -689,10 +689,13 @@ class MiscBoardGenerator(Renderer):
             rank_data = _pack_rank_data(self._yesterday.rankings, 10,
                                         self.config.get_config()['show_unrated'])
             rank_hint = None
-        else:  # 缓存文件不新鲜，退回当前 ranking 并标注
+        else:  # 缓存文件不新鲜，回退使用次日缓存中的 ranking 并标注其来源
             rank_data = _pack_rank_data(self._today.rankings, 10,
                                         self.config.get_config()['show_unrated'])
-            rank_hint = f'{day_label}榜单数据过时，当前数据为实时获取'
+            cache_time = get_cache_modified_time(
+                get_daily_json_path(self.config, False, format_date_string(self._date_string, 1)))
+            rank_hint = (f'{day_label}榜单数据过时，'
+                         f'当前榜单取自次日本地缓存（{cache_time:%Y-%m-%d %H:%M}）')
         has_ac_submission = len(
             [s for s in self._yesterday.submissions if s.verdict == "Accepted"]
         ) > 0

@@ -130,6 +130,13 @@ def format_date_string(date_string: str, day_offset: int = 0) -> str:
             timedelta(days=day_offset)).strftime("%Y-%m-%d")
 
 
+def get_cache_modified_time(file_path: str) -> datetime | None:
+    """读取缓存文件的修改时间，文件不存在时返回 None"""
+    if not os.path.exists(file_path):
+        return None
+    return datetime.fromtimestamp(os.stat(file_path).st_mtime)
+
+
 def get_cache_fresh_time(file_path: str, tolerance_hours: float = 4) -> datetime | None:
     """检查榜单缓存文件的修改时间是否在 24 时（0 点）前后 tolerance_hours 之内。
 
@@ -137,9 +144,9 @@ def get_cache_fresh_time(file_path: str, tolerance_hours: float = 4) -> datetime
     其 ranking 才足够贴近「昨日结束」的榜单，可用于绘制昨日榜单。
     新鲜则返回文件的修改时间，否则返回 None。
     """
-    if not os.path.exists(file_path):
+    modified = get_cache_modified_time(file_path)
+    if modified is None:
         return None
-    modified = datetime.fromtimestamp(os.stat(file_path).st_mtime)
     midnight = modified.replace(hour=0, minute=0, second=0, microsecond=0)
     distance = min(modified - midnight, midnight + timedelta(days=1) - modified)
     return modified if distance <= timedelta(hours=tolerance_hours) else None
