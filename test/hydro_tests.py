@@ -151,7 +151,7 @@ class TestLogin(unittest.TestCase):
 
 
 class TestCalculateRankingNewUser(unittest.TestCase):
-    """离线验证 calculate_ranking 对新用户的补建逻辑。"""
+    """离线验证 calculate_ranking 的补建逻辑与 unrated 判定。"""
 
     def setUp(self):
         self.work_dir = tempfile.mkdtemp()
@@ -216,6 +216,42 @@ class TestCalculateRankingNewUser(unittest.TestCase):
     def test_user_data_from_json_falls_back_to_zero(self):
         user = UserData.from_json({"name": "legacy", "uid": "7"})
         self.assertEqual(user.register_at, 0)
+
+    def test_existing_user_unrated_is_recomputed(self):
+        # 昨日因注册时间被标为 unrated 的用户，在 exclude_reg_date 调整后应重新计入榜单，
+        # 而不是被 |= 永久固化
+        self.config.get_config()["exclude_reg_date"] = "2026-01-01"
+        self._write_yesterday_json([
+            {"user": {"name": "recent", "uid": "1", "register_at": 1800000000},
+             "accepted": "5", "rank": 0, "unrated": True},
+        ])
+
+        rankings = HydroHandler(self.config).calculate_ranking([])
+
+        self.assertFalse(rankings[0].unrated)
+
+    def test_existing_user_unrated_by_reg_date_is_kept(self):
+        # 反过来，注册时间早于 exclude_reg_date 的用户必须被判成 unrated
+        self.config.get_config()["exclude_reg_date"] = "2026-01-01"
+        self._write_yesterday_json([
+            {"user": {"name": "old_reg", "uid": "1", "register_at": 1500000000},
+             "accepted": "5", "rank": 0, "unrated": False},
+        ])
+
+        rankings = HydroHandler(self.config).calculate_ranking([])
+
+        self.assertTrue(rankings[0].unrated)
+
+    def test_legacy_ranking_without_register_at_keeps_unrated(self):
+        # 历史 json 里没有 register_at，无法重新判定，应沿用旧标记而不是重新算成 rated
+        self._write_yesterday_json([
+            {"user_name": "old", "accepted": "5", "uid": "1", "rank": 0, "unrated": True},
+        ])
+
+        rankings = HydroHandler(self.config).calculate_ranking([])
+
+        self.assertTrue(rankings[0].unrated)
+        self.assertEqual(rankings[0].user_name, "old")
 
 
 if __name__ == '__main__':

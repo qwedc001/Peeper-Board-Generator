@@ -5,7 +5,7 @@ from dateutil.parser import isoparse
 from lxml import etree
 
 from module.config import Config
-from module.structures import RankingData
+from module.structures import RankingData, UserData
 from module.utils import json_headers, fetch_url
 
 
@@ -65,7 +65,9 @@ def fetch_rankings(config: Config) -> list[RankingData]:
                 logging.debug(f"用户 {user_name} 已被 uid 规则排除。")
             elif unrated:
                 logging.debug(f"用户 {user_name} 注册时间早于 {exclude_date}，已被排除。")
-            result.append(RankingData(user_name, accepted, uid, rank, unrated))
+            # 一并保留 register_at，后续 calculate_ranking 才能按当前配置重新判定 unrated
+            result.append(RankingData(UserData(user_name, uid, reg_time),
+                                      accepted, rank, unrated))
             current_rank = max(current_rank, int(rank))
         page += 1
     return result

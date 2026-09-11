@@ -96,9 +96,13 @@ class HydroHandler(BasicHandler):
         exclude_time = datetime.datetime.strptime(
             self.config.get_config()["exclude_reg_date"], "%Y-%m-%d").timestamp()
         
-        # 更新所有用户的 unrated 状态以反映当前配置
+        # 按当前配置重新判定所有用户的 unrated 状态。
         for rank in ranking:
-            rank.unrated |= int(rank.uid) in exclude_uid
+            if rank.user.register_at > 0:
+                rank.unrated = is_unrated_user(rank.user.uid, rank.user.register_at,
+                                               exclude_uid, exclude_time)
+            else:
+                rank.unrated |= int(rank.user.uid) in exclude_uid  # fallback
         
         ranking_by_uid = {rank.uid: rank for rank in ranking}
         problem_ac_list: list[tuple[str, str]] = []  # uid, pid
@@ -114,8 +118,7 @@ class HydroHandler(BasicHandler):
                 unrated = is_unrated_user(submission.user.uid,
                                           submission.user.register_at,
                                           exclude_uid, exclude_time)
-                rank = RankingData(submission.user.name, "0", submission.user.uid,
-                                   str(len(ranking)), unrated)
+                rank = RankingData(submission.user, "0", str(len(ranking)), unrated)
                 ranking.append(rank)
                 ranking_by_uid[submission.user.uid] = rank
                 logging.info(f"检测到新用户 {submission.user.name} "
