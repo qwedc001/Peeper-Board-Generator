@@ -8,7 +8,7 @@ from module.board.misc import MiscBoardGenerator
 import argparse
 
 from module.constants import VERSION_INFO
-from module.utils import search_user_by_uid, fuzzy_search_user
+from module.utils import search_user_by_uid, fuzzy_search_user, format_date_string
 from module.verdict import ALIAS_MAP
 import sys
 
@@ -22,9 +22,19 @@ work_dir = os.path.dirname(__file__)
 
 class DefaultHelpParser(argparse.ArgumentParser):
     def error(self, message):
-        sys.stderr.write('error: %sn' % message)
+        sys.stderr.write('error: %s\n' % message)
         self.print_help()
         sys.exit(2)
+
+
+def parse_full_date(value: str) -> str:
+    """解析 --full 的可选日期参数，非法日期作为参数错误报出（const='' 原样保留）"""
+    if not value:
+        return value
+    try:
+        return format_date_string(value)
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"日期格式应为 YYYY-MM-DD，得到 {value!r}")
 
 
 def generate(cur_config: Config, multi: bool = False, separate_cols: bool = False):
@@ -32,15 +42,22 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = Fals
     if not args.output or multi:
         args.output = os.path.join(work_dir, "data",
                                    f'{cur_config.get_config()["id"]}-output.png') \
-            if args.full or args.now else os.path.join(work_dir, "data",
-                                                       f'{cur_config.get_config()["id"]}-output.txt')
+            if args.full is not None or args.now else os.path.join(work_dir, "data",
+                                                                   f'{cur_config.get_config()["id"]}-output.txt')
     handler = sub_handlers.get(cur_config.get_config()['handler'])(cur_config)
-    if args.full:
-        logging.info("正在生成昨日榜单")
-        handler.save_daily("full")
+    if args.full is not None:
+        # --full 后附加日期时直接使用缓存生成该日期的榜单，否则更新并生成昨日榜单
+        target_date = args.full or None
+        if target_date:
+            logging.info(f"正在生成往期榜单，指定日期 {target_date}")
+        else:
+            logging.info(f"正在生成昨日榜单")
+        if target_date is None:
+            handler.save_daily("full")
         output_img = MiscBoardGenerator(cur_config, "full",
                                         os.path.join(work_dir, "data", f'logo.png'),
-                                        separate_columns=separate_cols).render()
+                                        separate_columns=separate_cols,
+                                        date_string=target_date).render()
         output_img.write_file(args.output)
         logging.info(f"生成图片成功，路径为{args.output}")
     elif args.now:
@@ -79,12 +96,13 @@ if __name__ == "__main__":
     parser = DefaultHelpParser(description='Peeper-Board-Generator OJ榜单图片生成器')
     required_para = parser.add_mutually_exclusive_group(required=True)
     required_para.add_argument('--version', action="store_true", help='版本号信息')
-    required_para.add_argument('--full', action="store_true", help='生成昨日榜单')
+    required_para.add_argument('--full', nargs='?', const='', default=None, type=parse_full_date,
+                               help='生成昨日榜单，可附加日期 (YYYY-MM-DD) 以生成往期榜单')
     required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
     required_para.add_argument('--query_uid', type=str, help='根据 uid 查询指定用户的信息')
     required_para.add_argument('--query_name', type=str, help='根据用户名查询指定用户的信息')
     parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
-    parser.add_argument('--verdict', type=str, help='指定榜单对应verdict (使用简写)')
+    parser.add_argument('--verdict', type=str, help='指定榜单对应 verdict (使用简写)')
     parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')
     parser.add_argument('--separate_cols', action='store_true', help='是否启用分栏特性')
     parser.add_argument('--performance_statistics', action='store_true', help='性能测试')
