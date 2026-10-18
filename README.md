@@ -48,7 +48,7 @@ uv sync --frozen
 ```bash
 python main.py --help
 
-usage: main.py [-h] (--version | --full [FULL] | --now | --query_uid QUERY_UID | --query_name QUERY_NAME) [--output OUTPUT] [--verdict VERDICT] [--id ID] [--separate_cols]
+usage: main.py [-h] (--version | --full [FULL] | --now | --query_uid QUERY_UID | --query_name QUERY_NAME) [--output OUTPUT] [--verdict VERDICT] [--id ID] [--separate_cols | --no-separate_cols]
                [--performance_statistics]
 
 Peeper-Board-Generator OJ榜单图片生成器
@@ -65,7 +65,8 @@ options:
   --output OUTPUT       指定生成图片的路径 (包含文件名)
   --verdict VERDICT     指定榜单对应 verdict (使用简写)
   --id ID               生成指定 id 的榜单(留空则生成全部榜单)
-  --separate_cols       是否启用分栏特性
+  --separate_cols, --no-separate_cols
+                        是否启用分栏特性（默认启用，可用 --no-separate_cols 关闭）
   --performance_statistics
                         性能测试
   --config CONFIG       指定配置文件路径
@@ -94,7 +95,7 @@ options:
 </details>
 
 <details>
-<summary><h3>数据较多时可开启分栏 (<code>... --separate_cols</code>)</h3></summary>
+<summary><h3>数据较多时默认分栏（可用 <code>--no-separate_cols</code> 关闭）</h3></summary>
 <img src="example_full_multi.png" alt="开启分栏的昨日榜单" />
 </details>
 

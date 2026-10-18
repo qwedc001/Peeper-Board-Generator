@@ -37,7 +37,7 @@ def parse_full_date(value: str) -> str:
         raise argparse.ArgumentTypeError(f"日期格式应为 YYYY-MM-DD，得到 {value!r}")
 
 
-def generate(cur_config: Config, multi: bool = False, separate_cols: bool = False):
+def generate(cur_config: Config, multi: bool = False, separate_cols: bool = True):
     logging.info(f"正在生成 {cur_config.get_config()['board_name']} 榜单")
     if not args.output or multi:
         args.output = os.path.join(work_dir, "data",
@@ -104,7 +104,8 @@ if __name__ == "__main__":
     parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
     parser.add_argument('--verdict', type=str, help='指定榜单对应 verdict (使用简写)')
     parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')
-    parser.add_argument('--separate_cols', action='store_true', help='是否启用分栏特性')
+    parser.add_argument('--separate_cols', action=argparse.BooleanOptionalAction, default=True,
+                        help='是否启用分栏特性 (可用 --no-separate_cols 关闭)')
     parser.add_argument('--performance_statistics', action='store_true', help='性能测试')
     parser.add_argument('--config', type=str, help='指定配置文件路径', default=os.path.join(os.path.dirname(__file__), "config.json"))
     parser.add_argument('--verbose', action='store_true', help='显示更详细的日志')
