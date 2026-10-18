@@ -59,9 +59,9 @@ options:
   --full [FULL]         生成昨日榜单，可附加日期 (YYYY-MM-DD) 以生成指定日期的榜单
   --now                 生成从今日0点到当前时间的榜单
   --query_uid QUERY_UID
-                        根据 uid 查询指定用户的信息
+                        根据 uid 查询指定用户的信息，生成用户名片图片
   --query_name QUERY_NAME
-                        根据用户名查询指定用户的信息
+                        根据用户名查询指定用户的信息，生成用户名片图片
   --output OUTPUT       指定生成图片的路径 (包含文件名)
   --verdict VERDICT     指定榜单对应 verdict (使用简写)
   --id ID               生成指定 id 的榜单(留空则生成全部榜单)

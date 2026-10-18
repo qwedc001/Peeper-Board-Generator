@@ -1,11 +1,13 @@
 import tempfile
 import unittest
 
+from lxml import etree
+
 from module.Hydro.entry import HydroHandler
 from module.Hydro.ranking import fetch_rankings
 from module.Hydro.tools import reload_stats
 from module.Hydro.submission import fetch_submissions
-from module.Hydro.user import fetch_user
+from module.Hydro.user import fetch_user, _extract_description
 from module.submission import *
 from module.utils import *
 from module.config import Configs
@@ -122,6 +124,30 @@ class TestUserModule(unittest.TestCase):
         with open("user.json", "w", encoding="utf-8") as f:
             f.write(json.dumps(result, default=lambda o: o.__dict__, ensure_ascii=False, indent=4))
         self.assertTrue(result.qq != "")
+
+
+class TestDescriptionExtraction(unittest.TestCase):
+    """富文本简介转文本：行内标签（如链接）不应产生额外换行"""
+
+    @staticmethod
+    def _extract(body: str) -> str:
+        html = etree.HTML('<html><body><div class="section__body typo richmedia">'
+                          f'{body}</div></body></html>')
+        return _extract_description(html)
+
+    def test_inline_link_keeps_single_line(self):
+        self.assertEqual(self._extract('<p>Bilibili: <a href="x">@Floating-Ocean</a></p>'
+                                       '<p>second line</p>'),
+                         "Bilibili: @Floating-Ocean\nsecond line")
+
+    def test_br_is_line_break(self):
+        self.assertEqual(self._extract('<p>a<br>b</p>'), "a\nb")
+
+    def test_list_items_are_separate_lines(self):
+        self.assertEqual(self._extract('<ul><li>a</li><li>b</li></ul>'), "a\nb")
+
+    def test_empty_description(self):
+        self.assertEqual(self._extract(''), "")
 
 
 class TestStructure(unittest.TestCase):

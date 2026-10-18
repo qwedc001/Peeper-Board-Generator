@@ -69,3 +69,35 @@ def fetch_submissions(config: Config, is_yesterday: bool) -> list[SubmissionData
             result.append(SubmissionData(user, score, verdict, problem_id, problem_name, at))
         page += 1
     return result
+
+
+def fetch_recent_submissions(config: Config, uid: str, limit: int = 5) -> list[SubmissionData]:
+    """获取指定用户最近的提交记录，用于用户名片展示"""
+    logging.info(f"开始获取用户 {uid} 的最近提交记录")
+    if "session" not in config.get_config() or config.get_config()["session"] is None:
+        raise Exception("登录信息无效，请重试")
+    submission_headers = json_headers.copy()
+    submission_headers['Cookie'] = (
+        f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
+        f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
+    )
+    url = config.get_config()["url"] + f'record?uidOrName={uid}&page=1'
+    response_json = fetch_url(url, method='get', headers=submission_headers).json()
+    problem_json = response_json['pdict']
+    result = []
+    for submission in response_json['rdocs']:
+        if submission['lang'] == '-' or "hackTarget" in submission:
+            # 自测 / hack 记录，不计入
+            continue
+        if "judgeAt" not in submission or submission['judgeAt'] is None:
+            # pending or 异常数据，不计入
+            continue
+        pid = str(submission['pid'])
+        result.append(SubmissionData(
+            UserData("", uid, 0), submission['score'],
+            STATUS_VERDICT.get(submission['status'], "Unknown Error"),
+            pid, problem_json.get(pid, {}).get('title', f'P{pid}'),
+            int(isoparse(submission['judgeAt']).timestamp())
+        ))
+    result.sort(key=lambda item: item.at, reverse=True)
+    return result[:limit]
