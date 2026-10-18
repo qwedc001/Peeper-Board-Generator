@@ -6,7 +6,9 @@ import random
 import re
 from datetime import datetime, timedelta
 from typing import Tuple
+from urllib.parse import urljoin
 
+import pixie
 import requests
 
 from module.config import Config
@@ -54,7 +56,12 @@ def fetch_url(url: str, method: str = 'post', headers: dict | None = None,
     return response
 
 
-def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
+def get_site_icon_url(config: Config) -> str:
+    return urljoin(config.get_config()["url"], "/favicon-96x96.png")
+
+
+def fuzzy_search_user(config: Config, name: str, handler: BasicHandler) -> pixie.Image | None:
+    """未找到用户时返回 None"""
     try:
         load_json(config, False)
     except FileNotFoundError:
@@ -79,10 +86,10 @@ def fuzzy_search_user(config: Config, name: str, handler: BasicHandler):
     if len(res) > 0:
         return handler.fetch_user(submission_users_name_to_uid[res[0]])
     
-    return "未找到用户"
+    return None
 
 
-def search_user_by_uid(uid: str, handler: BasicHandler):
+def search_user_by_uid(uid: str, handler: BasicHandler) -> pixie.Image:
     return handler.fetch_user(uid)  # 留给 handler 判断 uid 是否存在
 
 

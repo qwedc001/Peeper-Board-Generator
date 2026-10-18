@@ -7,6 +7,7 @@ from easy_pixie import StyledString
 
 from module.Hydro.entry import HydroHandler
 from module.board.misc import MiscBoardGenerator
+from module.board.user_card import UserCardGenerator, UserCardInfo, UserCardSection, render_user_notice
 from module.config import Configs
 
 config = Configs(os.path.join(
@@ -53,6 +54,30 @@ class GenerateTest(unittest.TestCase):
                                         separate_columns=True).render()
         output_img.write_file("verdict_wa.png")
         self.assertIsNotNone(output_img)
+
+    def test_gen_user_card(self):
+        logo_path = os.path.join(config.work_dir, "data", "logo.png")
+        card_info = UserCardInfo(
+            platform_name="Hydro", handle="Mock User", rating="1234.56", rank="No. 1",
+            data_source="FJNUACM Online Judge",
+            social=["邮箱 mock@example.com", "QQ 123456"],
+            timeline=["UID: 1 · 注册于 2020-01-01 00:00:00"],
+            metrics=[("通过题目", "100"), ("今日提交", "6"), ("平均分数", "80.00"), ("AC 率", "50.00")],
+            sections=[UserCardSection("最近提交", ["Mock Problem · Accepted · 100 分 · 01-01 12:00"]),
+                      UserCardSection("用户描述", ["Mock description."])]
+        )
+        card_img = UserCardGenerator(config, card_info, logo_path).render()
+        card_img.write_file("user_card.png")
+        self.assertGreater(card_img.height, card_img.width)
+        minimal_img = UserCardGenerator(
+            config, UserCardInfo(platform_name="Hydro", handle="Minimal"), logo_path
+        ).render()
+        minimal_img.write_file("user_card_minimal.png")
+        self.assertGreater(minimal_img.height, 0)
+        notice_img = render_user_notice(config, "Hydro", "用户不存在",
+                                        "未找到 UID 为 999 的用户", logo_path)
+        notice_img.write_file("user_card_notice.png")
+        self.assertGreater(notice_img.height, 0)
 
     def test_font(self):
         output_img = pixie.Image(400, 200)

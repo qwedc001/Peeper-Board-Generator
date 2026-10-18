@@ -2,17 +2,20 @@ import datetime
 import json
 import logging
 import os
+import re
 
+import pixie
 import requests
 
 from module.Hydro.user import fetch_user
+from module.board.user_card import UserCardGenerator, UserCardInfo, UserCardSection, render_user_notice
 from module.config import Config
 from module.Hydro.tools import reload_stats
 from module.handler import BasicHandler
 from module.structures import DailyJson, RankingData, SubmissionData
-from module.Hydro.submission import fetch_submissions
+from module.Hydro.submission import fetch_submissions, fetch_recent_submissions
 from module.Hydro.ranking import fetch_rankings, is_unrated_user
-from module.utils import save_json, get_date_string, load_json, fetch_url
+from module.utils import save_json, get_date_string, load_json, fetch_url, get_site_icon_url
 
 
 class HydroHandler(BasicHandler):
@@ -130,39 +133,72 @@ class HydroHandler(BasicHandler):
             ranking[i].rank = i
         return ranking
 
-    def fetch_user(self, uid: str) -> str:
+    def fetch_user(self, uid: str) -> pixie.Image:
         logging.info(f"正在获取用户 {uid} 的信息")
         self.begin_session()
+        data_source = self.config.get_config()["board_name"]
+        logo_url = get_site_icon_url(self.config)
 
         user = fetch_user(self.config, uid)
         if user is None:
-            return f"UID {uid} 不存在"
+            return render_user_notice(self.config, self.config.get_config()["handler"],
+                                      "用户不存在", f"未找到 UID 为 {uid} 的用户",
+                                      os.path.join(self.config.work_dir, "data", "logo.png"),
+                                      data_source=data_source, logo_url=logo_url)
 
-        basic_fields = [['邮箱', user.mail.replace('.', '. ')],
-                        ['QQ号', user.qq],
-                        ['状态', user.status.replace(': ', ' ').replace(',', '，')],
-                        ['进度', user.progress],
-                        ['描述', user.description]]
-        result_text = f'用户 {user.name} 的信息如下：\n'
-        result_text += ''.join([f'{name}：{val}\n' for [name, val] in basic_fields if val is not None and len(val) > 0])
+        solved = re.search(r"解决了\s*(\d+)\s*道题目", user.progress)
+        rating = re.search(r"RP[:：]\s*([\d.]+)", user.progress)
+        rank = re.search(r"No\.\s*(\d+)", user.progress)
 
-        submission_info = [submission for submission in load_json(self.config, False).submissions if
-                           submission.user.uid == uid]
-        total_submissions = 0
-        avg_score = 0
-        ac_rate = 0
-        for submission in submission_info:
-            total_submissions += 1
-            avg_score += submission.score
-            if submission.verdict == "Accepted":
-                ac_rate += 1
-        if total_submissions != 0:
-            formatted_avg_score = '{:.2f}'.format(avg_score / total_submissions)
-            formatted_ac_rate = '{:.2f}'.format(ac_rate / total_submissions * 100)
-            result_text += (f'\n今日提交信息：\n'
-                            f'提交次数：{total_submissions}\n'
-                            f'平均分数：{formatted_avg_score}\n'
-                            f'AC率：{formatted_ac_rate}%\n')
-        else:
-            result_text += f'\n今日暂未收到该用户的提交。\n'
-        return result_text.rstrip('\n')
+        submission_info = [submission for submission in load_json(self.config, False).submissions
+                           if submission.user.uid == uid]
+        total_submissions = len(submission_info)
+        total_score = sum(submission.score for submission in submission_info)
+        accepted_submissions = sum(1 for submission in submission_info
+                                   if submission.verdict == "Accepted")
+        metrics = [
+            ("通过题目", solved.group(1) if solved else "-"),
+            ("今日提交", str(total_submissions)),
+            ("平均分数", f"{total_score / total_submissions:.2f}" if total_submissions else "-"),
+            ("AC 率", (f"{accepted_submissions / total_submissions * 100:.2f}"
+                       if total_submissions else "-")),
+        ]
+
+        try:
+            recent_submissions = fetch_recent_submissions(self.config, uid)
+        except Exception as e:
+            logging.warning(f"获取用户 {uid} 的最近提交失败: {e}")
+            recent_submissions = []
+        recent_lines = [
+            f"{submission.problem_name} · {submission.verdict} · {submission.score} 分 · "
+            f"{datetime.datetime.fromtimestamp(submission.at).strftime('%y/%m/%d %H:%M')}"
+            for submission in recent_submissions
+        ]
+
+        social = ([f"邮箱 {user.mail}"] if user.mail else []) + ([f"QQ {user.qq}"] if user.qq else [])
+        status_text = re.sub(r"^UID:\s*", "UID ", user.status)
+        timeline = [re.sub(r"[,，]\s*", " · ", status_text)] if status_text else [f"UID {uid}"]
+        description = [line.strip() for line in user.description.split("\n") if line.strip()]
+
+        sections = []
+        if recent_lines:
+            sections.append(UserCardSection("最近提交", recent_lines))
+        if description:
+            sections.append(UserCardSection("用户描述", description))
+
+        info = UserCardInfo(
+            platform_name=self.config.get_config()["handler"],
+            handle=user.name,
+            avatar_url=user.avatar,
+            logo_url=logo_url,
+            data_source=data_source,
+            rating=rating.group(1) if rating else "",
+            rank=f"No. {rank.group(1)}" if rank else "",
+            social=social,
+            timeline=timeline,
+            metrics=metrics,
+            sections=sections,
+        )
+        return UserCardGenerator(
+            self.config, info, os.path.join(self.config.work_dir, "data", "logo.png")
+        ).render()

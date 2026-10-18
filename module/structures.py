@@ -1,8 +1,9 @@
 class UserData:
-    def __init__(self, name: str, uid: str, register_at: int):
+    def __init__(self, name: str, uid: str, register_at: int, avatar: str = ""):
         self.name = name
         self.uid = uid
         self.register_at = register_at
+        self.avatar = avatar
         self.status = ""
         self.progress = ""
         self.mail = ""
@@ -12,9 +13,10 @@ class UserData:
 
     @classmethod
     def from_json(cls, json_data: dict):
-        # 兼容历史数据：旧 json 中 user 没有 register_at，按 0 处理
+        # 兼容历史数据：旧 json 中 user 没有 register_at / avatar，按 0 / 空处理
         return UserData(json_data['name'], json_data['uid'],
-                        json_data.get('register_at', 0))
+                        json_data.get('register_at', 0),
+                        json_data.get('avatar', ''))
 
 
 class SubmissionData:

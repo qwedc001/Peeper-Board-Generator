@@ -5,10 +5,11 @@ import traceback
 from module.Hydro.entry import HydroHandler
 from module.config import Configs, Config
 from module.board.misc import MiscBoardGenerator
+from module.board.user_card import render_user_notice
 import argparse
 
 from module.constants import VERSION_INFO
-from module.utils import search_user_by_uid, fuzzy_search_user, format_date_string
+from module.utils import search_user_by_uid, fuzzy_search_user, format_date_string, get_site_icon_url
 from module.verdict import ALIAS_MAP
 import sys
 
@@ -40,10 +41,11 @@ def parse_full_date(value: str) -> str:
 def generate(cur_config: Config, multi: bool = False, separate_cols: bool = True):
     logging.info(f"正在生成 {cur_config.get_config()['board_name']} 榜单")
     if not args.output or multi:
-        args.output = os.path.join(work_dir, "data",
-                                   f'{cur_config.get_config()["id"]}-output.png') \
-            if args.full is not None or args.now else os.path.join(work_dir, "data",
-                                                                   f'{cur_config.get_config()["id"]}-output.txt')
+        # 查询与榜单使用不同默认输出，避免互相覆盖
+        output_name = (f'{cur_config.get_config()["id"]}-user.png'
+                       if args.query_uid or args.query_name
+                       else f'{cur_config.get_config()["id"]}-output.png')
+        args.output = os.path.join(work_dir, "data", output_name)
     handler = sub_handlers.get(cur_config.get_config()['handler'])(cur_config)
     if args.full is not None:
         # --full 后附加日期时直接使用缓存生成该日期的榜单，否则更新并生成昨日榜单
@@ -69,16 +71,20 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = True
                                         separate_columns=separate_cols).render()
         output_img.write_file(args.output)
         logging.info(f"生成图片成功，路径为{args.output}")
-    elif args.query_uid:
+    elif args.query_uid or args.query_name:
         logging.info("正在查询指定用户信息")
-        result = search_user_by_uid(args.query_uid, handler)
-        with open(args.output, "w", encoding='utf-8') as f:
-            f.write(result)
-    elif args.query_name:
-        logging.info("正在查询指定用户信息")
-        result = fuzzy_search_user(cur_config, args.query_name, handler)
-        with open(args.output, "w", encoding='utf-8') as f:
-            f.write(result)
+        if args.query_uid:
+            result = search_user_by_uid(args.query_uid, handler)
+        else:
+            result = fuzzy_search_user(cur_config, args.query_name, handler)
+            if result is None:
+                result = render_user_notice(cur_config, cur_config.get_config()['handler'],
+                                            "用户不存在", f"未找到与 {args.query_name} 匹配的用户",
+                                            os.path.join(work_dir, "data", f'logo.png'),
+                                            data_source=cur_config.get_config()["board_name"],
+                                            logo_url=get_site_icon_url(cur_config))
+        result.write_file(args.output)
+        logging.info(f"生成图片成功，路径为{args.output}")
 
 
 if __name__ == "__main__":
@@ -99,8 +105,8 @@ if __name__ == "__main__":
     required_para.add_argument('--full', nargs='?', const='', default=None, type=parse_full_date,
                                help='生成昨日榜单，可附加日期 (YYYY-MM-DD) 以生成往期榜单')
     required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
-    required_para.add_argument('--query_uid', type=str, help='根据 uid 查询指定用户的信息')
-    required_para.add_argument('--query_name', type=str, help='根据用户名查询指定用户的信息')
+    required_para.add_argument('--query_uid', type=str, help='根据 uid 查询指定用户的信息，生成用户名片图片')
+    required_para.add_argument('--query_name', type=str, help='根据用户名查询指定用户的信息，生成用户名片图片')
     parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
     parser.add_argument('--verdict', type=str, help='指定榜单对应 verdict (使用简写)')
     parser.add_argument('--id', type=str, help='生成指定 id 的榜单(留空则生成全部榜单)')

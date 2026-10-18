@@ -1,9 +1,40 @@
 import base64
 import logging
+import re
+from urllib.parse import urljoin
+
 from module.config import Config
 from module.utils import fetch_url
 from module.structures import UserData
 from lxml import etree
+
+_DESCRIPTION_BLOCK_TAGS = {"p", "div", "li", "ul", "ol", "blockquote", "pre",
+                           "h1", "h2", "h3", "h4", "h5", "h6", "table", "tr", "td"}
+
+
+def _rich_text(element) -> str:
+    parts = [element.text or ""]
+    for child in element:
+        tag = child.tag.lower() if isinstance(child.tag, str) else ""
+        if tag == "br":
+            parts.append("\n")
+        elif tag != "img":
+            parts.append(_rich_text(child))
+            if tag in _DESCRIPTION_BLOCK_TAGS:
+                parts.append("\n")
+        parts.append(child.tail or "")
+    return "".join(parts)
+
+
+def _extract_description(html) -> str:
+    """富文本简介转按行文本，只在块级边界与 <br> 处断行"""
+    lines = []
+    for section in html.xpath('//div[contains(@class, "section__body") and contains(@class, "richmedia")]'):
+        for line in _rich_text(section).split("\n"):
+            line = re.sub(r"\s+", " ", line).strip()
+            if line:
+                lines.append(line)
+    return "\n".join(lines)
 
 
 def infer_qq(html, mail) -> str:
@@ -39,8 +70,11 @@ def fetch_user(config: Config, uid: str) -> UserData | None:
 
     html = etree.HTML(response_text.text)
     user_name = "".join(s.strip() for s in html.xpath('//div[@class="media__body profile-header__main"]/h1/text()'))
+    avatar = "".join(html.xpath('//div[@class="media__left"]/img/@src'))
+    if avatar:  # 头像可能为协议相对（//host/...）或站点相对（/file/...）地址
+        avatar = urljoin(config.get_config()["url"], avatar)
     # 用户详情页不用于计算榜单 unrated，注册时间暂以 0 占位
-    user = UserData(user_name, uid, 0)
+    user = UserData(user_name, uid, 0, avatar)
     mail_base64 = "".join(html.xpath('//a[@data-tooltip="复制电子邮件"]/@data-copy'))
     user.mail = base64.b64decode(mail_base64).decode() if mail_base64 else ""
     user.qq = infer_qq(html, user.mail)
@@ -48,7 +82,5 @@ def fetch_user(config: Config, uid: str) -> UserData | None:
                                              '@class="media__body profile-header__main"]/p/*/text()')).split("\n")
     user.status = "".join(s.strip() for s in status_and_progress[:-1])
     user.progress = status_and_progress[-1].strip()
-    user.description = "\n".join(
-        html.xpath('//div[@class="section__body typo richmedia"]/p/text() | //div[@class="section__body typo '
-                   'richmedia"]/p//*/text()'))
+    user.description = _extract_description(html)
     return user
