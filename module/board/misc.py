@@ -23,6 +23,7 @@ _CONTENT_WIDTH = 1248
 _RANK_TILE_BASE_WIDTH = 360
 _RANK_TILE_STRETCH_WIDTH = 480
 _RANK_TILE_HEIGHT = 52
+_RANK_ENTRIES_PER_COLUMN = 15  # 榜单条目达到该数量即增加一栏，避免图片过长
 _HISTOGRAM_TILE_BASE_HEIGHT = 22
 _HISTOGRAM_TILE_STRETCH_HEIGHT = 198
 _TOP_PADDING = 168
@@ -323,7 +324,12 @@ class _RankSection(RenderableSection):
         self._tiles_cache = {}
 
     def get_columns(self):
-        return min(self._max_col_count, 1 + len(self.section_render_materials) // 32)
+        # Top N 榜单（top_count 指定）只是小分块，即使并列导致条目变多也保持单栏，
+        # 避免拆出一个只占部分宽度的栏位、在其它栏留下空白
+        if self._max_col_count == 1 or self.str_tops is not None:
+            return 1
+        return min(self._max_col_count,
+                   1 + len(self.section_render_materials) // _RANK_ENTRIES_PER_COLUMN)
 
     def render(self, img: pixie.Image, x: int, y: int) -> int:
         current_x, current_y = x, y
@@ -629,7 +635,7 @@ class _CopyrightSection(RenderableSection):
 class MiscBoardGenerator(Renderer):
 
     def __init__(self, config: Config, board_type: str, img_path: str, verdict: str = "Accepted",
-                 separate_columns: bool = False, date_string: str = None):
+                 separate_columns: bool = True, date_string: str = None):
         super().__init__(config)
         # date_string 为榜单对应的日期（--full 可指定），留空时 full 为昨日、now 为今日
         self._date_string = format_date_string(date_string or get_date_string(board_type == "full"))

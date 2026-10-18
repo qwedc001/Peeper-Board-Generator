@@ -93,6 +93,53 @@ class RenderableSectionBundle(RenderableSection):
                 self._section_padding * (len(self.section_bundle) - 1))
 
 
+def _balanced_column_counts(heights: list[int], section_padding: int,
+                            column_count: int) -> list[int]:
+    """把一组连续的单栏分块按原顺序切成若干栏，使最高的一栏尽量矮。
+
+    返回每栏包含的分块数量（长度固定为 column_count，未使用的栏为 0）。
+    分块顺序保持不变，且优先使用较少的栏，避免把相邻的小分块拆散。
+    """
+    count = len(heights)
+    if count == 0:
+        return [0] * column_count
+
+    prefix = [0] * (count + 1)
+    for i, height in enumerate(heights):
+        prefix[i + 1] = prefix[i] + height
+
+    def group_height(start: int, end: int) -> int:
+        return prefix[end] - prefix[start] + section_padding * (end - start - 1)
+
+    infinity = float('inf')
+    # dp[g][i]：前 i 个分块用 g 栏（每栏至少一个）装下时，最高一栏的最小高度
+    max_groups = min(column_count, count)
+    dp = [[infinity] * (count + 1) for _ in range(max_groups + 1)]
+    cut = [[0] * (count + 1) for _ in range(max_groups + 1)]
+    dp[0][0] = 0
+    for group in range(1, max_groups + 1):
+        for i in range(group, count + 1):
+            for j in range(group - 1, i):  # 最后一栏为 [j, i)，不能为空
+                if dp[group - 1][j] == infinity:
+                    continue
+                height = max(dp[group - 1][j], group_height(j, i))
+                if height < dp[group][i]:
+                    dp[group][i] = height
+                    cut[group][i] = j
+
+    best_group = 1  # 最高栏高度相同时优先用较少的栏
+    for group in range(2, max_groups + 1):
+        if dp[group][count] < dp[best_group][count]:
+            best_group = group
+
+    counts, i = [], count
+    for group in range(best_group, 0, -1):
+        counts.append(i - cut[group][i])
+        i = cut[group][i]
+    counts.reverse()
+    return counts + [0] * (column_count - best_group)
+
+
 class MultiColumnRenderableSection(RenderableSection):
     """图片渲染多栏分块基类"""
 
@@ -105,23 +152,31 @@ class MultiColumnRenderableSection(RenderableSection):
         self.section_bundle = sections
 
         self._sections_col_id = [0 for _ in range(len(self.section_bundle))]
+        self._assign_columns()
 
-        one_column_heights = [section.get_height() for section in self.section_bundle
-                               if section.get_columns() == 1]
-        one_column_height = max(sum(one_column_heights) // self.get_columns(),
-                                max(one_column_heights))  # 保证至少能塞下一个
+    def _assign_columns(self):
+        """按高度均衡分栏（跨栏分块固定从第一栏开始）"""
+        column_count = self.get_columns()
+        pending: list[int] = []  # 一段连续的单栏分块，整体参与高度均衡
 
-        current_col, current_height = 0, 0  # 分栏（策略：第一栏可以超出，后面不超出第一栏）
+        def flush():
+            counts = _balanced_column_counts(
+                [self.section_bundle[idx].get_height() for idx in pending],
+                self._section_padding, column_count)
+            start = 0
+            for column, count in enumerate(counts):
+                for idx in pending[start:start + count]:
+                    self._sections_col_id[idx] = column
+                start += count
+            pending.clear()
+
         for idx, section in enumerate(self.section_bundle):
-            if section.get_columns() > 1 or current_col >= self.get_columns():
+            if section.get_columns() > 1:
+                flush()
                 self._sections_col_id[idx] = 0
-                continue
-            if (current_height + section.get_height() > one_column_height and
-                    section.get_height() > one_column_height / 4):  # 让比较小的不单开一列
-                current_col += 1
-                current_height = 0
-            current_height += section.get_height() + self._section_padding
-            self._sections_col_id[idx] = current_col % self.get_columns()
+            else:
+                pending.append(idx)
+        flush()
 
     def get_columns(self):
         return max([section.get_columns() for section in self.section_bundle])
@@ -130,14 +185,13 @@ class MultiColumnRenderableSection(RenderableSection):
         column_current_y = [y - self._section_padding for _ in range(self.get_columns())]
         for i, section in enumerate(self.section_bundle):
             idx = self._sections_col_id[i]
+            spanning = section.get_columns() > 1
 
-            # 保证当前栏不会把跨越的某一栏挡住
-            if section.get_columns() > 1:
-                current_max_y = max([
-                    column_current_y[idx + j] for j in range(section.get_columns())
-                ])
-                for j in range(section.get_columns()):
-                    column_current_y[idx + j] = current_max_y
+            # 跨栏分块独占一行：即使它只占其中几栏，也从第一栏开始，
+            # 并把所有栏对齐到它的下方，避免右侧栏的小分块跑到上面去
+            if spanning:
+                current_y = max(column_current_y)
+                column_current_y = [current_y] * self.get_columns()
 
             current_y = column_current_y[idx] + self._section_padding
             current_y = section.render(
@@ -145,8 +199,10 @@ class MultiColumnRenderableSection(RenderableSection):
                 x + (self._content_width + self._column_padding) * idx,
                 current_y
             )
-            for j in range(section.get_columns()):
-                column_current_y[idx + j] = current_y
+            if spanning:
+                column_current_y = [current_y] * self.get_columns()
+            else:
+                column_current_y[idx] = current_y
 
         return max(column_current_y)
 
@@ -155,16 +211,13 @@ class MultiColumnRenderableSection(RenderableSection):
 
         for i, section in enumerate(self.section_bundle):
             idx = self._sections_col_id[i]
+            section_height = self._section_padding + section.get_height()
 
-            # 保证当前栏不会把跨越的某一栏挡住
+            # 跨栏分块独占一行，对齐方式与 render 保持一致
             if section.get_columns() > 1:
-                current_max_height = max([
-                    column_current_height[idx + j] for j in range(section.get_columns())
-                ])
-                for j in range(section.get_columns()):
-                    column_current_height[idx + j] = current_max_height
-
-            for j in range(section.get_columns()):
-                column_current_height[idx + j] += self._section_padding + section.get_height()
+                current_height = max(column_current_height) + section_height
+                column_current_height = [current_height] * self.get_columns()
+            else:
+                column_current_height[idx] += section_height
 
         return max(column_current_height)
