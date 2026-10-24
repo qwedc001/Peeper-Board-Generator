@@ -81,7 +81,7 @@ def fetch_recent_submissions(config: Config, uid: str, limit: int = 5) -> list[S
         f'sid={config.get_config()["session"].cookies.get_dict()["sid"]};'
         f'sid.sig={config.get_config()["session"].cookies.get_dict()["sid.sig"]};'
     )
-    url = config.get_config()["url"] + f'record?uidOrName={uid}&page=1'
+    url = config.get_config()["url"] + f'record?all=1&uidOrName={uid}&page=1'
     response_json = fetch_url(url, method='get', headers=submission_headers).json()
     problem_json = response_json['pdict']
     result = []
