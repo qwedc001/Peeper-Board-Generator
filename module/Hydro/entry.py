@@ -65,7 +65,7 @@ class HydroHandler(BasicHandler):
                 logging.info("昨日 json 数据已固定，跳过爬取")
             else:
                 self.get_yesterday()
-        elif mode == "now":  # 检查昨日榜单文件是否生成
+        else:  # 检查昨日榜单文件是否生成
             json_file = f'{self.config.get_config()["id"]}-{get_date_string(True)}.json'
             file_path = os.path.join(self.config.work_dir, "data", json_file)
             if not os.path.exists(file_path):

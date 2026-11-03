@@ -305,7 +305,7 @@ class _RankSection(RenderableSection):
     def __init__(self, config: Config, header: str, title: str,
                  rank_data: list[dict], rank_key: str = "Accepted",
                  hint: str = None, top_count: int = -1,
-                 separate_columns: bool = False):
+                 separate_columns: bool = True):
         super().__init__(config)
         self._max_col_count = 3 if separate_columns else 1
         self.str_header = StyledString(
@@ -324,10 +324,6 @@ class _RankSection(RenderableSection):
         self._tiles_cache = {}
 
     def get_columns(self):
-        # Top N 榜单（top_count 指定）只是小分块，即使并列导致条目变多也保持单栏，
-        # 避免拆出一个只占部分宽度的栏位、在其它栏留下空白
-        if self._max_col_count == 1 or self.str_tops is not None:
-            return 1
         return min(self._max_col_count,
                    1 + len(self.section_render_materials) // _RANK_ENTRIES_PER_COLUMN)
 
@@ -635,7 +631,7 @@ class _CopyrightSection(RenderableSection):
 class MiscBoardGenerator(Renderer):
 
     def __init__(self, config: Config, board_type: str, img_path: str, verdict: str = "Accepted",
-                 separate_columns: bool = True, date_string: str = None):
+                 separate_columns: bool = True, date_string: str = None, rank_limit: int = -1):
         super().__init__(config)
         # date_string 为榜单对应的日期（--full 可指定），留空时 full 为昨日、now 为今日
         self._date_string = format_date_string(date_string or get_date_string(board_type == "full"))
@@ -665,7 +661,8 @@ class MiscBoardGenerator(Renderer):
                 f"{'往期' if self._is_past else '昨日'}卷王天梯榜", eng_full_name
             )
             self._collect_full_sections()
-        else:  # if board_type == "now"  对于 now 榜单的图形逻辑
+
+        elif board_type == "now":  # 对于 now 榜单的图形逻辑
             self._today = load_json(config, False, self._date_string)
             alias = {val: key for key, val in ALIAS_MAP.items()}
             self._verdict = verdict
@@ -685,9 +682,17 @@ class MiscBoardGenerator(Renderer):
                 self._board = generate_board_data(self._today.submissions, self._verdict)
                 self._collect_verdict_sections()
 
+        else:  # if board_type == "rank"  对于 rank 榜单的图形逻辑
+            self._today = load_json(config, False, self._date_string)
+            self._rank_limit = rank_limit
+            self.section_title = _TitleSection(
+                config, self._gradient_color.color_list[0], img_path,
+                "当前题数排名", eng_full_name
+            )
+            self._collect_rank_sections()
+
         self.section_copyright = _CopyrightSection(config, self._gradient_color.name,
                                                    self._cache_fresh_time)
-
 
     def _collect_full_sections(self):
         day_label = "当日" if self._is_past else "昨日"  # 往期榜单以「当日」指代榜单对应日期
@@ -855,6 +860,24 @@ class MiscBoardGenerator(Renderer):
         else:
             section_content.extend([section_submit_detail, section_today_top_10])
 
+        self.section_content = MultiColumnRenderableSection(
+            self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
+        )
+
+    def _collect_rank_sections(self):
+        rank_data = _pack_rank_data(self._today.rankings, self._rank_limit,
+                                    self.config.get_config()['show_unrated'])
+        section_ranking_none = _SimpleTextSection(
+            self.config, "暂无排行", "当前排行榜为空"
+        )
+        section_total_rank_tops = _RankSection(
+            self.config, "训练榜单", "题数排名",
+            rank_data, top_count=self._rank_limit,
+            hint='为存在"重复提交往日已AC的题目"条件下的过题数理论值',
+            separate_columns=self._separate_columns
+        )
+        section_content = [section_ranking_none if len(rank_data) == 0 else
+                           section_total_rank_tops]
         self.section_content = MultiColumnRenderableSection(
             self.config, section_content, _CONTENT_WIDTH, _SECTION_PADDING, _COLUMN_PADDING
         )
