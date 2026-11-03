@@ -47,6 +47,7 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = True
                        else f'{cur_config.get_config()["id"]}-output.png')
         args.output = os.path.join(work_dir, "data", output_name)
     handler = sub_handlers.get(cur_config.get_config()['handler'])(cur_config)
+
     if args.full is not None:
         # --full 后附加日期时直接使用缓存生成该日期的榜单，否则更新并生成昨日榜单
         target_date = args.full or None
@@ -62,6 +63,7 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = True
                                         date_string=target_date).render()
         output_img.write_file(args.output)
         logging.info(f"生成图片成功，路径为{args.output}")
+
     elif args.now:
         logging.info("正在生成0点到现在时间的榜单")
         handler.save_daily("now")
@@ -71,8 +73,21 @@ def generate(cur_config: Config, multi: bool = False, separate_cols: bool = True
                                         separate_columns=separate_cols).render()
         output_img.write_file(args.output)
         logging.info(f"生成图片成功，路径为{args.output}")
+
+    elif args.rank is not None:
+        rank_limit = max(5, min(100, args.rank))
+        logging.info(f"正在生成过题数榜单，上限 {args.rank} 人")
+        handler.save_daily("now")
+        output_img = MiscBoardGenerator(cur_config, "rank",
+                                        os.path.join(work_dir, "data", f'logo.png'),
+                                        separate_columns=separate_cols,
+                                        rank_limit=rank_limit).render()
+        output_img.write_file(args.output)
+        logging.info(f"生成图片成功，路径为{args.output}")
+
     elif args.query_uid or args.query_name:
         logging.info("正在查询指定用户信息")
+        handler.save_daily("now")
         if args.query_uid:
             result = search_user_by_uid(args.query_uid, handler)
         else:
@@ -105,6 +120,8 @@ if __name__ == "__main__":
     required_para.add_argument('--full', nargs='?', const='', default=None, type=parse_full_date,
                                help='生成昨日榜单，可附加日期 (YYYY-MM-DD) 以生成往期榜单')
     required_para.add_argument('--now', action="store_true", help='生成从今日0点到当前时间的榜单')
+    required_para.add_argument('--rank', nargs='?', const=10, default=None, type=int,
+                               metavar='LIMIT', help='生成当前过题数榜单，可附加查询上限 (默认 10，最多 100)')
     required_para.add_argument('--query_uid', type=str, help='根据 uid 查询指定用户的信息，生成用户名片图片')
     required_para.add_argument('--query_name', type=str, help='根据用户名查询指定用户的信息，生成用户名片图片')
     parser.add_argument('--output', type=str, help='指定生成图片的路径 (包含文件名)')
