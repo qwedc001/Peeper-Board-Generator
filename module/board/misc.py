@@ -24,6 +24,10 @@ _RANK_TILE_BASE_WIDTH = 360
 _RANK_TILE_STRETCH_WIDTH = 480
 _RANK_TILE_HEIGHT = 52
 _RANK_ENTRIES_PER_COLUMN = 15  # 榜单条目达到该数量即增加一栏，避免图片过长
+_ELLIPSIS_STAR_MAX = 5  # 同一档连续打星最多显示数量
+_ELLIPSIS_TIE_OVERFLOW = 3  # Top N 上限处的并列数量
+_ELLIPSIS_SEGMENT_TARGET = 96
+_ELLIPSIS_SEGMENT_GAP = 18
 _HISTOGRAM_TILE_BASE_HEIGHT = 22
 _HISTOGRAM_TILE_STRETCH_HEIGHT = 198
 _TOP_PADDING = 168
@@ -153,6 +157,99 @@ def _ellipsize_str(origin: any, limit: int) -> str:
     return data[:(limit - 1) // 2] + "..." + data[-((limit - 1) // 2):]
 
 
+@dataclass
+class _RankRow:
+    """榜单里的一行（折叠前的原始信息）"""
+    rank: int | None
+    user: str
+    value: int
+    tile_width: float
+    unrated: bool
+    same_rank: bool
+
+    @property
+    def rank_text(self) -> str:
+        return "*" if self.unrated else str(self.rank)
+
+    @property
+    def raw_count(self) -> int:
+        return 1
+
+
+@dataclass
+class _RankEllipsis:
+    """连续相同行折叠出的省略条，raw_count 即被隐藏的行数"""
+    unrated: bool
+    hidden: int
+    tile_width: float
+
+    @property
+    def raw_count(self) -> int:
+        return self.hidden
+
+
+def _collapse_identical_rows(entries: list[_RankRow],
+                             top_count: int) -> list[_RankRow | _RankEllipsis]:
+    """折叠非重点展示的行"""
+
+    # 连续打星折叠（打星行显示的都是 "*"，且条长随分数变化，整档取上下均值）
+    collapsed: list[_RankRow | _RankEllipsis] = []
+    index = 0
+    while index < len(entries):
+        entry = entries[index]
+        if not (isinstance(entry, _RankRow) and entry.unrated):
+            collapsed.append(entry)
+            index += 1
+            continue
+        end = index
+        while end + 1 < len(entries):
+            following = entries[end + 1]
+            if not (isinstance(following, _RankRow) and following.unrated):
+                break
+            end += 1
+        block = entries[index:end + 1]
+        if len(block) > _ELLIPSIS_STAR_MAX:
+            collapsed.extend(block[:2])
+            collapsed.append(_RankEllipsis(
+                unrated=True,
+                hidden=sum(item.raw_count for item in block[2:-2]),
+                tile_width=(block[1].tile_width + block[-2].tile_width) / 2,
+            ))
+            collapsed.extend(block[-2:])
+        else:
+            collapsed.extend(block)
+        index = end + 1
+
+    # 上限处并列折叠
+    if top_count > 0:
+        cap_index = next((idx for idx, entry in enumerate(collapsed)
+                          if isinstance(entry, _RankRow) and not entry.unrated
+                          and entry.rank == top_count), None)
+        if cap_index is not None:
+            overflow = collapsed[cap_index + 1:]
+            if len(overflow) > _ELLIPSIS_TIE_OVERFLOW:
+                kept = overflow[:_ELLIPSIS_TIE_OVERFLOW]
+                removed = overflow[_ELLIPSIS_TIE_OVERFLOW:]
+                collapsed = collapsed[:cap_index + 1] + kept + [_RankEllipsis(
+                    unrated=False,
+                    hidden=sum(item.raw_count for item in removed),
+                    # 并列时省略条与并列行等长
+                    tile_width=collapsed[cap_index].tile_width,
+                )]
+
+    # 相邻省略条合并
+    merged: list[_RankRow | _RankEllipsis] = []
+    for entry in collapsed:
+        previous = merged[-1] if merged else None
+        if isinstance(entry, _RankEllipsis) and isinstance(previous, _RankEllipsis):
+            previous.hidden += entry.hidden
+            if not entry.unrated:
+                previous.unrated = False
+        else:
+            merged.append(entry)
+    return merged
+
+
 def _make_watermark(img: pixie.Image, width: int, height: int):
     cp = StyledString(
         "©2023-2026 P.B.G. Dev Team.", 'H', 16, font_color=(0, 0, 0, 72)
@@ -220,17 +317,21 @@ class _SimpleTextSection(RenderableSection):
 
 class _RankSection(RenderableSection):
 
+    @staticmethod
+    def _tile_alphas(unrated: bool, same_rank: bool) -> tuple[int, int, int]:
+        """普通条渐变的三段黑色透明度（起点/中点/终点）"""
+        return (8 if unrated else (10 if same_rank else 18),
+                10 if unrated else (18 if same_rank else 28),
+                12 if unrated else 32)
+
     @classmethod
     def _get_tile_gradient_color(cls, unrated: bool, same_rank: bool) -> GradientColor:
-        color_list = [
-            (0, 0, 0, 12 if unrated else (10 if same_rank else 18)),
-            (0, 0, 0, 15 if unrated else (18 if same_rank else 28)),
-            (0, 0, 0, 18 if unrated else 32)
-        ]
-        pos_list = [0.0, 0.5, 1.0]
-        return GradientColor(color_list, pos_list, '')
+        color_list = [(0, 0, 0, alpha) for alpha in cls._tile_alphas(unrated, same_rank)]
+        return GradientColor(color_list, [0.0, 0.5, 1.0], '')
 
-    def _decode_rank_data(self, rank_data: list[dict], rank_key: str) -> list[dict]:
+    def _decode_rank_entries(self, rank_data: list[dict],
+                             rank_key: str) -> list[_RankRow | _RankEllipsis]:
+        """把切片后的 rank_data 解析成绘制条目（行 + 省略条）"""
         if len(rank_data) == 0:
             return []
 
@@ -241,9 +342,8 @@ class _RankSection(RenderableSection):
         min_val = int(rank_data[-1][rank_key][-1]
                       if isinstance(rank_data[-1][rank_key], tuple) else
                       rank_data[-1][rank_key])
-        color_black = tuple_to_color((0, 0, 0))
         pre_rank = ""
-        render_material = []
+        entries = []
 
         for top in rank_data:
             unrated = True if top.get('unrated') else False
@@ -255,39 +355,100 @@ class _RankSection(RenderableSection):
             same_rank = current_rank == pre_rank
             if not unrated:
                 pre_rank = current_rank
-
-            str_rank = StyledString(
-                current_rank, 'H', 64,
-                font_color=change_alpha(color_black,
-                                        100 if unrated else (0 if same_rank else 255))
-            )
-            str_uname = StyledString(
-                _ellipsize_str(top['user'], 25), 'B', 36,
-                font_color=change_alpha(color_black, 100 if unrated else 255)
-            )
-            str_value = StyledString(
-                str(val), 'H', 36,
-                font_color=change_alpha(color_black, 100 if unrated else 255),
-                padding_bottom=32
-            )
             tile_progress = (val - min_val + 1) / (max_val - min_val + 1)
-            tile_width = _RANK_TILE_BASE_WIDTH + _RANK_TILE_STRETCH_WIDTH * tile_progress
-            tile_gradient_color = self._get_tile_gradient_color(unrated, same_rank)
+            entries.append(_RankRow(
+                rank=None if unrated else int(top['rank']),
+                user=top['user'],
+                value=val,
+                tile_width=_RANK_TILE_BASE_WIDTH + _RANK_TILE_STRETCH_WIDTH * tile_progress,
+                unrated=unrated,
+                same_rank=same_rank,
+            ))
 
-            render_material.append({
-                'str_rank': str_rank,
-                'str_uname': str_uname,
-                'str_value': str_value,
-                'tile_width': tile_width,
-                'tile_gradient_color': tile_gradient_color
-            })
+        return _collapse_identical_rows(entries, self._top_count)
+
+    def _decode_rank_data(self, rank_data: list[dict], rank_key: str) -> list[dict]:
+        color_black = tuple_to_color((0, 0, 0))
+        render_material = []
+
+        for entry in self._decode_rank_entries(rank_data, rank_key):
+            # 文字颜色与上下文行一致：打星行用打星透明度，并列行用正常文字色
+            text_alpha = 80 if entry.unrated else 255
+
+            if isinstance(entry, _RankEllipsis):
+                render_material.append({
+                    'ellipsis': True,
+                    'str_rank': StyledString(
+                        "…", 'H', 64,
+                        font_color=change_alpha(color_black, text_alpha)
+                    ),
+                    'str_uname': StyledString(
+                        f"省略 {entry.hidden} 人", 'B', 36,
+                        font_color=change_alpha(color_black, text_alpha)
+                    ),
+                    'str_value': StyledString('', 'H', 36, padding_bottom=32),
+                    'tile_width': entry.tile_width,
+                    # 条颜色与上下文对齐：打星取打星条、并列取并列条
+                    'tile_gradient_color': self._get_tile_gradient_color(entry.unrated, not entry.unrated),
+                })
+
+            else:
+                render_material.append({
+                    'str_rank': StyledString(
+                        entry.rank_text, 'H', 64,
+                        font_color=change_alpha(
+                            color_black,
+                            0 if not entry.unrated and entry.same_rank else text_alpha)
+                    ),
+                    'str_uname': StyledString(
+                        _ellipsize_str(entry.user, 25), 'B', 36,
+                        font_color=change_alpha(color_black, text_alpha)
+                    ),
+                    'str_value': StyledString(
+                        str(entry.value), 'H', 36,
+                        font_color=change_alpha(color_black, text_alpha),
+                        padding_bottom=32
+                    ),
+                    'tile_width': entry.tile_width,
+                    'tile_gradient_color': self._get_tile_gradient_color(
+                        entry.unrated, entry.same_rank),
+                })
 
         return render_material
+
+    def _draw_ellipsis_row(self, img: pixie.Image, x: int, y: int, item: dict):
+        """绘制省略条：分段全圆角（圆角与普通条一致），颜色取上下文条的中间色"""
+        width = item['tile_width']
+        paint = pixie.Paint(pixie.SOLID_PAINT)
+        paint.color = tuple_to_color(item['tile_gradient_color'].color_list[1])
+        segment_count = max(3, int(width // _ELLIPSIS_SEGMENT_TARGET))
+        segment_width = (width - _ELLIPSIS_SEGMENT_GAP * (segment_count - 1)) / segment_count
+        for index in range(segment_count):
+            draw_rect(img, paint,
+                      Loc(round(x + index * (segment_width + _ELLIPSIS_SEGMENT_GAP)), y + 38,
+                          round(segment_width), _RANK_TILE_HEIGHT),
+                      _RANK_TILE_HEIGHT // 2)
+
+        current_x = x + 32
+        draw_text(img, item['str_rank'], current_x, y + 8)
+        current_x += calculate_width(item['str_rank']) + 28
+        draw_text(img, item['str_uname'], current_x, y + 40)
+
+    @staticmethod
+    def _hashable_color(color: str | tuple | pixie.Color) -> str | tuple[int, ...]:
+        """GradientColor 的颜色可能是不可哈希的 pixie.Color，统一转成可哈希表示"""
+        if isinstance(color, str):
+            return color
+        if isinstance(color, pixie.Color):
+            return (round(color.r * 255), round(color.g * 255),
+                    round(color.b * 255), round(color.a * 255))
+        return tuple(round(float(channel)) for channel in color)
 
     def _cache_tiles(self, tile_loc: Loc, tile_colors: GradientColor):
         """缓存相同样式的tile，不在全局缓存的原因是不同板块的tile长度很难一致"""
         tile_style = (int(tile_loc.width),
-                      tuple(tile_colors.color_list), tuple(tile_colors.pos_list))
+                      tuple(self._hashable_color(color) for color in tile_colors.color_list),
+                      tuple(tile_colors.pos_list))
         self._tiles_cache.setdefault(tile_style, [])
         self._tiles_cache[tile_style].append((tile_loc.x, tile_loc.y))
 
@@ -308,6 +469,7 @@ class _RankSection(RenderableSection):
                  separate_columns: bool = True):
         super().__init__(config)
         self._max_col_count = 3 if separate_columns else 1
+        self._top_count = top_count
         self.str_header = StyledString(
             header, "B", 36, padding_bottom=16
         )
@@ -346,18 +508,22 @@ class _RankSection(RenderableSection):
         start_x, max_y, start_y = current_x, current_y, current_y
         for idx, item in enumerate(self.section_render_materials):
             current_x = start_x
-            self._cache_tiles(Loc(current_x, current_y + 38, item['tile_width'], 52),
-                              item['tile_gradient_color'])
-            current_x += 32
+            if item.get('ellipsis'):
+                self._draw_ellipsis_row(img, current_x, current_y, item)
+                current_y = draw_text(img, item['str_value'], current_x, current_y + 40)
+            else:
+                self._cache_tiles(Loc(current_x, current_y + 38, item['tile_width'], 52),
+                                  item['tile_gradient_color'])
+                current_x += 32
 
-            draw_text(img, item['str_rank'], current_x, current_y + 8)
-            current_x += calculate_width(item['str_rank']) + 28
+                draw_text(img, item['str_rank'], current_x, current_y + 8)
+                current_x += calculate_width(item['str_rank']) + 28
 
-            draw_text(img, item['str_uname'], current_x, current_y + 40)
-            current_x = max(item['tile_width'] + start_x,
-                            current_x + calculate_width(item['str_uname'])) + 36
+                draw_text(img, item['str_uname'], current_x, current_y + 40)
+                current_x = max(item['tile_width'] + start_x,
+                                current_x + calculate_width(item['str_uname'])) + 36
 
-            current_y = draw_text(img, item['str_value'], current_x, current_y + 40)
+                current_y = draw_text(img, item['str_value'], current_x, current_y + 40)
 
             max_y = max(max_y, current_y)
             if (idx + 1) % column_count == 0:  # 分栏
